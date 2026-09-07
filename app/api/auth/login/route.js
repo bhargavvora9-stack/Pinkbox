@@ -15,8 +15,10 @@ export async function POST(request) {
     }
 
     // Keep the auth session on this exact response so the browser receives the
-    // SSR cookies produced by signInWithPassword.
+    // SSR cookies produced by signInWithPassword. Authentication responses must
+    // never be cached by a CDN/browser.
     const response = NextResponse.json({ ok: true });
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0');
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -25,10 +27,15 @@ export async function POST(request) {
           getAll() {
             return request.cookies.getAll();
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet, headers) {
             cookiesToSet.forEach(({ name, value, options }) => {
               response.cookies.set(name, value, options);
             });
+            if (headers) {
+              Object.entries(headers).forEach(([name, value]) => {
+                if (value) response.headers.set(name, value);
+              });
+            }
           },
         },
       }
@@ -38,7 +45,7 @@ export async function POST(request) {
 
     if (error || !data.user) {
       console.error('Website admin auth failed:', error?.message || 'No authenticated user');
-      return NextResponse.json({ error: error?.message || 'Invalid email or password.' }, { status: 401 });
+      return NextResponse.json({ error: error?.message || 'Invalid email or password.' }, { status: 401, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     const admin = createAdminClient();
@@ -50,15 +57,15 @@ export async function POST(request) {
 
     if (profileLookupError) {
       console.error('Website admin profile lookup failed:', profileLookupError.message);
-      return NextResponse.json({ error: 'Unable to verify admin access.' }, { status: 500 });
+      return NextResponse.json({ error: 'Unable to verify admin access.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) {
-      return NextResponse.json({ error: 'You do not have Website Admin access.' }, { status: 403 });
+      return NextResponse.json({ error: 'You do not have Website Admin access.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     if (!profile.company_id) {
-      return NextResponse.json({ error: 'Your admin account is not linked to a company.' }, { status: 403 });
+      return NextResponse.json({ error: 'Your admin account is not linked to a company.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     const { data: company, error: companyError } = await admin
@@ -69,20 +76,20 @@ export async function POST(request) {
 
     if (companyError) {
       console.error('Website admin company lookup failed:', companyError.message);
-      return NextResponse.json({ error: 'Unable to verify company access.' }, { status: 500 });
+      return NextResponse.json({ error: 'Unable to verify company access.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     if (!company) {
-      return NextResponse.json({ error: 'Your admin account is linked to a missing company.' }, { status: 403 });
+      return NextResponse.json({ error: 'Your admin account is linked to a missing company.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     if (company.subscription_status && company.subscription_status !== 'active') {
-      return NextResponse.json({ error: 'PinkBox website subscription is not active.' }, { status: 403 });
+      return NextResponse.json({ error: 'PinkBox website subscription is not active.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     }
 
     return response;
   } catch (error) {
     console.error('Admin login failed:', error);
-    return NextResponse.json({ error: error?.message || 'Unable to sign in right now.' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Unable to sign in right now.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
   }
 }
