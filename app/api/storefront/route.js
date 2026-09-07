@@ -2,9 +2,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 
 async function getStore(){
  const db=createAdminClient();
- const {data:company}=await db.from('companies').select('id,name').eq('name','PinkBox').maybeSingle();
- if(!company)return {db,settings:null};
- const {data:settings}=await db.from('website_settings').select('*').eq('company_id',company.id).eq('status','active').maybeSingle();
+ const {data:settings}=await db.from('website_settings').select('*').eq('slug','pinkbox').eq('status','active').maybeSingle();
  return {db,settings};
 }
 
