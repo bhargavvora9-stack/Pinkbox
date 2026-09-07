@@ -28,9 +28,19 @@ function buildPayload(resource, body, companyId, partial = false) {
     if (!partial || body.primary_color !== undefined) p.primary_color = cleanString(body.primary_color, 30) || null;
     if (!partial || body.secondary_color !== undefined) p.secondary_color = cleanString(body.secondary_color, 30) || null;
     if (!partial || body.font_family !== undefined) p.font_family = cleanString(body.font_family, 120) || null;
-    const old = jsonObject(body.settings);
-    p.settings = { ...old };
-    ['theme_name','accent_color','background_color','text_color','button_radius','layout_width','custom_css','header_settings','footer_settings','card_style','product_grid','announcement_bar','checkout_style'].forEach(k => { if (!partial || body[k] !== undefined) p.settings[k] = body[k]; });
+    const incoming = jsonObject(body.settings);
+    const allowed = [
+      'theme_name','accent_color','background_color','surface_color','text_color','muted_color',
+      'border_radius','button_radius','card_radius','layout_width','section_spacing','product_grid',
+      'image_ratio','header_style','header_height','hero_style','hero_height','button_style',
+      'card_style','card_shadow','heading_weight','announcement_bar','show_benefits','show_categories',
+      'show_blog','checkout_style','header_settings','footer_settings','custom_css'
+    ];
+    const settings = {};
+    for (const key of allowed) {
+      if (!partial || Object.prototype.hasOwnProperty.call(incoming, key)) settings[key] = incoming[key];
+    }
+    p.settings = settings;
     return p;
   }
   if (resource === 'footer') {
