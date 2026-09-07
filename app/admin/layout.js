@@ -5,31 +5,34 @@ import LogoutButton from '@/components/LogoutButton';
 import '../website/website-theme.css';
 
 export const metadata = { title: 'PinkBox Admin', robots: { index: false, follow: false, nocache: true } };
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function AdminLayout({ children }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect('/login');
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('display_name, role, active, company_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (profileError || !profile || !profile.active) redirect('/login');
-
-  let company = null;
-  if (profile.company_id) {
-    const { data } = await supabase
-      .from('companies')
-      .select('name, logo_url, subscription_status')
-      .eq('id', profile.company_id)
-      .maybeSingle();
-    company = data || null;
+  if (profileError || !profile || profile.active === false || !['super_admin', 'admin'].includes(profile.role)) {
+    redirect('/login?error=not_admin');
   }
+  if (!profile.company_id) redirect('/login?error=no_company');
 
-  if (!company) redirect('/login');
+  const { data: company, error: companyError } = await supabase
+    .from('companies')
+    .select('name, logo_url, subscription_status')
+    .eq('id', profile.company_id)
+    .maybeSingle();
+
+  if (companyError || !company || (company.subscription_status && company.subscription_status !== 'active')) {
+    redirect('/login?error=company_access');
+  }
 
   return (
     <div className="website-admin glass-shell flex min-h-screen">
@@ -45,7 +48,7 @@ export default async function AdminLayout({ children }) {
         </div>
         <WebsiteAdminNav />
         <div className="border-t border-white/10 p-4">
-          <div className="mb-2 truncate text-sm text-gray-300">{profile.display_name}</div>
+          <div className="mb-2 truncate text-sm text-gray-300">{profile.display_name || user.email}</div>
           <LogoutButton />
         </div>
       </aside>
