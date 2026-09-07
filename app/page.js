@@ -71,6 +71,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          payment_method: 'cod',
           session_id: sessionId,
           items: [{ product_id: selected.id, quantity: qty }]
         })
@@ -146,7 +147,7 @@ export default function Home() {
           {selected ? <>
             <div className="mt-5 flex items-center justify-between rounded-2xl bg-[#fbf3ef] p-4">
               <div><div className="font-semibold">{selected.title}</div><div className="text-sm text-gray-500">{money(selected.price)} each</div></div>
-              <div className="flex items-center gap-3"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="rounded-full border p-2"><Minus size={15} /></button><span className="w-6 text-center">{qty}</span><button type="button" onClick={() => setQty(qty + 1)} className="rounded-full border p-2"><Plus size={15} /></button></div>
+              <div className="flex items-center gap-3"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="rounded-full border p-2"><Minus size={15} /></button><span className="w-6 text-center">{qty}</span><button type="button" disabled={qty >= Number(selected.stock_quantity || 0)} onClick={() => setQty(qty + 1)} className="rounded-full border p-2 disabled:opacity-40"><Plus size={15} /></button></div>
             </div>
             <form onSubmit={order} onBlur={saveCart} className="mt-6 grid gap-4 sm:grid-cols-2">
               <input required placeholder="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border px-4 py-3" />
@@ -158,15 +159,15 @@ export default function Home() {
               <textarea required placeholder="Delivery Address" rows="3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="sm:col-span-2 rounded-xl border px-4 py-3" />
               <textarea placeholder="Order note" rows="2" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="sm:col-span-2 rounded-xl border px-4 py-3" />
               <input placeholder="Coupon Code (optional)" value={form.coupon_code} onChange={(e) => setForm({ ...form, coupon_code: e.target.value.toUpperCase() })} className="rounded-xl border px-4 py-3" />
-              <select value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })} className="rounded-xl border px-4 py-3"><option value="cod">Cash on Delivery</option>{data.settings.online_payment_enabled && <option value="online">Online Payment</option>}</select>
-              <div className="flex items-center justify-between sm:col-span-2"><div><div className="text-sm text-gray-500">Product Total</div><div className="text-3xl font-semibold text-[#0e4f4b]">{money(total)}</div><div className="text-xs text-gray-400">Final total includes shipping/coupon calculation.</div></div><button disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-[#d9295f] px-6 py-3.5 font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={17} className="animate-spin" /> : <MessageCircle size={17} />}Place Order</button></div>
+              <select value="cod" disabled className="rounded-xl border px-4 py-3 bg-gray-50"><option value="cod">Cash on Delivery</option></select>
+              <div className="flex items-center justify-between sm:col-span-2"><div><div className="text-sm text-gray-500">Product Total</div><div className="text-3xl font-semibold text-[#0e4f4b]">{money(total)}</div><div className="text-xs text-gray-400">Final total includes shipping/coupon calculation.</div></div><button disabled={busy || Number(selected.stock_quantity || 0) < 1} className="inline-flex items-center gap-2 rounded-full bg-[#d9295f] px-6 py-3.5 font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={17} className="animate-spin" /> : <MessageCircle size={17} />}Place Order</button></div>
             </form>
           </> : <p className="mt-5 text-gray-500">No products are currently available.</p>}
           {(msg || err) && <div className={`mt-5 rounded-xl p-4 text-sm ${err ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>{err || msg}</div>}
         </div>
       </section>
 
-      <footer className="border-t border-black/5 py-10 text-center text-sm text-gray-500">{data.settings.website_name || '24Care'} · Powered by BK CRM Website Admin</footer>
+      <footer className="border-t border-black/5 py-10 text-center text-sm text-gray-500">{data.settings.website_name || '24Care'}</footer>
     </main>
   );
 }
