@@ -1,6 +1,27 @@
 import Link from 'next/link';
 import {createAdminClient} from '@/lib/supabase-admin';
 import {notFound} from 'next/navigation';
+
 export const dynamic='force-dynamic';
-export default async function BlogPage({params}){const {slug}=await params;const db=createAdminClient();const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description').eq('slug','24care').eq('status','active').maybeSingle();if(!settings)return notFound();const {data:post}=await db.from('website_blog_posts').select('*').eq('company_id',settings.company_id).eq('slug',slug).eq('status','published').lte('published_at',new Date().toISOString()).maybeSingle();if(!post)return notFound();return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]"><article className="mx-auto max-w-3xl px-5 py-16"><Link href="/" className="text-sm font-semibold text-[#0e4f4b]">← Back to 24Care</Link>{post.featured_image_url&&<img src={post.featured_image_url} alt={post.title} className="mt-8 h-80 w-full rounded-3xl object-cover"/>}<div className="mt-8 text-xs font-bold uppercase tracking-widest text-[#d9295f]">{post.category||'24Care'} · {post.published_at?new Date(post.published_at).toLocaleDateString('en-IN'):''}</div><h1 className="mt-3 text-4xl font-bold md:text-5xl">{post.title}</h1>{post.excerpt&&<p className="mt-5 text-lg text-gray-600">{post.excerpt}</p>}<div className="prose prose-lg mt-10 max-w-none" dangerouslySetInnerHTML={{__html:post.content?.html||''}}/></article></main>}
-export async function generateMetadata({params}){const {slug}=await params;const db=createAdminClient();const {data:settings}=await db.from('website_settings').select('company_id,website_name').eq('slug','24care').eq('status','active').maybeSingle();if(!settings)return {};const {data:post}=await db.from('website_blog_posts').select('title,seo_title,seo_description,featured_image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('status','published').maybeSingle();return post?{title:post.seo_title||post.title,description:post.seo_description||undefined,openGraph:post.featured_image_url?{images:[post.featured_image_url]}:undefined}:{title:settings.website_name||'24Care'};}
+export const revalidate=0;
+
+async function getStore(){
+ const db=createAdminClient();
+ const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description').eq('slug','pinkbox').eq('status','active').maybeSingle();
+ return {db,settings};
+}
+
+export default async function BlogPage({params}){
+ const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return notFound();
+ const {data:post}=await db.from('website_blog_posts').select('*').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).lte('published_at',new Date().toISOString()).maybeSingle();
+ if(!post)return notFound();
+ const image=post.cover_image_url||post.featured_image_url;
+ return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]"><article className="mx-auto max-w-3xl px-5 py-16"><Link href="/" className="text-sm font-semibold text-[#d9295f]">← Back to {settings.website_name||'PinkBox'}</Link>{image&&<img src={image} alt={post.title} className="mt-8 h-80 w-full rounded-3xl object-cover"/>}<div className="mt-8 text-xs font-bold uppercase tracking-widest text-[#d9295f]">{post.category||'PinkBox Journal'} · {post.published_at?new Date(post.published_at).toLocaleDateString('en-IN'):''}</div><h1 className="mt-3 text-4xl font-bold md:text-5xl">{post.title}</h1>{post.excerpt&&<p className="mt-5 text-lg text-gray-600">{post.excerpt}</p>}<div className="prose prose-lg mt-10 max-w-none" dangerouslySetInnerHTML={{__html:post.content?.html||''}}/></article></main>
+}
+
+export async function generateMetadata({params}){
+ const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return {};
+ const {data:post}=await db.from('website_blog_posts').select('title,seo_title,seo_description,cover_image_url,featured_image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
+ const image=post?.cover_image_url||post?.featured_image_url;
+ return post?{title:post.seo_title||post.title,description:post.seo_description||undefined,openGraph:image?{images:[image]}:undefined}:{title:settings.website_name||'PinkBox'};
+}
