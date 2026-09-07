@@ -6,24 +6,29 @@ const WEBSITE_ADMIN_ROLES = new Set(['super_admin', 'admin']);
 
 function errorResponse(request, code, message, wantsJson) {
   if (wantsJson) {
-    const response = NextResponse.json({ ok: false, error: message }, { status: code === 'invalid_credentials' ? 401 : code === 'not_admin' || code === 'no_company' || code === 'subscription_inactive' ? 403 : 500 });
-    response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    const status = code === 'invalid_credentials' ? 401 : ['not_admin', 'no_company', 'subscription_inactive'].includes(code) ? 403 : 500;
+    const response = NextResponse.json({ ok: false, error: message, code }, { status });
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    response.headers.set('Vary', 'Cookie');
     return response;
   }
   const url = new URL('/login', request.url);
   url.searchParams.set('error', code);
   const response = NextResponse.redirect(url, 303);
-  response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  response.headers.set('Vary', 'Cookie');
   return response;
 }
 
 export async function POST(request) {
+  let wantsJson = false;
   try {
     const contentType = request.headers.get('content-type') || '';
-    const wantsJson = contentType.includes('application/json');
-    let body = {};
+    const accept = request.headers.get('accept') || '';
+    wantsJson = contentType.includes('application/json') || accept.includes('application/json');
 
-    if (wantsJson) {
+    let body = {};
+    if (contentType.includes('application/json')) {
       body = await request.json();
     } else {
       body = Object.fromEntries((await request.formData()).entries());
@@ -31,16 +36,14 @@ export async function POST(request) {
 
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body?.password === 'string' ? body.password : '';
-    const next = typeof body?.next === 'string' && body.next.startsWith('/') ? body.next : '/admin';
+    const next = typeof body?.next === 'string' && body.next.startsWith('/') && !body.next.startsWith('//') ? body.next : '/admin';
 
     if (!email || !password) return errorResponse(request, 'missing_credentials', 'Email and password are required.', wantsJson);
 
-    // Both the legacy JSON client and the new native form use this exact response,
-    // so Supabase SSR cookies are always returned to the browser without caching.
     const response = wantsJson
       ? NextResponse.json({ ok: true })
       : NextResponse.redirect(new URL(next, request.url), 303);
-    response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
     response.headers.set('Vary', 'Cookie');
 
     const supabase = createServerClient(
@@ -53,11 +56,7 @@ export async function POST(request) {
           },
           setAll(cookiesToSet, headers) {
             cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-            if (headers) {
-              Object.entries(headers).forEach(([name, value]) => {
-                if (value) response.headers.set(name, value);
-              });
-            }
+            if (headers) Object.entries(headers).forEach(([name, value]) => value && response.headers.set(name, value));
           },
         },
       }
@@ -99,7 +98,7 @@ export async function POST(request) {
     return response;
   } catch (error) {
     console.error('Admin login failed:', error);
-    return errorResponse(request, 'server_error', 'Unable to sign in right now.', false);
+    return errorResponse(request, 'server_error', 'Unable to sign in right now.', wantsJson);
   }
 }
 
