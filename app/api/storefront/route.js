@@ -27,7 +27,7 @@ export async function GET() {
       db.from('website_menus').select('location,name,items').eq('company_id', c).eq('location', 'header').maybeSingle(),
       db.from('website_theme_settings').select('*').eq('company_id', c).maybeSingle(),
       db.from('website_footer_settings').select('*').eq('company_id', c).maybeSingle(),
-      db.from('website_blog_posts').select('id,title,slug,excerpt,content,featured_image_url,author_name,category,tags,seo_title,seo_description,published_at').eq('company_id', c).eq('status', 'published').lte('published_at', now).order('published_at', { ascending: false }).limit(20),
+      db.from('website_blog_posts').select('id,title,slug,excerpt,content,cover_image_url,published_at').eq('company_id', c).eq('is_published', true).lte('published_at', now).order('published_at', { ascending: false }).limit(20),
     ]);
 
     const queryError = [products, categories, banners, sections, pages, menu, theme, footer, blog].find((result) => result.error)?.error;
