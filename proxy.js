@@ -16,9 +16,6 @@ export async function proxy(request) {
     return NextResponse.redirect(url);
   }
 
-  // The login page must never participate in session refresh. A stale or
-  // anonymous login-page request must not clear/replace a freshly-created
-  // Supabase auth cookie during the sign-in redirect chain.
   if (path === '/login') {
     const response = NextResponse.next({ request });
     response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
@@ -36,8 +33,7 @@ export async function proxy(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value, options));
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
           if (headers) {
             Object.entries(headers).forEach(([name, value]) => {
@@ -49,8 +45,12 @@ export async function proxy(request) {
     }
   );
 
-  const { data: claimsData } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const user = claimsData?.claims?.sub ? claimsData.claims : null;
+
+  if (claimsError) {
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  }
 
   if (!user && (
     path.startsWith('/admin') ||
@@ -59,11 +59,15 @@ export async function proxy(request) {
   )) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.search = '';
+    url.searchParams.set('error', 'session_expired');
     const redirect = NextResponse.redirect(url);
     redirect.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
     return redirect;
   }
 
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  response.headers.set('Vary', 'Cookie');
   return response;
 }
 
