@@ -4,21 +4,40 @@ import { createAdminClient } from '@/lib/supabase-admin';
 
 const WEBSITE_ADMIN_ROLES = new Set(['super_admin', 'admin']);
 
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const password = typeof body?.password === 'string' ? body.password : '';
+function redirectWithError(request, code) {
+  const url = new URL('/login', request.url);
+  url.searchParams.set('error', code);
+  const response = NextResponse.redirect(url, 303);
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+  return response;
+}
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+export async function POST(request) {
+  let response;
+
+  try {
+    const contentType = request.headers.get('content-type') || '';
+    let body = {};
+
+    if (contentType.includes('application/json')) {
+      body = await request.json();
+    } else {
+      const form = await request.formData();
+      body = Object.fromEntries(form.entries());
     }
 
-    // Keep the auth session on this exact response so the browser receives the
-    // SSR cookies produced by signInWithPassword. Authentication responses must
-    // never be cached by a CDN/browser.
-    const response = NextResponse.json({ ok: true });
+    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body?.password === 'string' ? body.password : '';
+    const next = typeof body?.next === 'string' && body.next.startsWith('/') ? body.next : '/admin';
+
+    if (!email || !password) return redirectWithError(request, 'missing_credentials');
+
+    // The same response object must receive every Supabase auth cookie and
+    // response header. The browser then follows this response's 303 redirect.
+    response = NextResponse.redirect(new URL(next, request.url), 303);
     response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    response.headers.set('Vary', 'Cookie');
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -45,7 +64,7 @@ export async function POST(request) {
 
     if (error || !data.user) {
       console.error('Website admin auth failed:', error?.message || 'No authenticated user');
-      return NextResponse.json({ error: error?.message || 'Invalid email or password.' }, { status: 401, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'invalid_credentials');
     }
 
     const admin = createAdminClient();
@@ -57,15 +76,15 @@ export async function POST(request) {
 
     if (profileLookupError) {
       console.error('Website admin profile lookup failed:', profileLookupError.message);
-      return NextResponse.json({ error: 'Unable to verify admin access.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'access_check_failed');
     }
 
     if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) {
-      return NextResponse.json({ error: 'You do not have Website Admin access.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'not_admin');
     }
 
     if (!profile.company_id) {
-      return NextResponse.json({ error: 'Your admin account is not linked to a company.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'no_company');
     }
 
     const { data: company, error: companyError } = await admin
@@ -76,20 +95,21 @@ export async function POST(request) {
 
     if (companyError) {
       console.error('Website admin company lookup failed:', companyError.message);
-      return NextResponse.json({ error: 'Unable to verify company access.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'company_check_failed');
     }
 
-    if (!company) {
-      return NextResponse.json({ error: 'Your admin account is linked to a missing company.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
-    }
+    if (!company) return redirectWithError(request, 'no_company');
 
     if (company.subscription_status && company.subscription_status !== 'active') {
-      return NextResponse.json({ error: 'PinkBox website subscription is not active.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+      return redirectWithError(request, 'subscription_inactive');
     }
 
     return response;
   } catch (error) {
     console.error('Admin login failed:', error);
-    return NextResponse.json({ error: error?.message || 'Unable to sign in right now.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+    return redirectWithError(request, 'server_error');
   }
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
