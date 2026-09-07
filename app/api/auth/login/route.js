@@ -14,6 +14,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
 
+    // Keep the auth session on this exact response so the browser receives the
+    // SSR cookies produced by signInWithPassword.
     const response = NextResponse.json({ ok: true });
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
