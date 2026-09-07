@@ -1,0 +1,47 @@
+import WebsiteResourceManager3 from '@/components/WebsiteResourceManager3';
+import { WebsiteDashboard, WebsiteInventory, WebsiteSettings } from '@/components/WebsiteSpecialPages';
+import { ProductCategoryMapping, WebsiteAuditLog, Phase1Status } from '@/components/WebsitePhase1Extras';
+import { Phase2Manager, ProductCollectionMapping } from '@/components/WebsitePhase2Catalog';
+import WebsiteBulkTools from '@/components/WebsiteBulkTools';
+import WebsiteCustomersPhase3 from '@/components/WebsiteCustomersPhase3';
+import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } from '@/components/WebsitePhase3Orders';
+import { Phase4Theme, Phase4SEO, Phase4Blog, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
+import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
+import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
+
+export default async function WebsiteModulePage({ params }) {
+  const { slug = [] } = await params;
+  const key = slug.join('/');
+  if (key === '' || key === 'dashboard') return <WebsiteDashboard />;
+  if (key === 'settings') return <WebsiteSettings />;
+  if (key === 'orders') return <Phase3Orders />;
+  if (key === 'inventory') return <WebsiteInventory />;
+  if (key === 'customers') return <WebsiteCustomersPhase3 />;
+  if (key === 'audit-log') return <WebsiteAuditLog />;
+  if (key === 'products/categories') return <ProductCategoryMapping />;
+  if (key === 'products/import-export') return <WebsiteBulkTools />;
+  if (['brands','collections','variants','reviews'].includes(key)) return <Phase2Manager resource={key} />;
+  if (key === 'products/collections') return <ProductCollectionMapping />;
+  if (key === 'shipping') return <Phase3Shipping resource="shipping-methods" />;
+  if (key === 'shipping/methods') return <Phase3Shipping resource="shipping-methods" />;
+  if (key === 'shipping/zones') return <Phase3Shipping resource="shipping-zones" />;
+  if (key === 'shipping/rules') return <Phase3Shipping resource="shipping-rules" />;
+  if (key === 'payments') return <Phase3Payments />;
+  if (key === 'abandoned-carts') return <Phase3AbandonedCarts />;
+  if (key === 'theme') return <Phase4Theme />;
+  if (key === 'seo') return <Phase4SEO />;
+  if (key === 'blog') return <Phase4Blog />;
+  if (key === 'footer') return <Phase4Footer />;
+  if (key === 'homepage') return <Phase4Homepage />;
+  if (key === 'campaigns') return <Phase5Campaigns />;
+  if (key === 'notifications') return <Phase5Notifications />;
+  if (key === 'notification-logs') return <Phase5NotificationLogs />;
+  if (key === 'analytics') return <Phase6Analytics />;
+  if (key === 'reports') return <Phase6Reports />;
+  if (key === 'roles') return <Phase6Roles />;
+  if (key === 'automations') return <Phase6Automations />;
+  if (key === 'system-health') return <Phase6Health />;
+  const map = { categories:'categories', products:'products', images:'images', pages:'pages', banners:'banners', navigation:'navigation', discounts:'discounts' };
+  if (map[key]) return <WebsiteResourceManager3 resource={map[key]} />;
+  return <Phase1Status title={key.replaceAll('-',' ') || 'Website'} />;
+}
