@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase-browser';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,20 +12,31 @@ export default function Login() {
     setLoading(true);
     setError('');
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
 
-    if (error) {
-      setError('Invalid email or password.');
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(result.error || 'Invalid email or password.');
+        setLoading(false);
+        return;
+      }
+
+      const next = new URLSearchParams(window.location.search).get('next');
+      window.location.replace(next && next.startsWith('/') ? next : '/admin');
+    } catch {
+      setError('Unable to sign in right now.');
       setLoading(false);
-      return;
     }
-
-    const next = new URLSearchParams(window.location.search).get('next');
-    window.location.href = next && next.startsWith('/') ? next : '/admin';
   };
 
   return (
