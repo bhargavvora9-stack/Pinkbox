@@ -25,16 +25,20 @@ export async function proxy(request) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          if (headers?.['cache-control']) response.headers.set('cache-control', headers['cache-control']);
+          if (headers?.['expires']) response.headers.set('expires', headers.expires);
+          if (headers?.pragma) response.headers.set('pragma', headers.pragma);
         },
       },
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? claimsData.claims : null;
 
   if (!user && (
     path.startsWith('/admin') ||
