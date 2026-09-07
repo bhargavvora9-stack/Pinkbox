@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 
 const ERROR_MESSAGES = {
   missing_credentials: 'Email and password are required.',
@@ -18,8 +19,10 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export default async function LoginPage({ searchParams }) {
+  await headers();
   const params = await searchParams;
   const errorCode = typeof params?.error === 'string' ? params.error : '';
   const error = ERROR_MESSAGES[errorCode] || '';
