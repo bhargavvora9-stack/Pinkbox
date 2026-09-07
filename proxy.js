@@ -16,6 +16,16 @@ export async function proxy(request) {
     return NextResponse.redirect(url);
   }
 
+  // The login page must never participate in session refresh. A stale or
+  // anonymous login-page request must not clear/replace a freshly-created
+  // Supabase auth cookie during the sign-in redirect chain.
+  if (path === '/login') {
+    const response = NextResponse.next({ request });
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    response.headers.set('Vary', 'Cookie');
+    return response;
+  }
+
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -26,7 +36,7 @@ export async function proxy(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
           if (headers) {
@@ -39,9 +49,6 @@ export async function proxy(request) {
     }
   );
 
-  // Supabase SSR uses getClaims() to verify the session and refresh cookies.
-  // Do not create another response after this call; the response above carries
-  // any refreshed auth cookies back to the browser.
   const { data: claimsData } = await supabase.auth.getClaims();
   const user = claimsData?.claims?.sub ? claimsData.claims : null;
 
@@ -53,7 +60,7 @@ export async function proxy(request) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     const redirect = NextResponse.redirect(url);
-    redirect.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    redirect.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
     return redirect;
   }
 
