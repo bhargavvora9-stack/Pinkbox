@@ -29,18 +29,17 @@ function buildPayload(resource, body, companyId, partial = false) {
     if (!partial || body.secondary_color !== undefined) p.secondary_color = cleanString(body.secondary_color, 30) || null;
     if (!partial || body.font_family !== undefined) p.font_family = cleanString(body.font_family, 120) || null;
     const incoming = jsonObject(body.settings);
-    const allowed = [
+    p.settings = { ...incoming };
+    const settingKeys = [
       'theme_name','accent_color','background_color','surface_color','text_color','muted_color',
-      'border_radius','button_radius','card_radius','layout_width','section_spacing','product_grid',
-      'image_ratio','header_style','header_height','hero_style','hero_height','button_style',
-      'card_style','card_shadow','heading_weight','announcement_bar','show_benefits','show_categories',
-      'show_blog','checkout_style','header_settings','footer_settings','custom_css'
+      'button_radius','card_radius','layout_width','section_spacing','product_grid','image_ratio',
+      'header_style','header_height','hero_style','hero_height','announcement_bar','heading_weight',
+      'card_style','card_shadow','button_style','show_benefits','show_categories','show_blog',
+      'custom_css','header_settings','footer_settings','checkout_style'
     ];
-    const settings = {};
-    for (const key of allowed) {
-      if (!partial || Object.prototype.hasOwnProperty.call(incoming, key)) settings[key] = incoming[key];
+    for (const k of settingKeys) {
+      if (!partial || body[k] !== undefined) p.settings[k] = body[k];
     }
-    p.settings = settings;
     return p;
   }
   if (resource === 'footer') {
