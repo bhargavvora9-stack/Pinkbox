@@ -2,13 +2,29 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 export async function middleware(request) {
+  const path = request.nextUrl.pathname;
+
+  // Normalize common admin/login capitalization to canonical lowercase routes.
+  if (path === '/Admin' || path.startsWith('/Admin/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = path.replace(/^\/Admin/, '/admin');
+    return NextResponse.redirect(url);
+  }
+  if (path === '/Login' || path.startsWith('/Login/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = path.replace(/^\/Login/, '/login');
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        getAll() { return request.cookies.getAll(); },
+        getAll() {
+          return request.cookies.getAll();
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
@@ -17,14 +33,29 @@ export async function middleware(request) {
       },
     }
   );
+
   const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
-  if (!user && (path.startsWith('/website') || path.startsWith('/api/website'))) {
+
+  if (!user && (
+    path.startsWith('/admin') ||
+    path.startsWith('/website') ||
+    path.startsWith('/api/website')
+  )) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
+
   return response;
 }
 
-export const config = { matcher: ['/website/:path*', '/api/website/:path*'] };
+export const config = {
+  matcher: [
+    '/admin/:path*',
+    '/Admin/:path*',
+    '/website/:path*',
+    '/api/website/:path*',
+    '/login',
+    '/Login',
+  ],
+};
