@@ -1,4 +1,39 @@
 'use client';
-import Link from 'next/link';import {usePathname} from 'next/navigation';import {LayoutDashboard,ShoppingCart,Package,Tags,Boxes,Users,TicketPercent,Monitor,Truck,CreditCard,BarChart3,Bell,Settings,FileText,Image,Navigation,Palette,Search,ClipboardList,Layers,GitBranch,Star,Upload,BookOpen,Send,Shield,Workflow,HeartPulse,FileBarChart} from 'lucide-react';
-const groups=[{label:'HOME',items:[['/website','Dashboard',LayoutDashboard]]},{label:'SALES',items:[['/website/orders','Orders',ShoppingCart],['/website/abandoned-carts','Abandoned Carts',ShoppingCart]]},{label:'CATALOG',items:[['/website/products','Products',Package],['/website/products/import-export','Import / Export',Upload],['/website/products/categories','Product Categories',Tags],['/website/categories','Categories',Tags],['/website/brands','Brands',Layers],['/website/collections','Collections',Layers],['/website/products/collections','Product Collections',GitBranch],['/website/variants','Variants',GitBranch],['/website/inventory','Inventory',Boxes],['/website/reviews','Reviews',Star]]},{label:'CUSTOMERS',items:[['/website/customers','Customers',Users]]},{label:'MARKETING',items:[['/website/discounts','Discounts & Coupons',TicketPercent],['/website/campaigns','Campaigns',BarChart3],['/website/notifications','Notifications',Bell]]},{label:'ONLINE STORE',items:[['/website/homepage','Homepage',Monitor],['/website/banners','Banners',Image],['/website/pages','Pages',FileText],['/website/navigation','Navigation',Navigation],['/website/theme','Theme & Customize',Palette],['/website/seo','SEO',Search],['/website/blog','Blog',BookOpen],['/website/footer','Footer & Social',FileText]]},{label:'OPERATIONS',items:[['/website/shipping','Shipping',Truck],['/website/payments','Payments',CreditCard],['/website/notification-logs','Notification Logs',Send],['/website/automations','Automations',Workflow]]},{label:'INSIGHTS',items:[['/website/analytics','Analytics',BarChart3],['/website/reports','Reports',FileBarChart],['/website/system-health','System Health',HeartPulse]]},{label:'CONFIGURATION',items:[['/website/roles','Roles & Permissions',Shield],['/website/settings','Website Settings',Settings],['/website/audit-log','Audit Log',ClipboardList]}];
-const active=(p,h)=>h==='/website'?p===h:p===h||p.startsWith(`${h}/`);export default function WebsiteAdminNav(){const p=usePathname();return <nav className="flex-1 overflow-y-auto px-3 py-4">{groups.map(g=><div key={g.label} className="mb-5"><div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.16em] text-gray-500">{g.label}</div><div className="space-y-1">{g.items.map(([h,l,I])=><Link key={h} href={h} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active(p,h)?'bg-white/10 text-white shadow-sm ring-1 ring-white/10':'text-gray-400 hover:bg-white/5 hover:text-white'}`}><I size={17} strokeWidth={1.8}/><span className="truncate">{l}</span></Link>)}</div></div>)}</nav>}
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, ShoppingCart, Package, Tags, Boxes, Users, TicketPercent, Monitor, Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation, Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen, Send, Shield, Workflow, HeartPulse, FileBarChart } from 'lucide-react';
+
+const groups = [
+  { label: 'HOME', items: [['/website', 'Dashboard', LayoutDashboard]] },
+  { label: 'SALES', items: [['/website/orders', 'Orders', ShoppingCart], ['/website/abandoned-carts', 'Abandoned Carts', ShoppingCart]] },
+  { label: 'CATALOG', items: [['/website/products', 'Products', Package], ['/website/products/import-export', 'Import / Export', Upload], ['/website/products/categories', 'Product Categories', Tags], ['/website/categories', 'Categories', Tags], ['/website/brands', 'Brands', Layers], ['/website/collections', 'Collections', Layers], ['/website/products/collections', 'Product Collections', GitBranch], ['/website/variants', 'Variants', GitBranch], ['/website/inventory', 'Inventory', Boxes], ['/website/reviews', 'Reviews', Star]] },
+  { label: 'CUSTOMERS', items: [['/website/customers', 'Customers', Users]] },
+  { label: 'MARKETING', items: [['/website/discounts', 'Discounts & Coupons', TicketPercent], ['/website/campaigns', 'Campaigns', BarChart3], ['/website/notifications', 'Notifications', Bell]] },
+  { label: 'ONLINE STORE', items: [['/website/homepage', 'Homepage', Monitor], ['/website/banners', 'Banners', Image], ['/website/pages', 'Pages', FileText], ['/website/navigation', 'Navigation', Navigation], ['/website/theme', 'Theme & Customize', Palette], ['/website/seo', 'SEO', Search], ['/website/blog', 'Blog', BookOpen], ['/website/footer', 'Footer & Social', FileText]] },
+  { label: 'OPERATIONS', items: [['/website/shipping', 'Shipping', Truck], ['/website/payments', 'Payments', CreditCard], ['/website/notification-logs', 'Notification Logs', Send], ['/website/automations', 'Automations', Workflow]] },
+  { label: 'INSIGHTS', items: [['/website/analytics', 'Analytics', BarChart3], ['/website/reports', 'Reports', FileBarChart], ['/website/system-health', 'System Health', HeartPulse]] },
+  { label: 'CONFIGURATION', items: [['/website/roles', 'Roles & Permissions', Shield], ['/website/settings', 'Website Settings', Settings], ['/website/audit-log', 'Audit Log', ClipboardList]] },
+];
+
+const active = (p, h) => h === '/website' ? p === h : p === h || p.startsWith(`${h}/`);
+
+export default function WebsiteAdminNav() {
+  const p = usePathname();
+  return (
+    <nav className="flex-1 overflow-y-auto px-3 py-4">
+      {groups.map((g) => (
+        <div key={g.label} className="mb-5">
+          <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.16em] text-gray-500">{g.label}</div>
+          <div className="space-y-1">
+            {g.items.map(([h, l, I]) => (
+              <Link key={h} href={h} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active(p, h) ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/10' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                <I size={17} strokeWidth={1.8} />
+                <span className="truncate">{l}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
