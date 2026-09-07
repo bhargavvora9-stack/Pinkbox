@@ -8,11 +8,13 @@ import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } fr
 import { Phase4Theme, Phase4SEO, Phase4Blog, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
 import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
+import PinkBoxDesignStudio from '@/components/PinkBoxDesignStudio';
 
 export default async function AdminModulePage({ params }) {
   const { slug = [] } = await params;
   const key = slug.join('/');
   if (key === '' || key === 'dashboard') return <WebsiteDashboard />;
+  if (key === 'design') return <PinkBoxDesignStudio />;
   if (key === 'settings') return <WebsiteSettings />;
   if (key === 'orders') return <Phase3Orders />;
   if (key === 'inventory') return <WebsiteInventory />;
