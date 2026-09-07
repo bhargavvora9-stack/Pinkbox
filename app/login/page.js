@@ -25,24 +25,10 @@ export default function LoginPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id, role, active')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (
-        profileError ||
-        !profile ||
-        profile.active === false ||
-        !profile.company_id ||
-        !['super_admin', 'admin'].includes(profile.role)
-      ) {
-        await supabase.auth.signOut();
-        setError('You do not have Website Admin access.');
-        return;
-      }
-
+      // Do not perform a second browser-side profiles query here.
+      // Admin authorization is enforced by the authenticated /admin layout/server APIs.
+      // A client-side RLS/profile read can produce a false "no access" result even
+      // after Supabase authentication has succeeded.
       const next = new URLSearchParams(window.location.search).get('next');
       window.location.replace(next && next.startsWith('/') ? next : '/admin');
     } catch (err) {
