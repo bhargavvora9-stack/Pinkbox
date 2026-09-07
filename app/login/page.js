@@ -25,7 +25,8 @@ export default function Login() {
       return;
     }
 
-    location.href = '/admin';
+    const next = new URLSearchParams(window.location.search).get('next');
+    window.location.href = next && next.startsWith('/') ? next : '/admin';
   };
 
   return (
