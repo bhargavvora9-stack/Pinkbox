@@ -26,17 +26,22 @@ export async function proxy(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-          if (headers?.['cache-control']) response.headers.set('cache-control', headers['cache-control']);
-          if (headers?.['expires']) response.headers.set('expires', headers.expires);
-          if (headers?.pragma) response.headers.set('pragma', headers.pragma);
+          if (headers) {
+            Object.entries(headers).forEach(([name, value]) => {
+              if (value) response.headers.set(name, value);
+            });
+          }
         },
       },
     }
   );
 
+  // Supabase SSR uses getClaims() to verify the session and refresh cookies.
+  // Do not create another response after this call; the response above carries
+  // any refreshed auth cookies back to the browser.
   const { data: claimsData } = await supabase.auth.getClaims();
   const user = claimsData?.claims?.sub ? claimsData.claims : null;
 
@@ -47,7 +52,9 @@ export async function proxy(request) {
   )) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    redirect.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    return redirect;
   }
 
   return response;
