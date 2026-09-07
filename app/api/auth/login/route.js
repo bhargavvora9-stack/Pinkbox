@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 export async function POST(request) {
   try {
@@ -29,14 +30,42 @@ export async function POST(request) {
       }
     );
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
+    if (error || !data.user) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
+    // Bootstrap the first Website Admin profile from the active 24Care website.
+    const admin = createAdminClient();
+    const { data: website } = await admin
+      .from('website_settings')
+      .select('company_id')
+      .eq('slug', '24care')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (website?.company_id) {
+      const { error: profileError } = await admin.from('profiles').upsert(
+        {
+          id: data.user.id,
+          company_id: website.company_id,
+          role: 'super_admin',
+          active: true,
+          display_name: data.user.user_metadata?.full_name || email.split('@')[0],
+        },
+        { onConflict: 'id' }
+      );
+
+      if (profileError) {
+        console.error('Website admin profile bootstrap failed:', profileError.message);
+        return NextResponse.json({ error: 'Login succeeded, but admin access could not be initialized.' }, { status: 500 });
+      }
+    }
+
     return response;
-  } catch {
+  } catch (error) {
+    console.error('Admin login failed:', error);
     return NextResponse.json({ error: 'Unable to sign in right now.' }, { status: 500 });
   }
 }
