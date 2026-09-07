@@ -4,7 +4,12 @@ import { createAdminClient } from '@/lib/supabase-admin';
 
 const WEBSITE_ADMIN_ROLES = new Set(['super_admin', 'admin']);
 
-function redirectWithError(request, code) {
+function errorResponse(request, code, message, wantsJson) {
+  if (wantsJson) {
+    const response = NextResponse.json({ ok: false, error: message }, { status: code === 'invalid_credentials' ? 401 : code === 'not_admin' || code === 'no_company' || code === 'subscription_inactive' ? 403 : 500 });
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    return response;
+  }
   const url = new URL('/login', request.url);
   url.searchParams.set('error', code);
   const response = NextResponse.redirect(url, 303);
@@ -13,28 +18,28 @@ function redirectWithError(request, code) {
 }
 
 export async function POST(request) {
-  let response;
-
   try {
     const contentType = request.headers.get('content-type') || '';
+    const wantsJson = contentType.includes('application/json');
     let body = {};
 
-    if (contentType.includes('application/json')) {
+    if (wantsJson) {
       body = await request.json();
     } else {
-      const form = await request.formData();
-      body = Object.fromEntries(form.entries());
+      body = Object.fromEntries((await request.formData()).entries());
     }
 
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body?.password === 'string' ? body.password : '';
     const next = typeof body?.next === 'string' && body.next.startsWith('/') ? body.next : '/admin';
 
-    if (!email || !password) return redirectWithError(request, 'missing_credentials');
+    if (!email || !password) return errorResponse(request, 'missing_credentials', 'Email and password are required.', wantsJson);
 
-    // The same response object must receive every Supabase auth cookie and
-    // response header. The browser then follows this response's 303 redirect.
-    response = NextResponse.redirect(new URL(next, request.url), 303);
+    // Both the legacy JSON client and the new native form use this exact response,
+    // so Supabase SSR cookies are always returned to the browser without caching.
+    const response = wantsJson
+      ? NextResponse.json({ ok: true })
+      : NextResponse.redirect(new URL(next, request.url), 303);
     response.headers.set('Cache-Control', 'private, no-store, max-age=0');
     response.headers.set('Vary', 'Cookie');
 
@@ -47,9 +52,7 @@ export async function POST(request) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet, headers) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options);
-            });
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
             if (headers) {
               Object.entries(headers).forEach(([name, value]) => {
                 if (value) response.headers.set(name, value);
@@ -61,10 +64,9 @@ export async function POST(request) {
     );
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error || !data.user) {
       console.error('Website admin auth failed:', error?.message || 'No authenticated user');
-      return redirectWithError(request, 'invalid_credentials');
+      return errorResponse(request, 'invalid_credentials', 'Invalid email or password.', wantsJson);
     }
 
     const admin = createAdminClient();
@@ -76,16 +78,10 @@ export async function POST(request) {
 
     if (profileLookupError) {
       console.error('Website admin profile lookup failed:', profileLookupError.message);
-      return redirectWithError(request, 'access_check_failed');
+      return errorResponse(request, 'access_check_failed', 'Unable to verify admin access.', wantsJson);
     }
-
-    if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) {
-      return redirectWithError(request, 'not_admin');
-    }
-
-    if (!profile.company_id) {
-      return redirectWithError(request, 'no_company');
-    }
+    if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
+    if (!profile.company_id) return errorResponse(request, 'no_company', 'Your admin account is not linked to a company.', wantsJson);
 
     const { data: company, error: companyError } = await admin
       .from('companies')
@@ -95,19 +91,15 @@ export async function POST(request) {
 
     if (companyError) {
       console.error('Website admin company lookup failed:', companyError.message);
-      return redirectWithError(request, 'company_check_failed');
+      return errorResponse(request, 'company_check_failed', 'Unable to verify company access.', wantsJson);
     }
-
-    if (!company) return redirectWithError(request, 'no_company');
-
-    if (company.subscription_status && company.subscription_status !== 'active') {
-      return redirectWithError(request, 'subscription_inactive');
-    }
+    if (!company) return errorResponse(request, 'no_company', 'Your admin account is linked to a missing company.', wantsJson);
+    if (company.subscription_status && company.subscription_status !== 'active') return errorResponse(request, 'subscription_inactive', 'PinkBox website subscription is not active.', wantsJson);
 
     return response;
   } catch (error) {
     console.error('Admin login failed:', error);
-    return redirectWithError(request, 'server_error');
+    return errorResponse(request, 'server_error', 'Unable to sign in right now.', false);
   }
 }
 
