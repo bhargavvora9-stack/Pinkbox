@@ -4,18 +4,18 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ShoppingCart, Package, Tags, Boxes, Users, TicketPercent, Monitor, Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation, Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen, Send, Shield, Workflow, HeartPulse, FileBarChart } from 'lucide-react';
 
 const groups = [
-  { label: 'HOME', items: [['/website', 'Dashboard', LayoutDashboard]] },
-  { label: 'SALES', items: [['/website/orders', 'Orders', ShoppingCart], ['/website/abandoned-carts', 'Abandoned Carts', ShoppingCart]] },
-  { label: 'CATALOG', items: [['/website/products', 'Products', Package], ['/website/products/import-export', 'Import / Export', Upload], ['/website/products/categories', 'Product Categories', Tags], ['/website/categories', 'Categories', Tags], ['/website/brands', 'Brands', Layers], ['/website/collections', 'Collections', Layers], ['/website/products/collections', 'Product Collections', GitBranch], ['/website/variants', 'Variants', GitBranch], ['/website/inventory', 'Inventory', Boxes], ['/website/reviews', 'Reviews', Star]] },
-  { label: 'CUSTOMERS', items: [['/website/customers', 'Customers', Users]] },
-  { label: 'MARKETING', items: [['/website/discounts', 'Discounts & Coupons', TicketPercent], ['/website/campaigns', 'Campaigns', BarChart3], ['/website/notifications', 'Notifications', Bell]] },
-  { label: 'ONLINE STORE', items: [['/website/homepage', 'Homepage', Monitor], ['/website/banners', 'Banners', Image], ['/website/pages', 'Pages', FileText], ['/website/navigation', 'Navigation', Navigation], ['/website/theme', 'Theme & Customize', Palette], ['/website/seo', 'SEO', Search], ['/website/blog', 'Blog', BookOpen], ['/website/footer', 'Footer & Social', FileText]] },
-  { label: 'OPERATIONS', items: [['/website/shipping', 'Shipping', Truck], ['/website/payments', 'Payments', CreditCard], ['/website/notification-logs', 'Notification Logs', Send], ['/website/automations', 'Automations', Workflow]] },
-  { label: 'INSIGHTS', items: [['/website/analytics', 'Analytics', BarChart3], ['/website/reports', 'Reports', FileBarChart], ['/website/system-health', 'System Health', HeartPulse]] },
-  { label: 'CONFIGURATION', items: [['/website/roles', 'Roles & Permissions', Shield], ['/website/settings', 'Website Settings', Settings], ['/website/audit-log', 'Audit Log', ClipboardList]] },
+  { label: 'HOME', items: [['/admin/dashboard', 'Dashboard', LayoutDashboard]] },
+  { label: 'SALES', items: [['/admin/orders', 'Orders', ShoppingCart], ['/admin/abandoned-carts', 'Abandoned Carts', ShoppingCart]] },
+  { label: 'CATALOG', items: [['/admin/products', 'Products', Package], ['/admin/products/import-export', 'Import / Export', Upload], ['/admin/products/categories', 'Product Categories', Tags], ['/admin/categories', 'Categories', Tags], ['/admin/brands', 'Brands', Layers], ['/admin/collections', 'Collections', Layers], ['/admin/products/collections', 'Product Collections', GitBranch], ['/admin/variants', 'Variants', GitBranch], ['/admin/inventory', 'Inventory', Boxes], ['/admin/reviews', 'Reviews', Star]] },
+  { label: 'CUSTOMERS', items: [['/admin/customers', 'Customers', Users]] },
+  { label: 'MARKETING', items: [['/admin/discounts', 'Discounts & Coupons', TicketPercent], ['/admin/campaigns', 'Campaigns', BarChart3], ['/admin/notifications', 'Notifications', Bell]] },
+  { label: 'ONLINE STORE', items: [['/admin/homepage', 'Homepage', Monitor], ['/admin/banners', 'Banners', Image], ['/admin/pages', 'Pages', FileText], ['/admin/navigation', 'Navigation', Navigation], ['/admin/theme', 'Theme & Customize', Palette], ['/admin/seo', 'SEO', Search], ['/admin/blog', 'Blog', BookOpen], ['/admin/footer', 'Footer & Social', FileText]] },
+  { label: 'OPERATIONS', items: [['/admin/shipping', 'Shipping', Truck], ['/admin/payments', 'Payments', CreditCard], ['/admin/notification-logs', 'Notification Logs', Send], ['/admin/automations', 'Automations', Workflow]] },
+  { label: 'INSIGHTS', items: [['/admin/analytics', 'Analytics', BarChart3], ['/admin/reports', 'Reports', FileBarChart], ['/admin/system-health', 'System Health', HeartPulse]] },
+  { label: 'CONFIGURATION', items: [['/admin/roles', 'Roles & Permissions', Shield], ['/admin/settings', 'Website Settings', Settings], ['/admin/audit-log', 'Audit Log', ClipboardList]] },
 ];
 
-const active = (p, h) => h === '/website' ? p === h : p === h || p.startsWith(`${h}/`);
+const active = (p, h) => p === h || p.startsWith(`${h}/`);
 
 export default function WebsiteAdminNav() {
   const p = usePathname();
