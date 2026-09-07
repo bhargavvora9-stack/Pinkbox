@@ -44,7 +44,7 @@ export default function LoginPage() {
       }
 
       const next = new URLSearchParams(window.location.search).get('next');
-      window.location.replace(next && next.startsWith('/') ? next : '/website');
+      window.location.replace(next && next.startsWith('/') ? next : '/admin');
     } catch (err) {
       setError(err?.message || 'Unable to sign in right now.');
     } finally {
