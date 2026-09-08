@@ -6,7 +6,7 @@ const allowedActions=new Set(['create_notification','update_order']);
 const clean=(v,max=5000)=>typeof v==='string'?v.trim().slice(0,max):'';
 export async function GET(request){
  const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
- if(ctx.error)return jsonError('Access denied.',403);
+ if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId}=ctx;
  if(r==='analytics'){
   const [o,i,p,c]=await Promise.all([
@@ -31,7 +31,29 @@ export async function GET(request){
   if(o.error||i.error||p.error)return jsonError((o.error||i.error||p.error).message,500);
   return Response.json({data:{orders:o.data||[],items:i.data||[],products:p.data||[]}});
  }
- const t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);const{data,error}=await supabase.from(t).select('*').eq('company_id',companyId).order('created_at',{ascending:false});if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
+ const t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);
+ const{data,error}=await supabase.from(t).select('*').eq('company_id',companyId).order('created_at',{ascending:false});
+ if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
 }
-export async function POST(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);if(r==='automations'){const trigger=clean(b.trigger,80),action=clean(b.action,80);if(!allowedTriggers.has(trigger)||!allowedActions.has(action))return jsonError('Invalid automation trigger or action.');}if(r==='roles'){const name=clean(b.name,80);if(!name)return jsonError('Role name is required.');b.name=name;}const p={...b,company_id:companyId};delete p.resource;delete p.id;delete p.company_id;const{data,error}=await supabase.from(t).insert({...p,company_id:companyId}).select().single();if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.create`,entityType:t,entityId:data.id,newData:data});return Response.json({data},{status:201})}
-export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id});return Response.json({ok:true})}
+export async function POST(request){
+ const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
+ if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+ const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];
+ if(!t)return jsonError('Unknown Phase 6 resource.',404);
+ if(r==='automations'){
+  const trigger=clean(b.trigger_type,80),action=clean(b.action_type,80);
+  if(!allowedTriggers.has(trigger)||!allowedActions.has(action))return jsonError('Invalid automation trigger or action.');
+  if(!clean(b.name,120))return jsonError('Automation name is required.');
+ }
+ if(r==='roles'){
+  const name=clean(b.name,80);if(!name)return jsonError('Role name is required.');
+  b.name=name;b.description=clean(b.description,500)||null;b.permissions=b.permissions&&typeof b.permissions==='object'?b.permissions:{view:true,create:false,update:false,delete:false};
+ }
+ const p={...b,company_id:companyId};delete p.resource;delete p.id;delete p.company_id;
+ if(r==='automations'){
+  p.name=clean(p.name,120);p.trigger_type=clean(p.trigger_type,80);p.action_type=clean(p.action_type,80);p.config=p.config&&typeof p.config==='object'?p.config:{};p.is_active=p.is_active!==false;
+ }
+ const{data,error}=await supabase.from(t).insert({...p,company_id:companyId}).select().single();if(error)return jsonError(error.message,500);
+ await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.create`,entityType:t,entityId:data.id,newData:data});return Response.json({data},{status:201});
+}
+export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
