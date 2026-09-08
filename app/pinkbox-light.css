@@ -1,0 +1,86 @@
+/* PinkBox light editorial storefront skin — Radiant-inspired visual language, PinkBox content/data */
+.pb-home{background:#fffaf7;color:#5b4546;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.pb-home-announcement{background:#e1b86f!important;color:#fff!important;padding:9px 18px!important;font-size:9px!important;letter-spacing:.18em!important}
+.pb-home-header{background:rgba(255,250,247,.96)!important;border-bottom:1px solid #eadfd9!important;box-shadow:0 2px 15px rgba(108,78,79,.05)!important}
+.pb-home-top{height:94px!important;grid-template-columns:1fr auto 1fr!important;padding:0 34px!important}
+.pb-home-brand{grid-column:2;justify-self:center;color:#6a4b4e!important;font-family:Georgia,"Times New Roman",serif;font-size:25px!important;letter-spacing:-.05em!important}
+.pb-home-brand span{background:#f0c8cf!important;color:#6a4b4e!important;width:42px!important;height:42px!important}
+.pb-home-brand img{background:#fff!important;border:1px solid #ead9d8!important}
+.pb-home-top nav{grid-column:1;grid-row:1;justify-self:start;gap:22px!important}
+.pb-home-top nav a{color:#806b6d!important;font-size:9px!important;letter-spacing:.12em!important}
+.pb-home-top nav a:hover{color:#c36f83!important}
+.pb-home-tools{grid-column:3;justify-self:end}
+.pb-home-tools label{background:#fff!important;border:1px solid #e6d9d7!important;color:#9d8587!important}
+.pb-home-tools>a:hover{background:#f7ecec!important;color:#c36f83!important}
+.pb-home-tools i{background:#d9869b!important;color:#fff!important}
+.pb-home-hero{width:min(1440px,100%)!important;padding:24px 34px 70px!important;grid-template-columns:.9fr 1.1fr!important;gap:42px!important}
+.pb-home-hero-copy{padding-left:16px!important}
+.pb-home-kicker,.pb-home-head>div>span,.pb-home-editorial-copy>span,.pb-home-custom>div>span,.pb-home-cta>div>span{color:#c36f83!important}
+.pb-home-hero h1{color:#6a4b4e!important;font-family:Georgia,"Times New Roman",serif!important;font-weight:500!important;letter-spacing:-.07em!important}
+.pb-home-hero p{color:#846f70!important}
+.pb-home-primary{background:#d8899d!important;color:#fff!important;box-shadow:0 10px 22px rgba(201,119,141,.18)!important}
+.pb-home-primary:hover{background:#c66f84!important}
+.pb-home-ghost{border-color:#b89fa1!important;color:#70595b!important}
+.pb-home-proof span{color:#8b7778!important}
+.pb-home-hero-art{background:#f3e3df!important;box-shadow:0 18px 50px rgba(116,87,89,.08)!important}
+.pb-home-hero-art>img{height:610px!important}
+.pb-art-fallback{background:radial-gradient(circle at 25% 15%,#fff,#f7dfe2 45%,#ead4ca)!important;color:#c36f83!important}
+.pb-doodle{color:#b77d89!important}
+.pb-hero-note{background:rgba(255,252,250,.92)!important;color:#765c5f!important;box-shadow:0 15px 35px rgba(116,87,89,.10)!important}
+.pb-slider-nav{background:rgba(255,252,250,.95)!important;color:#765c5f!important}
+.pb-slider-nav button{border-color:#e7d9d6!important;background:#fff!important;color:#765c5f!important}
+.pb-home-marquee{background:#f5ebe6!important;border-color:#eadfd9!important}
+.pb-home-marquee span{color:#856e70!important}
+.pb-home-marquee em{color:#d8899d!important}
+.pb-home-section{padding:86px 28px!important}
+.pb-home-section.pb-home-categories{background:#fffaf7!important}
+.pb-home-head h2{color:#6a4b4e!important;font-family:Georgia,"Times New Roman",serif!important;font-weight:500!important}
+.pb-home-head>a{color:#8a6f71!important}
+.pb-category-grid{gap:15px!important}
+.pb-category-card{background:#f1e6e1!important}
+.pb-category-card:after{background:linear-gradient(transparent,rgba(95,65,68,.55))!important}
+.pb-category-placeholder{background:#f2dfdd!important;color:#c36f83!important}
+.pb-category-card>div{color:#fff!important}
+.pb-home-products{background:#fdf8f5!important}
+.pb-product-image{background:#fff!important;border:1px solid #eee1dc!important}
+.pb-product-image em{background:#d8899d!important;color:#fff!important}
+.pb-heart{background:#fff!important;border:1px solid #eee1dc!important;color:#936f73!important}
+.pb-product-info>span{color:#ad9496!important}
+.pb-product-info h3{color:#624b4d!important;font-weight:500!important}
+.pb-product-info strong{color:#6a4b4e!important}
+.pb-product-info del{color:#b8a4a5!important}
+.pb-view{color:#8b686c!important}
+.pb-home-editorial{padding:92px 28px!important}
+.pb-editorial-art{background:#f3e4df!important}
+.pb-illustration-circle{border-color:#cdb3b0!important}
+.pb-illustration-card{background:#e7b3bf!important;color:#fff!important;box-shadow:20px 25px 0 #dec8c1!important}
+.pb-illustration>span{color:#c36f83!important}
+.pb-editorial-copy h2{color:#6a4b4e!important;font-family:Georgia,"Times New Roman",serif!important;font-weight:500!important}
+.pb-editorial-copy p{color:#846f70!important}
+.pb-home-custom{background:#f4e7e1!important;color:#6a4b4e!important;border:1px solid #eadfd9!important}
+.pb-home-custom.alt{background:#fff!important;color:#6a4b4e!important}
+.pb-home-custom p,.pb-home-custom.alt p{color:#846f70!important}
+.pb-home-custom .pb-home-primary{background:#d8899d!important}
+.pb-home-benefits{background:#f6ece7!important;border-color:#eadfd9!important}
+.pb-home-benefits>div{border-right-color:#eadfd9!important}
+.pb-home-benefits svg{color:#c36f83!important}
+.pb-home-benefits b{color:#6a4b4e!important}
+.pb-home-benefits small{color:#8f7779!important}
+.pb-home-journal{background:#fffaf7!important}
+.pb-journal-grid>a{background:#fff!important;border-color:#eadfd9!important}
+.pb-journal-grid img,.pb-journal-placeholder{background:#f1e2dd!important}
+.pb-journal-placeholder{color:#c36f83!important}
+.pb-journal-grid h3{color:#6a4b4e!important;font-weight:500!important}
+.pb-journal-grid p{color:#8a7476!important}
+.pb-journal-grid span{color:#8b686c!important}
+.pb-home-cta{background:#f0cbd2!important;color:#6a4b4e!important;border:1px solid #e5bdc7!important}
+.pb-home-cta h2{font-family:Georgia,"Times New Roman",serif!important;font-weight:500!important}
+.pb-home-cta p{color:#80686b!important}
+.pb-home-light{background:#fff!important;color:#6a4b4e!important;box-shadow:0 10px 20px rgba(106,75,78,.08)!important}
+.pb-home-footer{background:#f5ebe6!important;border-top:1px solid #eadfd9!important}
+.pb-footer-brand p,.pb-home-footer a,.pb-home-footer span{color:#806c6e!important}
+.pb-home-footer b{color:#6a4b4e!important}
+.pb-home-bottom{background:#ead8d5!important;color:#80686b!important}
+.pb-home-state{background:#fffaf7!important;color:#6a4b4e!important}
+.pb-home-state p{color:#8a7476!important}
+@media(max-width:1020px){.pb-home-top{height:78px!important;grid-template-columns:auto 1fr auto!important}.pb-home-brand{grid-column:2;justify-self:center}.pb-home-top nav{display:none}.pb-home-tools{grid-column:3}.pb-home-hero{padding:18px 16px 55px!important}.pb-home-hero-art,.pb-home-hero-art>img,.pb-art-fallback{min-height:460px;height:460px}.pb-home-section{padding:70px 18px!important}.pb-home-editorial{padding:70px 18px!important}.pb-home-cta{width:calc(100% - 32px)!important}.pb-home-footer{padding:55px 18px!important}}
