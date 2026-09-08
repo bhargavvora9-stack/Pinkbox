@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
+import { getWebsiteAdminContext } from '@/lib/website-admin';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
 import '../website/website-theme.css';
@@ -9,30 +9,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function AdminLayout({ children }) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect('/login');
+  const { user, profile, company, error } = await getWebsiteAdminContext();
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('display_name, role, active, company_id')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (profileError || !profile || profile.active === false || !['super_admin', 'admin'].includes(profile.role)) {
-    redirect('/login?error=not_admin');
-  }
-  if (!profile.company_id) redirect('/login?error=no_company');
-
-  const { data: company, error: companyError } = await supabase
-    .from('companies')
-    .select('name, logo_url, subscription_status')
-    .eq('id', profile.company_id)
-    .maybeSingle();
-
-  if (companyError || !company || (company.subscription_status && company.subscription_status !== 'active')) {
-    redirect('/login?error=company_access');
-  }
+  if (error === 'UNAUTHENTICATED') redirect('/login');
+  if (error === 'NOT_ADMIN') redirect('/login?error=not_admin');
+  if (error === 'NO_COMPANY') redirect('/login?error=no_company');
+  if (error === 'SUBSCRIPTION_INACTIVE') redirect('/login?error=subscription_inactive');
+  if (error === 'COMPANY_ACCESS') redirect('/login?error=company_check_failed');
+  if (!user || !profile || !company) redirect('/login?error=server_error');
 
   return (
     <>
