@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase-admin';
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ayphefqdvrbldhwzhybe.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Ql0ABtOzHqN96WvjMRomEQ_r_2CNjAh';
 const WEBSITE_ADMIN_ROLES = new Set(['super_admin', 'admin']);
 
 function errorResponse(request, code, message, wantsJson) {
@@ -46,21 +47,17 @@ export async function POST(request) {
     response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
     response.headers.set('Vary', 'Cookie');
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet, headers) {
-            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-            if (headers) Object.entries(headers).forEach(([name, value]) => value && response.headers.set(name, value));
-          },
+    const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
         },
-      }
-    );
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          if (headers) Object.entries(headers).forEach(([name, value]) => value && response.headers.set(name, value));
+        },
+      },
+    });
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
@@ -68,8 +65,9 @@ export async function POST(request) {
       return errorResponse(request, 'invalid_credentials', 'Invalid email or password.', wantsJson);
     }
 
-    const admin = createAdminClient();
-    const { data: profile, error: profileLookupError } = await admin
+    // Use the authenticated Supabase session for the authorization lookup.
+    // This avoids requiring SUPABASE_SERVICE_ROLE_KEY just to log in.
+    const { data: profile, error: profileLookupError } = await supabase
       .from('profiles')
       .select('id, company_id, role, active, display_name')
       .eq('id', data.user.id)
@@ -79,10 +77,14 @@ export async function POST(request) {
       console.error('Website admin profile lookup failed:', profileLookupError.message);
       return errorResponse(request, 'access_check_failed', 'Unable to verify admin access.', wantsJson);
     }
-    if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
-    if (!profile.company_id) return errorResponse(request, 'no_company', 'Your admin account is not linked to a company.', wantsJson);
+    if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) {
+      return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
+    }
+    if (!profile.company_id) {
+      return errorResponse(request, 'no_company', 'Your admin account is not linked to a company.', wantsJson);
+    }
 
-    const { data: company, error: companyError } = await admin
+    const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('id, name, subscription_status')
       .eq('id', profile.company_id)
@@ -93,7 +95,9 @@ export async function POST(request) {
       return errorResponse(request, 'company_check_failed', 'Unable to verify company access.', wantsJson);
     }
     if (!company) return errorResponse(request, 'no_company', 'Your admin account is linked to a missing company.', wantsJson);
-    if (company.subscription_status && company.subscription_status !== 'active') return errorResponse(request, 'subscription_inactive', 'PinkBox website subscription is not active.', wantsJson);
+    if (company.subscription_status && company.subscription_status !== 'active') {
+      return errorResponse(request, 'subscription_inactive', 'PinkBox website subscription is not active.', wantsJson);
+    }
 
     return response;
   } catch (error) {
