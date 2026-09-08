@@ -11,6 +11,7 @@ import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
 import WebsiteProductsManagerPro from '@/components/WebsiteProductsManagerPro';
 import PinkBoxDesignStudio from '@/components/PinkBoxDesignStudio';
+import PinkBoxHomepageBuilder from '@/components/PinkBoxHomepageBuilder';
 
 export default async function AdminModulePage({ params }) {
   const { slug = [] } = await params;
@@ -37,7 +38,8 @@ export default async function AdminModulePage({ params }) {
   if (key === 'seo') return <Phase4SEO />;
   if (key === 'blog') return <Phase4Blog />;
   if (key === 'footer') return <Phase4Footer />;
-  if (key === 'homepage') return <Phase4Homepage />;
+  if (key === 'homepage') return <PinkBoxHomepageBuilder />;
+  if (key === 'homepage/legacy') return <Phase4Homepage />;
   if (key === 'campaigns') return <Phase5Campaigns />;
   if (key === 'notifications') return <Phase5Notifications />;
   if (key === 'notification-logs') return <Phase5NotificationLogs />;

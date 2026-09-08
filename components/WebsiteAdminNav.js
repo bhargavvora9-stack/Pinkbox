@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Tags, Boxes, Users, TicketPercent, Monitor, Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation, Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen, Send, Shield, Workflow, HeartPulse, FileBarChart, WandSparkles } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Tags, Boxes, Users, TicketPercent, Monitor, Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation, Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen, Send, Shield, Workflow, HeartPulse, FileBarChart, WandSparkles, SlidersHorizontal } from 'lucide-react';
 
 const groups = [
   { label: 'HOME', items: [['/admin/dashboard', 'Dashboard', LayoutDashboard]] },
@@ -9,7 +9,7 @@ const groups = [
   { label: 'CATALOG', items: [['/admin/products', 'Products', Package], ['/admin/products/import-export', 'Import / Export', Upload], ['/admin/images', 'Product Images', Image], ['/admin/products/categories', 'Product Categories', Tags], ['/admin/categories', 'Categories', Tags], ['/admin/brands', 'Brands', Layers], ['/admin/collections', 'Collections', Layers], ['/admin/products/collections', 'Product Collections', GitBranch], ['/admin/variants', 'Variants', GitBranch], ['/admin/inventory', 'Inventory', Boxes], ['/admin/reviews', 'Reviews', Star]] },
   { label: 'CUSTOMERS', items: [['/admin/customers', 'Customers', Users]] },
   { label: 'MARKETING', items: [['/admin/discounts', 'Discounts & Coupons', TicketPercent], ['/admin/campaigns', 'Campaigns', BarChart3], ['/admin/notifications', 'Notifications', Bell]] },
-  { label: 'ONLINE STORE', items: [['/admin/homepage', 'Homepage', Monitor], ['/admin/banners', 'Banners', Image], ['/admin/pages', 'Pages', FileText], ['/admin/navigation', 'Navigation', Navigation], ['/admin/design', 'Design Studio', WandSparkles], ['/admin/theme', 'Theme & Customize', Palette], ['/admin/seo', 'SEO', Search], ['/admin/blog', 'Blog', BookOpen], ['/admin/footer', 'Footer & Social', FileText]] },
+  { label: 'ONLINE STORE', items: [['/admin/homepage', 'Homepage Builder', SlidersHorizontal], ['/admin/banners', 'Banners', Image], ['/admin/pages', 'Pages', FileText], ['/admin/navigation', 'Navigation', Navigation], ['/admin/design', 'Design Studio', WandSparkles], ['/admin/theme', 'Theme & Customize', Palette], ['/admin/seo', 'SEO', Search], ['/admin/blog', 'Blog', BookOpen], ['/admin/footer', 'Footer & Social', FileText]] },
   { label: 'OPERATIONS', items: [['/admin/shipping', 'Shipping', Truck], ['/admin/payments', 'Payments', CreditCard], ['/admin/notification-logs', 'Notification Logs', Send], ['/admin/automations', 'Automations', Workflow]] },
   { label: 'INSIGHTS', items: [['/admin/analytics', 'Analytics', BarChart3], ['/admin/reports', 'Reports', FileBarChart], ['/admin/system-health', 'System Health', HeartPulse]] },
   { label: 'CONFIGURATION', items: [['/admin/roles', 'Roles & Permissions', Shield], ['/admin/settings', 'Website Settings', Settings], ['/admin/audit-log', 'Audit Log', ClipboardList]] },
