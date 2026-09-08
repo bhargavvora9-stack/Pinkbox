@@ -1,0 +1,66 @@
+'use client';
+import {useEffect,useMemo,useState} from 'react';
+import {Upload,Trash2,RefreshCw,Image as ImageIcon,Star,CheckCircle2,AlertCircle} from 'lucide-react';
+import {createClient} from '@/lib/supabase-browser';
+
+const sb=createClient();
+const input='w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10';
+
+export default function WebsiteProductImageUploader(){
+  const[products,setProducts]=useState([]),[productId,setProductId]=useState(''),[images,setImages]=useState([]),[files,setFiles]=useState([]),[alt,setAlt]=useState(''),[primary,setPrimary]=useState(false),[loading,setLoading]=useState(true),[uploading,setUploading]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');
+  const loadProducts=async()=>{try{const r=await fetch('/api/website/products',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Unable to load products');setProducts(j.data||[])}catch(e){setErr(e.message)}finally{setLoading(false)}};
+  const loadImages=async(id)=>{if(!id){setImages([]);return}try{const r=await fetch('/api/website/images',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Unable to load images');setImages((j.data||[]).filter(x=>x.product_id===id))}catch(e){setErr(e.message)}};
+  useEffect(()=>{loadProducts()},[]);
+  useEffect(()=>{loadImages(productId)},[productId]);
+  const product=useMemo(()=>products.find(p=>p.id===productId),[products,productId]);
+  const upload=async()=>{
+    if(!productId)return setErr('Select a product first.');
+    if(!files.length)return setErr('Select one or more images.');
+    setUploading(true);setErr('');setMsg('');
+    try{
+      const {data:{user}}=await sb.auth.getUser();
+      if(!user)throw Error('Please sign in again.');
+      const {data:profile,error:pe}=await sb.from('profiles').select('company_id').eq('id',user.id).maybeSingle();
+      if(pe||!profile?.company_id)throw Error(pe?.message||'Company access unavailable.');
+      const baseCount=images.length;
+      for(let i=0;i<files.length;i++){
+        const file=files[i];
+        if(!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))throw Error(`${file.name}: unsupported image type.`);
+        if(file.size>5*1024*1024)throw Error(`${file.name}: maximum size is 5 MB.`);
+        const safe=file.name.toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
+        const path=`${profile.company_id}/${productId}/${crypto.randomUUID()}-${safe}`;
+        const {error:ue}=await sb.storage.from('product-images').upload(path,file,{contentType:file.type,upsert:false});
+        if(ue)throw Error(ue.message);
+        const {data:{publicUrl}}=sb.storage.from('product-images').getPublicUrl(path);
+        const shouldPrimary=primary&&i===0 || (!primary && baseCount===0 && i===0);
+        const r=await fetch('/api/website/images',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,image_url:publicUrl,alt_text:alt||product?.title||'',sort_order:baseCount+i,is_primary:shouldPrimary})});
+        const j=await r.json();
+        if(!r.ok)throw Error(j.error||'Image record save failed.');
+      }
+      setFiles([]);setAlt('');setPrimary(false);setMsg(`${files.length} image${files.length>1?'s':''} uploaded successfully.`);await loadImages(productId);
+    }catch(e){setErr(e.message)}finally{setUploading(false)}
+  };
+  const remove=async(img)=>{if(!confirm('Delete this product image?'))return;setErr('');const r=await fetch(`/api/website/images?id=${img.id}`,{method:'DELETE'}),j=await r.json();if(!r.ok)setErr(j.error||'Delete failed');else{setMsg('Image deleted.');loadImages(productId)}};
+  return <div className="space-y-4 text-gray-900">
+    <div><h1 className="text-2xl font-semibold">Product Images</h1><p className="mt-1 text-sm text-gray-500">Upload product photos directly to PinkBox Storage and attach them to a product.</p></div>
+    {(err||msg)&&<div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${err?'border-red-200 bg-red-50 text-red-700':'border-green-200 bg-green-50 text-green-700'}`}>{err?<AlertCircle size={17}/>:<CheckCircle2 size={17}/>} {err||msg}</div>}
+    <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
+      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="mb-1 text-sm font-semibold">1. Select Product</div>
+        <select value={productId} onChange={e=>{setProductId(e.target.value);setErr('');setMsg('')}} className={input} disabled={loading}><option value="">{loading?'Loading products…':'Select product'}</option>{products.map(p=><option key={p.id} value={p.id}>{p.title}{p.sku?` · ${p.sku}`:''}</option>)}</select>
+        {product&&<div className="mt-3 rounded-xl bg-gray-50 p-3 text-xs text-gray-600"><div className="font-medium text-gray-900">{product.title}</div><div>SKU: {product.sku||'—'} · ID: {product.id}</div></div>}
+        <div className="mt-5 mb-1 text-sm font-semibold">2. Choose Images</div>
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={e=>setFiles(Array.from(e.target.files||[]))} className="block w-full text-sm" />
+        <div className="mt-2 text-xs text-gray-500">JPG, PNG, WEBP or GIF · up to 5 MB each · multiple files supported</div>
+        {files.length>0&&<div className="mt-3 space-y-1 text-xs text-gray-700">{files.map(f=><div key={`${f.name}-${f.size}`} className="truncate">{f.name} · {(f.size/1024/1024).toFixed(2)} MB</div>)}</div>}
+        <input value={alt} onChange={e=>setAlt(e.target.value)} placeholder="Alt text (optional)" className={`${input} mt-4`} />
+        <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={primary} onChange={e=>setPrimary(e.target.checked)} />Set first uploaded image as primary</label>
+        <button onClick={upload} disabled={uploading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><Upload size={17}/>{uploading?'Uploading…':'Upload Images'}</button>
+      </div>
+      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 font-semibold"><ImageIcon size={18}/> Existing Images <span className="text-xs font-normal text-gray-500">({images.length})</span></div><button onClick={()=>loadImages(productId)} className="rounded-lg border px-2 py-2"><RefreshCw size={15}/></button></div>
+        {!productId?<div className="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500">Select a product to view its images.</div>:images.length===0?<div className="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500">No images uploaded yet.</div>:<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{images.map(img=><div key={img.id} className="overflow-hidden rounded-xl border bg-white"><div className="aspect-square bg-gray-100"><img src={img.image_url} alt={img.alt_text||''} className="h-full w-full object-cover" /></div><div className="p-2"><div className="flex items-center justify-between text-xs">{img.is_primary?<span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 font-medium"><Star size={12}/>Primary</span>:<span className="text-gray-400">Image</span>}<button onClick={()=>remove(img)} className="rounded-lg p-1.5 hover:bg-red-50"><Trash2 size={14}/></button></div></div></div>)}</div>}
+      </div>
+    </div>
+  </div>
+}
