@@ -36,7 +36,15 @@ export default async function AdminLayout({ children }) {
 
   return (
     <>
-      <style>{`\n        .website-admin .glass-sidebar { width: 14rem; }\n        .website-admin .glass-sidebar nav { padding: .625rem .5rem; }\n        .website-admin .glass-sidebar nav > div { margin-bottom: .875rem; }\n        .website-admin .glass-sidebar nav a { gap: .625rem; border-radius: .5rem; padding: .45rem .6rem; font-size: 13px; line-height: 1.25rem; }\n        .website-admin .glass-sidebar nav a svg { width: 15px; height: 15px; }\n        .website-admin main { zoom: .72; }\n        .website-admin main > * { max-width: 1400px; }\n      `}</style>
+      <style>{`
+        .website-admin .glass-sidebar { width: 14rem; }
+        .website-admin .glass-sidebar nav { padding: .625rem .5rem; }
+        .website-admin .glass-sidebar nav > div { margin-bottom: .875rem; }
+        .website-admin .glass-sidebar nav a { gap: .625rem; border-radius: .5rem; padding: .45rem .6rem; font-size: 13px; line-height: 1.25rem; }
+        .website-admin .glass-sidebar nav a svg { width: 15px; height: 15px; }
+        .website-admin main { zoom: .82; }
+        .website-admin main > * { max-width: 1400px; }
+      `}</style>
       <div className="website-admin glass-shell flex min-h-screen">
         <aside className="hidden md:flex w-56 shrink-0 glass-sidebar flex-col">
           <div className="border-b border-white/10 px-3 py-3">
