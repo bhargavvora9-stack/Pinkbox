@@ -21,15 +21,21 @@ export async function GET(request){
    db.from('website_theme_settings').select('*').eq('company_id',c).maybeSingle(),
    db.from('website_footer_settings').select('*').eq('company_id',c).maybeSingle(),
    db.from('website_blog_posts').select('id,title,slug,excerpt,content,cover_image_url,published_at').eq('company_id',c).eq('is_published',true).lte('published_at',now).order('published_at',{ascending:false}).limit(20),
-   db.from('website_product_images').select('product_id,image_url,alt_text,sort_order,is_primary').eq('company_id',c).order('sort_order'),
+   db.from('website_product_images').select('id,product_id,image_url,alt_text,sort_order,is_primary').eq('company_id',c).order('sort_order'),
    db.from('website_product_categories').select('product_id,category_id').eq('company_id',c)
   ]);
   const qErr=[products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings].find(x=>x.error)?.error;
   if(qErr)return Response.json({error:qErr.message},{status:500});
   const activeBanners=(banners.data||[]).filter(x=>(!x.starts_at||x.starts_at<=now)&&(!x.ends_at||x.ends_at>=now));
-  const imageMap={};(images.data||[]).forEach(x=>{if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url});
+  const imageMap={};
+  const imageListMap={};
+  (images.data||[]).forEach(x=>{
+   if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];
+   imageListMap[x.product_id].push(x);
+   if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;
+  });
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
-  const productData=(products.data||[]).map(p=>({...p,image_url:imageMap[p.id]||null,category_id:catMap[p.id]||null}));
+  const productData=(products.data||[]).map(p=>({...p,image_url:imageMap[p.id]||null,images:imageListMap[p.id]||[],category_id:catMap[p.id]||null}));
   const url=new URL(request.url),slug=url.searchParams.get('product');
   const selectedProduct=slug?productData.find(p=>p.slug===slug)||null:null;
   return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:settings.online_payment_enabled,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description},products:productData,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],selectedProduct});
