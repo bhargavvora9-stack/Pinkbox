@@ -1,3 +1,26 @@
+/* Product image sizing: preserve full product artwork */
+.pb-card-media img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#f6f4f3;
+  transform:none!important;
+}
+.pb-card:hover .pb-card-media img{
+  transform:none!important;
+}
+.pb-modal-media{
+  overflow:hidden!important;
+}
+.pb-modal-media img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#f5f2f2;
+}
+
 /* Compact product detail popup */
 .pb-product-modal{
   width:min(680px,calc(100% - 36px))!important;
