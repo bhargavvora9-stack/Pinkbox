@@ -1,6 +1,62 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {Minus,Plus,Trash2,ArrowRight,ShoppingBag,ShieldCheck,Truck} from 'lucide-react';
-const money=n=>`₹${Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
-export default function CartPage(){const[cart,setCart]=useState([]),[settings,setSettings]=useState(null);useEffect(()=>{try{setCart(JSON.parse(localStorage.getItem('pinkbox_cart')||'[]'))}catch{};fetch('/api/storefront',{cache:'no-store'}).then(r=>r.json()).then(x=>setSettings(x.settings||{})).catch(()=>{})},[]);useEffect(()=>{localStorage.setItem('pinkbox_cart',JSON.stringify(cart))},[cart]);const subtotal=useMemo(()=>cart.reduce((s,x)=>s+Number(x.price||0)*x.quantity,0),[cart]);const threshold=Number(settings?.free_shipping_threshold||0),shipping=settings?.shipping_enabled?(threshold&&subtotal>=threshold?0:Number(settings?.default_shipping_charge||0)):0,total=subtotal+shipping;const change=(id,n)=>setCart(a=>a.map(x=>x.id===id?{...x,quantity:Math.max(0,Math.min(x.quantity+n,Number(x.stock_quantity||999999)))}:x).filter(x=>x.quantity));const remove=id=>setCart(a=>a.filter(x=>x.id!==id));return <main className="min-h-screen bg-[#fff7fa] px-5 py-10"><div className="mx-auto max-w-6xl"><div className="mb-8 flex items-center justify-between gap-4"><div><Link href="/" className="text-sm font-bold text-[#d9295f]">← Continue shopping</Link><h1 className="mt-2 text-4xl font-black">Your cart</h1><p className="mt-1 text-gray-500">Review your items before checkout.</p></div><Link href="/account" className="rounded-full border px-4 py-2 text-sm font-bold">Account</Link></div>{!cart.length?<div className="rounded-3xl bg-white p-12 text-center shadow-sm"><ShoppingBag className="mx-auto" size={44}/><h2 className="mt-4 text-2xl font-black">Your cart is empty</h2><p className="mt-2 text-gray-500">Add something you love and it will appear here.</p><Link href="/" className="mt-6 inline-flex rounded-2xl bg-[#d9295f] px-6 py-3 font-bold text-white">Start shopping <ArrowRight size={18} className="ml-2"/></Link></div>:<div className="grid gap-6 lg:grid-cols-[1fr_360px]"><section className="space-y-3">{cart.map(x=><article key={x.id} className="flex gap-4 rounded-3xl bg-white p-4 shadow-sm"><div className="h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#fff0f5]">{x.image_url?<img src={x.image_url} alt={x.title} className="h-full w-full object-cover"/>:<span className="grid h-full place-items-center font-black text-[#d9295f]">PB</span>}</div><div className="min-w-0 flex-1"><div className="flex justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-gray-400">{x.brand||'PinkBox'}</p><h2 className="mt-1 font-bold">{x.title}</h2></div><button onClick={()=>remove(x.id)} aria-label={`Remove ${x.title}`} className="text-gray-400"><Trash2 size={18}/></button></div><div className="mt-4 flex items-center justify-between"><div className="flex items-center rounded-full border"><button className="grid h-9 w-9 place-items-center" onClick={()=>change(x.id,-1)}><Minus size={14}/></button><span className="min-w-8 text-center text-sm font-bold">{x.quantity}</span><button className="grid h-9 w-9 place-items-center" onClick={()=>change(x.id,1)}><Plus size={14}/></button></div><b>{money(Number(x.price||0)*x.quantity)}</b></div></div></article>)}</section><aside className="h-fit rounded-3xl bg-white p-6 shadow-sm"><div className="space-y-3 text-sm"><div className="flex justify-between"><span>Subtotal</span><b>{money(subtotal)}</b></div><div className="flex justify-between"><span>Shipping</span><b>{shipping?'₹'+Number(shipping).toLocaleString('en-IN'):'FREE'}</b></div><div className="flex justify-between border-t pt-4 text-lg"><span>Total</span><b>{money(total)}</b></div></div>{threshold>0&&<div className="mt-5 rounded-2xl bg-[#fff7fa] p-4 text-sm">{subtotal>=threshold?'🎉 Free shipping unlocked.':`Add ${money(threshold-subtotal)} more for free shipping.`}</div>}<Link href="/checkout" className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-[#d9295f] px-5 py-3 font-bold text-white">Checkout <ArrowRight size={17} className="ml-2"/></Link><div className="mt-5 grid gap-3 text-xs text-gray-500"><span className="inline-flex items-center gap-2"><ShieldCheck size={16}/>Secure checkout</span><span className="inline-flex items-center gap-2"><Truck size={16}/>Reliable delivery</span></div></aside></div>}</div></main>}
+import { Heart, ShoppingBag } from 'lucide-react';
+
+const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
+export default function WishlistPage() {
+  const [ids, setIds] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('pinkbox_wishlist') || '[]');
+      setIds(Array.isArray(saved) ? saved : []);
+    } catch { setIds([]); }
+    fetch('/api/storefront', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => setProducts(Array.isArray(data.products) ? data.products : []))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const saved = useMemo(() => products.filter((p) => ids.includes(p.id) && p.is_active !== false), [products, ids]);
+
+  function remove(id) {
+    const next = ids.filter((value) => value !== id);
+    setIds(next);
+    localStorage.setItem('pinkbox_wishlist', JSON.stringify(next));
+    window.dispatchEvent(new Event('pinkbox-wishlist-updated'));
+  }
+
+  function addToCart(product) {
+    try {
+      const current = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
+      const existing = current.find((item) => item.id === product.id);
+      const requested = Number(existing?.quantity || 0) + 1;
+      const stock = Number(product.stock_quantity || 0);
+      if (stock > 0 && requested > stock && !product.allow_backorder) return;
+      const next = existing
+        ? current.map((item) => item.id === product.id ? { ...item, quantity: requested } : item)
+        : [...current, { ...product, quantity: 1 }];
+      localStorage.setItem('pinkbox_cart', JSON.stringify(next));
+      window.dispatchEvent(new Event('pinkbox-cart-updated'));
+    } catch {}
+  }
+
+  if (loading) return <main className="min-h-screen bg-[#fffaf7] p-8 text-[#6a4b4e]">Loading wishlist…</main>;
+  return <main className="min-h-screen bg-[#fffaf7] px-5 py-10 text-[#6a4b4e]">
+    <div className="mx-auto max-w-6xl">
+      <div className="flex flex-wrap items-center justify-between gap-4"><Link href="/" className="font-semibold text-[#c36f83]">← PinkBox</Link><Link href="/cart" className="inline-flex items-center gap-2 rounded-full border border-[#eadfd9] bg-white px-4 py-2 text-sm font-semibold"><ShoppingBag size={16}/> Cart</Link></div>
+      <header className="mt-8"><p className="text-xs font-bold uppercase tracking-[.22em] text-[#c36f83]">Saved for later</p><h1 className="mt-2 text-4xl font-semibold tracking-tight">Wishlist</h1><p className="mt-2 text-[#846f70]">Keep your favourite PinkBox products close.</p></header>
+      {!saved.length ? <section className="mt-8 rounded-3xl border border-[#eadfd9] bg-white p-10 text-center"><Heart className="mx-auto text-[#d8899d]" size={28}/><h2 className="mt-4 text-2xl font-semibold">Nothing saved yet</h2><p className="mt-2 text-[#846f70]">Tap the heart on a product to save it here.</p><Link href="/#new-arrivals" className="mt-5 inline-flex rounded-full bg-[#d8899d] px-5 py-3 font-semibold text-white">Explore products</Link></section> :
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{saved.map((p) => <article key={p.id} className="overflow-hidden rounded-3xl border border-[#eadfd9] bg-white">
+        <Link href={`/products/${p.slug}`} className="block bg-[#f5eeea]"><div className="aspect-square">{p.image_url ? <img src={p.image_url} alt={p.title || ''} className="h-full w-full object-contain"/> : <div className="grid h-full place-items-center font-serif text-4xl text-[#b18489]">PB</div>}</div></Link>
+        <div className="p-4"><div className="flex items-start justify-between gap-3"><Link href={`/products/${p.slug}`} className="font-semibold leading-5 hover:text-[#c36f83]">{p.title}</Link><button type="button" aria-label={`Remove ${p.title} from wishlist`} onClick={() => remove(p.id)} className="text-[#c36f83]"><Heart size={18} fill="currentColor"/></button></div><p className="mt-2 font-semibold">{money(p.price)}</p><button type="button" onClick={() => addToCart(p)} className="mt-4 w-full rounded-xl bg-[#d8899d] px-4 py-2.5 text-sm font-bold text-white">Add to cart</button></div>
+      </article>)}</div>}
+    </div>
+  </main>;
+}
