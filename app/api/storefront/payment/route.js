@@ -6,9 +6,6 @@ async function getSettings(db) {
   return data;
 }
 
-// Looks up Razorpay keys saved by the admin in /admin/payments (website_payment_methods,
-// provider = 'razorpay'). Falls back to Vercel env vars if no row is configured yet, so
-// either setup path works.
 async function getRazorpayCreds(db, companyId) {
   const { data } = await db
     .from('website_payment_methods')
@@ -22,6 +19,12 @@ async function getRazorpayCreds(db, companyId) {
     keyId: cfg.key_id || cfg.razorpay_key_id || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
     keySecret: cfg.key_secret || cfg.razorpay_key_secret || process.env.RAZORPAY_KEY_SECRET || '',
   };
+}
+
+function safeSignatureEqual(expected, received) {
+  const a = Buffer.from(String(expected || ''), 'utf8');
+  const b = Buffer.from(String(received || ''), 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export async function POST(request) {
@@ -40,21 +43,23 @@ export async function POST(request) {
 
       const { data: order, error } = await db
         .from('website_orders')
-        .select('id, order_number, total_amount, payment_method, payment_status, razorpay_order_id')
+        .select('id, order_number, total_amount, payment_method, payment_status, razorpay_order_id, order_status')
         .eq('id', b.order_id)
         .eq('company_id', c)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order is not set up for online payment.' }, { status: 400 });
+      if (['cancelled', 'delivered', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
+        return Response.json({ error: 'This order cannot accept a new payment.' }, { status: 409 });
+      }
       if (order.payment_status === 'paid') return Response.json({ error: 'This order is already paid.' }, { status: 400 });
 
       const amountPaise = Math.round(Number(order.total_amount) * 100);
-      if (!amountPaise || amountPaise < 100) return Response.json({ error: 'Order amount is invalid.' }, { status: 400 });
+      if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) return Response.json({ error: 'Order amount is invalid.' }, { status: 400 });
 
       const { keyId, keySecret } = await getRazorpayCreds(db, c);
       if (!keyId || !keySecret) return Response.json({ error: 'Online payment is not configured yet. Please choose Cash on Delivery.' }, { status: 503 });
 
-      // Reuse existing Razorpay order if one was already created for this order.
       if (order.razorpay_order_id) {
         return Response.json({
           razorpay_order_id: order.razorpay_order_id,
@@ -82,7 +87,15 @@ export async function POST(request) {
         return Response.json({ error: rzData?.error?.description || 'Unable to start payment right now.' }, { status: 502 });
       }
 
-      await db.from('website_orders').update({ razorpay_order_id: rzData.id, updated_at: new Date().toISOString() }).eq('id', order.id).eq('company_id', c);
+      const { error: orderUpdateError } = await db
+        .from('website_orders')
+        .update({ razorpay_order_id: rzData.id, updated_at: new Date().toISOString() })
+        .eq('id', order.id)
+        .eq('company_id', c);
+      if (orderUpdateError) {
+        console.error('Failed to persist Razorpay order id:', orderUpdateError.message);
+        return Response.json({ error: 'Unable to prepare payment. Please try again.' }, { status: 500 });
+      }
 
       return Response.json({
         razorpay_order_id: rzData.id,
@@ -103,33 +116,42 @@ export async function POST(request) {
 
       const { data: order, error } = await db
         .from('website_orders')
-        .select('id, company_id, razorpay_order_id, payment_status')
+        .select('id, company_id, razorpay_order_id, payment_method, payment_status, order_status')
         .eq('id', order_id)
         .eq('company_id', c)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
+      if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
       if (order.razorpay_order_id !== razorpay_order_id) return Response.json({ error: 'Order mismatch.' }, { status: 400 });
+      if (order.payment_status === 'paid') return Response.json({ ok: true, already_paid: true });
+      if (['cancelled', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
+        return Response.json({ error: 'This order cannot be paid.' }, { status: 409 });
+      }
 
       const expected = crypto.createHmac('sha256', keySecret).update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
-      if (expected !== razorpay_signature) {
+      if (!safeSignatureEqual(expected, razorpay_signature)) {
         await db.from('website_orders').update({ payment_status: 'failed', razorpay_payment_id, updated_at: new Date().toISOString() }).eq('id', order.id).eq('company_id', c);
         return Response.json({ error: 'Payment verification failed.' }, { status: 400 });
       }
 
-      if (order.payment_status !== 'paid') {
-        await db
-          .from('website_orders')
-          .update({ payment_status: 'paid', order_status: 'confirmed', razorpay_payment_id, razorpay_signature, updated_at: new Date().toISOString() })
-          .eq('id', order.id)
-          .eq('company_id', c);
-        await db.from('website_order_status_history').insert({
-          company_id: c,
-          order_id: order.id,
-          status: 'confirmed',
-          note: 'Payment received via Razorpay',
-          created_at: new Date().toISOString(),
-        });
+      const { error: paidUpdateError } = await db
+        .from('website_orders')
+        .update({ payment_status: 'paid', order_status: 'confirmed', razorpay_payment_id, razorpay_signature, updated_at: new Date().toISOString() })
+        .eq('id', order.id)
+        .eq('company_id', c)
+        .neq('payment_status', 'paid');
+      if (paidUpdateError) {
+        console.error('Payment status update failed:', paidUpdateError.message);
+        return Response.json({ error: 'Payment was verified but order update failed. Please contact support.' }, { status: 500 });
       }
+
+      await db.from('website_order_status_history').insert({
+        company_id: c,
+        order_id: order.id,
+        status: 'confirmed',
+        note: 'Payment received via Razorpay',
+        created_at: new Date().toISOString(),
+      });
 
       return Response.json({ ok: true });
     }
