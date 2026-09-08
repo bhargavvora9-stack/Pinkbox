@@ -6,6 +6,24 @@ async function getSettings(db) {
   return data;
 }
 
+// Looks up Razorpay keys saved by the admin in /admin/payments (website_payment_methods,
+// provider = 'razorpay'). Falls back to Vercel env vars if no row is configured yet, so
+// either setup path works.
+async function getRazorpayCreds(db, companyId) {
+  const { data } = await db
+    .from('website_payment_methods')
+    .select('config')
+    .eq('company_id', companyId)
+    .eq('provider', 'razorpay')
+    .eq('is_active', true)
+    .maybeSingle();
+  const cfg = data?.config || {};
+  return {
+    keyId: cfg.key_id || cfg.razorpay_key_id || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+    keySecret: cfg.key_secret || cfg.razorpay_key_secret || process.env.RAZORPAY_KEY_SECRET || '',
+  };
+}
+
 export async function POST(request) {
   try {
     const db = createAdminClient();
@@ -33,20 +51,19 @@ export async function POST(request) {
       const amountPaise = Math.round(Number(order.total_amount) * 100);
       if (!amountPaise || amountPaise < 100) return Response.json({ error: 'Order amount is invalid.' }, { status: 400 });
 
+      const { keyId, keySecret } = await getRazorpayCreds(db, c);
+      if (!keyId || !keySecret) return Response.json({ error: 'Online payment is not configured yet. Please choose Cash on Delivery.' }, { status: 503 });
+
       // Reuse existing Razorpay order if one was already created for this order.
       if (order.razorpay_order_id) {
         return Response.json({
           razorpay_order_id: order.razorpay_order_id,
           amount: amountPaise,
           currency: 'INR',
-          key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          key_id: keyId,
           order_number: order.order_number,
         });
       }
-
-      const keyId = process.env.RAZORPAY_KEY_ID;
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      if (!keyId || !keySecret) return Response.json({ error: 'Online payment is not configured yet. Please choose Cash on Delivery.' }, { status: 503 });
 
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
       const rzRes = await fetch('https://api.razorpay.com/v1/orders', {
@@ -71,7 +88,7 @@ export async function POST(request) {
         razorpay_order_id: rzData.id,
         amount: amountPaise,
         currency: 'INR',
-        key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key_id: keyId,
         order_number: order.order_number,
       });
     }
@@ -81,7 +98,7 @@ export async function POST(request) {
       if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return Response.json({ error: 'Missing payment verification details.' }, { status: 400 });
       }
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      const { keySecret } = await getRazorpayCreds(db, c);
       if (!keySecret) return Response.json({ error: 'Online payment is not configured.' }, { status: 503 });
 
       const { data: order, error } = await db

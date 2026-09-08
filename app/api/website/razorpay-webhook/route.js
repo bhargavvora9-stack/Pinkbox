@@ -8,7 +8,10 @@ import crypto from 'crypto';
 
 export async function POST(request) {
   try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const db = createAdminClient();
+    // Single-tenant store: there is one active Razorpay row, configured from /admin/payments.
+    const { data: pm } = await db.from('website_payment_methods').select('config').eq('provider', 'razorpay').eq('is_active', true).maybeSingle();
+    const secret = pm?.config?.webhook_secret || process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) return Response.json({ error: 'Webhook not configured.' }, { status: 503 });
 
     const rawBody = await request.text();
@@ -19,7 +22,6 @@ export async function POST(request) {
     const payload = JSON.parse(rawBody);
     const event = payload.event;
     const paymentEntity = payload.payload?.payment?.entity;
-    const db = createAdminClient();
 
     if ((event === 'payment.captured' || event === 'order.paid') && paymentEntity?.order_id) {
       const { data: order } = await db.from('website_orders').select('id, company_id, payment_status').eq('razorpay_order_id', paymentEntity.order_id).maybeSingle();
