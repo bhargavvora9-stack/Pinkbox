@@ -1,7 +1,8 @@
 import WebsiteResourceManager3 from '@/components/WebsiteResourceManager3';
 import { WebsiteDashboard, WebsiteInventory, WebsiteSettings } from '@/components/WebsiteSpecialPages';
 import { ProductCategoryMapping, WebsiteAuditLog, Phase1Status } from '@/components/WebsitePhase1Extras';
-import { Phase2Manager, ProductCollectionMapping } from '@/components/WebsitePhase2Catalog';
+import { Phase2Manager } from '@/components/WebsitePhase2Catalog';
+import WebsiteProductCollectionMapping from '@/components/WebsiteProductCollectionMapping';
 import WebsiteBulkTools from '@/components/WebsiteBulkTools';
 import WebsiteCustomersPhase3 from '@/components/WebsiteCustomersPhase3';
 import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } from '@/components/WebsitePhase3Orders';
@@ -22,8 +23,8 @@ export default async function AdminModulePage({ params }) {
   if (key === 'audit-log') return <WebsiteAuditLog />;
   if (key === 'products/categories') return <ProductCategoryMapping />;
   if (key === 'products/import-export') return <WebsiteBulkTools />;
+  if (key === 'products/collections') return <WebsiteProductCollectionMapping />;
   if (['brands','collections','variants','reviews'].includes(key)) return <Phase2Manager resource={key} />;
-  if (key === 'products/collections') return <ProductCollectionMapping />;
   if (key === 'shipping') return <Phase3Shipping resource="shipping-methods" />;
   if (key === 'shipping/methods') return <Phase3Shipping resource="shipping-methods" />;
   if (key === 'shipping/zones') return <Phase3Shipping resource="shipping-zones" />;
