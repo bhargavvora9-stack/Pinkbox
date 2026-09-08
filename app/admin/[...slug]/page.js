@@ -9,7 +9,9 @@ import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } fr
 import { Phase4Theme, Phase4SEO, Phase4Blog, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
 import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
+import WebsiteProductsManagerPro from '@/components/WebsiteProductsManagerPro';
 import PinkBoxDesignStudio from '@/components/PinkBoxDesignStudio';
+import PinkBoxHomepageBuilder from '@/components/PinkBoxHomepageBuilder';
 
 export default async function AdminModulePage({ params }) {
   const { slug = [] } = await params;
@@ -21,6 +23,7 @@ export default async function AdminModulePage({ params }) {
   if (key === 'inventory') return <WebsiteInventory />;
   if (key === 'customers') return <WebsiteCustomersPhase3 />;
   if (key === 'audit-log') return <WebsiteAuditLog />;
+  if (key === 'products') return <WebsiteProductsManagerPro />;
   if (key === 'products/categories') return <ProductCategoryMapping />;
   if (key === 'products/import-export') return <WebsiteBulkTools />;
   if (key === 'products/collections') return <WebsiteProductCollectionMapping />;
@@ -35,7 +38,8 @@ export default async function AdminModulePage({ params }) {
   if (key === 'seo') return <Phase4SEO />;
   if (key === 'blog') return <Phase4Blog />;
   if (key === 'footer') return <Phase4Footer />;
-  if (key === 'homepage') return <Phase4Homepage />;
+  if (key === 'homepage') return <PinkBoxHomepageBuilder />;
+  if (key === 'homepage/legacy') return <Phase4Homepage />;
   if (key === 'campaigns') return <Phase5Campaigns />;
   if (key === 'notifications') return <Phase5Notifications />;
   if (key === 'notification-logs') return <Phase5NotificationLogs />;
@@ -44,7 +48,7 @@ export default async function AdminModulePage({ params }) {
   if (key === 'roles') return <Phase6Roles />;
   if (key === 'automations') return <Phase6Automations />;
   if (key === 'system-health') return <Phase6Health />;
-  const map = { categories:'categories', products:'products', images:'images', pages:'pages', banners:'banners', navigation:'navigation', discounts:'discounts' };
+  const map = { categories:'categories', images:'images', pages:'pages', banners:'banners', navigation:'navigation', discounts:'discounts' };
   if (map[key]) return <WebsiteResourceManager3 resource={map[key]} />;
   return <Phase1Status title={key.replaceAll('-',' ') || 'Admin'} />;
 }

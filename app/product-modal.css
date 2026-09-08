@@ -1,0 +1,145 @@
+/* Product popup: full image + multi-image gallery */
+.pb-product-modal{
+  width:min(900px,calc(100% - 36px))!important;
+  max-height:90vh!important;
+  border-radius:24px!important;
+  overflow:auto!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr)!important;
+}
+.pb-modal-media{
+  min-height:440px!important;
+  height:440px!important;
+  max-height:none!important;
+  overflow:hidden!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#f5f2f2!important;
+  padding:18px!important;
+}
+.pb-modal-media>img,
+.pb-modal-media>span{
+  max-width:100%!important;
+  max-height:100%!important;
+}
+.pb-modal-media>img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  transform:none!important;
+}
+.pb-gallery{
+  width:100%!important;
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+}
+.pb-modal-main-image{
+  position:relative!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  overflow:hidden!important;
+  border-radius:16px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#fff!important;
+}
+.pb-modal-main-image img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  transform:none!important;
+}
+.pb-gallery-arrow{
+  position:absolute!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:2!important;
+  width:42px!important;
+  height:42px!important;
+  border:0!important;
+  border-radius:50%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  cursor:pointer!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.12)!important;
+}
+.pb-gallery-prev{left:10px!important}
+.pb-gallery-next{right:10px!important}
+.pb-modal-thumbs{
+  flex:0 0 70px!important;
+  display:flex!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  padding:2px!important;
+}
+.pb-modal-thumbs button{
+  flex:0 0 64px!important;
+  width:64px!important;
+  height:64px!important;
+  padding:0!important;
+  border:2px solid transparent!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+  background:#fff!important;
+  cursor:pointer!important;
+}
+.pb-modal-thumbs button.active{border-color:var(--pb-primary,#d9295f)!important}
+.pb-modal-thumbs img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#f7f5f5!important;
+}
+.pb-modal-copy{padding:32px!important;overflow:auto!important}
+.pb-modal-copy h2{font-size:28px!important;line-height:1.15!important}
+.pb-modal-copy p{max-height:180px!important;overflow:auto!important}
+.pb-price{margin:18px 0!important;font-size:24px!important}
+.pb-card-media img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#f6f4f3;
+  transform:none!important;
+}
+.pb-card:hover .pb-card-media img{transform:none!important}
+@media(max-width:800px){
+  .pb-product-modal{
+    width:min(700px,calc(100% - 24px))!important;
+    max-height:92vh!important;
+    grid-template-columns:1fr!important;
+  }
+  .pb-modal-media{
+    min-height:390px!important;
+    height:390px!important;
+  }
+  .pb-modal-copy{padding:25px!important}
+}
+@media(max-width:560px){
+  .pb-product-modal{
+    width:calc(100% - 18px)!important;
+    max-height:94vh!important;
+    border-radius:20px!important;
+  }
+  .pb-modal-media{
+    min-height:300px!important;
+    height:300px!important;
+    padding:12px!important;
+  }
+  .pb-modal-thumbs{flex-basis:58px!important}
+  .pb-modal-thumbs button{width:52px!important;height:52px!important;flex-basis:52px!important}
+  .pb-gallery-arrow{width:36px!important;height:36px!important}
+  .pb-modal-copy{padding:20px!important}
+  .pb-modal-copy h2{font-size:23px!important}
+}

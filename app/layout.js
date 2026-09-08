@@ -1,4 +1,8 @@
 import './globals.css';
+import './product-modal.css';
+import './product-gallery-fix.css';
+import './pinkbox-radiant-theme.css';
+import PinkBoxProductGalleryFix from '@/components/PinkBoxProductGalleryFix';
 
 export const metadata = {
   title: 'PinkBox',
@@ -6,5 +10,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body><PinkBoxProductGalleryFix />{children}</body></html>;
 }
