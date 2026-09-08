@@ -1,4 +1,5 @@
 import './globals.css';
+import './storefront-images.css';
 
 export const metadata = {
   title: 'PinkBox',
