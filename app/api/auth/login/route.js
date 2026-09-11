@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ayphefqdvrbldhwzhybe.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Ql0ABtOzHqN96WvjMRomEQ_r_2CNjAh';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'REPLACE_WITH_ENV_KEY';
 const WEBSITE_ADMIN_ROLES = new Set(['super_admin', 'admin']);
 
 function errorResponse(request, code, message, wantsJson) {
@@ -40,20 +40,17 @@ export async function POST(request) {
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body?.password === 'string' ? body.password : '';
     const requestedNext = typeof body?.next === 'string' ? body.next : '';
-    const next = requestedNext === '/admin' || requestedNext.startsWith('/admin/')
-      ? requestedNext
-      : '/account';
-    const isAdminDestination = next === '/admin' || next.startsWith('/admin/');
+    const hasExplicitNext = requestedNext === '/admin' || requestedNext.startsWith('/admin/') || requestedNext === '/account' || requestedNext.startsWith('/account/');
+    const requestedDestination = hasExplicitNext ? requestedNext : '';
+    const isExplicitAdminDestination = requestedDestination === '/admin' || requestedDestination.startsWith('/admin/');
 
     if (!email || !password) {
       return errorResponse(request, 'missing_credentials', 'Email and password are required.', wantsJson);
     }
 
-    const response = wantsJson
-      ? NextResponse.json({ ok: true })
-      : NextResponse.redirect(new URL(next, request.url), 303);
-    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
-    response.headers.set('Vary', 'Cookie');
+    const supabaseResponse = NextResponse.json({ ok: true });
+    supabaseResponse.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    supabaseResponse.headers.set('Vary', 'Cookie');
 
     const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       cookies: {
@@ -61,8 +58,8 @@ export async function POST(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-          if (headers) Object.entries(headers).forEach(([name, value]) => value && response.headers.set(name, value));
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options));
+          if (headers) Object.entries(headers).forEach(([name, value]) => value && supabaseResponse.headers.set(name, value));
         },
       },
     });
@@ -73,18 +70,47 @@ export async function POST(request) {
       return errorResponse(request, 'invalid_credentials', 'Invalid email or password.', wantsJson);
     }
 
-    // One authentication endpoint is now shared by customers and admins.
-    // Only requests going to /admin require an admin profile/company check.
-    if (isAdminDestination) {
-      const { data: profile, error: profileLookupError } = await supabase
+    let destination = requestedDestination || '/account';
+    let profile = null;
+
+    // If no destination was requested, detect the user's role and choose the correct home.
+    // An explicit /account destination skips admin checks. An explicit /admin destination requires them.
+    if (!hasExplicitNext || isExplicitAdminDestination) {
+      const { data: profileData, error: profileLookupError } = await supabase
         .from('profiles')
         .select('id, company_id, role, active, display_name')
         .eq('id', data.user.id)
         .maybeSingle();
 
       if (profileLookupError) {
-        console.error('Website admin profile lookup failed:', profileLookupError.message);
-        return errorResponse(request, 'access_check_failed', 'Unable to verify admin access.', wantsJson);
+        console.error('Profile lookup failed:', profileLookupError.message);
+        if (isExplicitAdminDestination) {
+          return errorResponse(request, 'access_check_failed', 'Unable to verify admin access.', wantsJson);
+        }
+      } else {
+        profile = profileData;
+      }
+
+      if (!hasExplicitNext && profile && profile.active !== false && WEBSITE_ADMIN_ROLES.has(profile.role)) {
+        destination = '/admin';
+      }
+    }
+
+    const isAdminDestination = destination === '/admin' || destination.startsWith('/admin/');
+
+    if (isAdminDestination) {
+      if (!profile) {
+        const { data: profileData, error: profileLookupError } = await supabase
+          .from('profiles')
+          .select('id, company_id, role, active, display_name')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profileLookupError) {
+          console.error('Website admin profile lookup failed:', profileLookupError.message);
+          return errorResponse(request, 'access_check_failed', 'Unable to verify admin access.', wantsJson);
+        }
+        profile = profileData;
       }
 
       if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) {
@@ -115,6 +141,18 @@ export async function POST(request) {
       }
     }
 
+    if (wantsJson) {
+      const response = NextResponse.json({ ok: true, destination });
+      supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+      response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+      response.headers.set('Vary', 'Cookie');
+      return response;
+    }
+
+    const response = NextResponse.redirect(new URL(destination, request.url), 303);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    response.headers.set('Vary', 'Cookie');
     return response;
   } catch (error) {
     console.error('Login failed:', error);
