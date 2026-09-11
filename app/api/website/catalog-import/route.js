@@ -1,10 +1,10 @@
 import { getWebsiteAdminContext, cleanString, slugify, jsonError, audit } from '@/lib/website-admin';
 
 const MAX_ROWS = 1000;
-const columns = ['sku','title','slug','crm_product_id','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
+const columns = ['sku','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
 const moneyFields = new Set(['price','compare_at_price','cost_price','gst_percent','weight','stock_quantity','low_stock_threshold']);
 const boolFields = new Set(['track_inventory','allow_backorder','featured','is_active']);
-const optionalText = new Set(['slug','crm_product_id','brand','short_description','description','hsn_code','barcode','seo_title','seo_description','seo_keywords']);
+const optionalText = new Set(['slug','brand','short_description','description','hsn_code','barcode','seo_title','seo_description','seo_keywords']);
 
 function csvEscape(value){const s=String(value ?? ''); return /[",\n\r]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;}
 function normalizeRow(row){
