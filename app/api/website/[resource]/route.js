@@ -11,18 +11,18 @@ export async function GET(request,{params}){
   const {supabase,companyId,error}=await getWebsiteAdminContext();
   if(error)return jsonError(error==='UNAUTHENTICATED'?'Please login.':'Access denied.',error==='UNAUTHENTICATED'?401:403);
   if(resource==='dashboard'){
-    const [orders,products,customers,categories,settings]=await Promise.all([
-      supabase.from('website_orders').select('id,total_amount,order_status,created_at,order_number').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT),
+    const [statsResult,orders,products,categories,settings]=await Promise.all([
+      supabase.rpc('get_website_dashboard_stats',{p_company_id:companyId}),
+      supabase.from('website_orders').select('id,total_amount,order_status,created_at,order_number').eq('company_id',companyId).order('created_at',{ascending:false}).limit(8),
       supabase.from('website_products').select('id,title,sku,price,stock_quantity,low_stock_threshold,is_active').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT),
-      supabase.from('customers').select('id,client_name,firm_name,phone1,created_at').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT),
-      supabase.from('website_categories').select('id,name,parent_id,is_active').eq('company_id',companyId).order('sort_order'),
+      supabase.from('website_categories').select('id,name,parent_id,is_active').eq('company_id',companyId).order('sort_order').limit(SAFE_LIMIT),
       supabase.from('website_settings').select('*').eq('company_id',companyId).maybeSingle()
     ]);
-    const rows=orders.data||[]; const sales=rows.reduce((n,o)=>n+Number(o.total_amount||0),0);
-    return Response.json({stats:{sales,orders:rows.length,products:products.data?.length||0,customers:customers.data?.length||0},recentOrders:rows.slice(0,8),lowStock:(products.data||[]).filter(p=>Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8),categories:categories.data||[],settings:settings.data||null});
+    if(statsResult.error)return jsonError(statsResult.error.message,500);
+    return Response.json({stats:statsResult.data||{sales:0,orders:0,products:0,customers:0},recentOrders:orders.data||[],lowStock:(products.data||[]).filter(p=>Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8),categories:categories.data||[],settings:settings.data||null});
   }
   if(resource==='customers'){
-    const {data,error:dbError}=await supabase.from('customers').select('id,firm_name,surname,client_name,phone1,phone2,email,address,pincode,city,state,gstin,category,created_at,updated_at').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
+    const {data,error:dbError}=await supabase.from('customers').select('id,client_name,phone1,email,address,pincode,city,state,gstin,created_at,updated_at').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
     if(dbError)return jsonError(dbError.message,500); return Response.json({data:data||[]});
   }
   if(resource==='inventory'){
