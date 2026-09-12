@@ -61,7 +61,7 @@ export default function ProductPurchasePanel({ product }) {
     <div className="space-y-5">
       <div className="flex items-end gap-3">
         <span className="text-3xl font-black">{money(product.price)}</span>
-        {product.compare_at_price && <del className="pb-1 text-sm text-gray-400">{money(product.compare_at_price)}</del>}
+        {Number(product.compare_at_price) > 0 && <del className="pb-1 text-sm text-gray-400">{money(product.compare_at_price)}</del>}
       </div>
       <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-[#fff8fa] text-gray-700' : 'bg-gray-50 text-gray-500'}`}>
         {canBuy ? (max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}

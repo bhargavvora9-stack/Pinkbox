@@ -46,16 +46,16 @@ export default async function ProductPage({ params }) {
       </div>
       <div className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 md:grid-cols-[1.05fr_.95fr]">
         <section>
-          <div className="overflow-hidden rounded-[28px] bg-[#f7f4f5]">
+          <div className="mx-auto max-w-sm overflow-hidden rounded-[28px] bg-[#f7f4f5] p-6">
             {p.images[0]?.image_url ? <img src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} className="aspect-square w-full object-contain" /> : <div className="grid aspect-square place-items-center text-8xl font-black text-[#d9295f]/30">PB</div>}
           </div>
-          {p.images.length > 1 && <div className="mt-4 grid grid-cols-5 gap-3">{p.images.slice(0, 5).map((x, i) => <div key={i} className="overflow-hidden rounded-2xl border bg-[#f7f4f5]"><img src={x.image_url} alt={x.alt_text || `${p.title} ${i + 1}`} className="aspect-square w-full object-contain" /></div>)}</div>}
+          {p.images.length > 1 && <div className="mx-auto mt-4 grid max-w-sm grid-cols-5 gap-3">{p.images.slice(0, 5).map((x, i) => <div key={i} className="overflow-hidden rounded-2xl border bg-[#f7f4f5] p-1"><img src={x.image_url} alt={x.alt_text || `${p.title} ${i + 1}`} className="aspect-square w-full object-contain" /></div>)}</div>}
         </section>
         <section className="flex flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{p.brand || p.sku || 'PinkBox'}</p>
           <h1 className="mt-4 text-4xl font-black tracking-[-.04em] md:text-5xl">{p.title}</h1>
           {p.short_description && <p className="mt-5 text-base leading-7 text-gray-600">{p.short_description}</p>}
-          <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images }} /></div>
+          <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null }} /></div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Quality checked</b><p className="mt-1 text-xs text-gray-500">Product information stays transparent.</p></div>
             <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Secure checkout</b><p className="mt-1 text-xs text-gray-500">COD and online payment supported.</p></div>
