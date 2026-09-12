@@ -12,7 +12,7 @@ export async function GET(request){
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const c=settings.company_id,now=new Date().toISOString();
   const [products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings]=await Promise.all([
-   db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override').eq('company_id',c).eq('is_active',true).order('created_at',{ascending:false}),
+   db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override').eq('company_id',c).eq('is_active',true).order('created_at',{ascending:false}),
    db.from('website_categories').select('id,name,slug,parent_id,image_url,sort_order').eq('company_id',c).eq('is_active',true).order('sort_order'),
    db.from('website_banners').select('id,title,subtitle,image_url,mobile_image_url,button_text,button_url,sort_order,starts_at,ends_at').eq('company_id',c).eq('is_active',true).order('sort_order'),
    db.from('website_homepage_sections').select('id,section_type,title,settings,sort_order').eq('company_id',c).eq('is_active',true).order('sort_order'),
@@ -29,7 +29,11 @@ export async function GET(request){
   const activeBanners=(banners.data||[]).filter(x=>(!x.starts_at||x.starts_at<=now)&&(!x.ends_at||x.ends_at>=now));
   const imageMap={};
   const imageListMap={};
-  (images.data||[]).forEach(x=>{if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];imageListMap[x.product_id].push(x);if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;});
+  (images.data||[]).forEach(x=>{
+   if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];
+   imageListMap[x.product_id].push(x);
+   if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;
+  });
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
   const productData=(products.data||[]).map(p=>({...p,image_url:imageMap[p.id]||null,images:imageListMap[p.id]||[],category_id:catMap[p.id]||null}));
   const url=new URL(request.url),slug=url.searchParams.get('product');
@@ -52,7 +56,7 @@ export async function POST(request){
   }
   if(!b.name||!b.phone||!b.address||!Array.isArray(b.items)||!b.items.length)return Response.json({error:'Name, phone, address and at least one product are required.'},{status:400});
   const address={name:String(b.name).trim(),phone:String(b.phone).trim(),email:String(b.email||'').trim()||null,address:String(b.address).trim(),pincode:String(b.pincode||'').trim(),city:String(b.city||'').trim(),state:String(b.state||'').trim()};
-  const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:b.items,p_payment_method:b.payment_method==='online'?'ONLINE':'COD',p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
+  const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:b.items,p_payment_method:settings.online_payment_enabled&&b.payment_method==='online'?'ONLINE':'COD',p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
   if(data?.order_id&&b.session_id)await db.from('website_abandoned_carts').update({status:'recovered',recovered_order_id:data.order_id,updated_at:new Date().toISOString()}).eq('company_id',c).eq('session_id',String(b.session_id));
   return Response.json(data,{status:201});
