@@ -22,7 +22,7 @@ export default function PinkBoxHome(){
  if(error&&!data)return <main className="pb-home-state"><b>PinkBox is temporarily unavailable</b><p>{error}</p></main>;
  if(!data)return <main className="pb-home-state">Loading PinkBox…</main>;
  const s=data.settings||{},theme=data.theme||{},cats=data.categories||[],products=data.products||[],sections=(data.sections||[]).filter(x=>x?.is_active!==false),blog=(data.blog||[]).filter(Boolean).slice(0,3),nav=Array.isArray(data.menu?.items)?data.menu.items:[],reviews=(data.reviews||[]).filter(Boolean).slice(0,3);
- const activeBanner=banners[slide]; const featured=products.filter(p=>p.featured&&p.is_active!==false);const arrivals=(featured.length?featured:products.filter(p=>p.is_active!==false)).slice(0,8);
+ const activeBanner=banners[slide]; const arrivals=products.filter(p=>p.is_active!==false).slice(0,8);
  const filtered=products.filter(p=>p.is_active!==false&&(!query||[p.title,p.brand,p.sku,p.short_description].some(v=>String(v||'').toLowerCase().includes(query.toLowerCase())))).slice(0,4);const shopProducts=query?filtered:arrivals;
  const toggle=id=>setWish(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
  const freeShip=money(s.free_shipping_threshold||499);
