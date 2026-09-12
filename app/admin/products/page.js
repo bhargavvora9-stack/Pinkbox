@@ -1,5 +1,5 @@
-import WebsiteProductsManager from '@/components/WebsiteProductsManager';
+import WebsiteProductsManagerPro from '@/components/WebsiteProductsManagerPro';
 
 export default function ProductsPage() {
-  return <WebsiteProductsManager />;
+  return <WebsiteProductsManagerPro />;
 }
