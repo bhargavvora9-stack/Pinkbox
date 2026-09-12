@@ -1,0 +1,135 @@
+/* Shared responsive layout rules for PinkBox storefront and admin. */
+
+html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas { max-width: 100%; }
+input, textarea, select, button { max-width: 100%; }
+
+/* Storefront: keep typography fluid but bounded. */
+.pb-store { width: 100%; min-width: 0; }
+.pb-store .pb-hero h1 { font-size: clamp(2.75rem, 6vw, 5.5rem); }
+.pb-store .pb-section-head h2,
+.pb-store .pb-page h2 { font-size: clamp(1.75rem, 3vw, 2.4rem); }
+.pb-store .pb-promo h2,
+.pb-store .pb-custom h2 { font-size: clamp(1.8rem, 3.2vw, 2.65rem); }
+.pb-store .pb-card-bottom b { font-size: clamp(0.95rem, 1.7vw, 1.08rem); }
+
+/* Admin: no global zoom; let each module use its own natural responsive size. */
+.website-admin { width: 100%; min-width: 0; }
+.website-admin main { width: 100%; max-width: none; min-width: 0; zoom: 1 !important; }
+.website-admin main > * { min-width: 0; max-width: 100%; }
+.website-admin table { width: 100%; }
+.website-admin input,
+.website-admin textarea,
+.website-admin select { min-width: 0; }
+.website-admin .overflow-x-auto { max-width: 100%; }
+
+@media (width <= 1279px) {
+  .pb-store .pb-head-inner { padding-inline: 20px; gap: 20px; }
+  .pb-store .pb-nav { gap: 16px; }
+  .pb-store .pb-search { width: min(220px, 20vw); }
+  .pb-store .pb-hero { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 30px; padding-inline: 20px; }
+  .pb-store .pb-section { padding-inline: 20px; }
+  .pb-store .pb-benefits { padding-inline: 20px; }
+  .pb-store .pb-footer-main { padding-inline: 20px; }
+}
+
+@media (width <= 1023px) {
+  .pb-store .pb-head-inner { height: 70px; }
+  .pb-store .pb-nav { gap: 12px; }
+  .pb-store .pb-nav a { font-size: 11px; }
+  .pb-store .pb-search { width: 170px; }
+  .pb-store .pb-hero { grid-template-columns: 1fr; padding-top: 34px; padding-bottom: 52px; }
+  .pb-store .pb-hero-copy { padding-left: 0; }
+  .pb-store .pb-hero-media { min-height: 420px; }
+  .pb-store .pb-hero-media > img,
+  .pb-store .pb-hero-placeholder { min-height: 420px; }
+  .pb-store .pb-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .pb-store .pb-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pb-store .pb-why-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pb-store .pb-blog { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pb-store .pb-footer-main { grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; }
+
+  .website-admin main { padding: 18px !important; }
+  .website-admin .min-w-full { min-width: 720px; }
+}
+
+@media (width <= 767px) {
+  /* Storefront */
+  .pb-store .pb-announcement { padding: 8px 12px; font-size: 8px; letter-spacing: .11em; line-height: 1.4; }
+  .pb-store .pb-head-inner { height: 64px; padding-inline: 12px; gap: 8px; }
+  .pb-store .pb-brand { min-width: 0; font-size: 17px; }
+  .pb-store .pb-brand > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  .pb-store .pb-brand img,
+  .pb-store .pb-logo { width: 34px; height: 34px; flex: 0 0 34px; }
+  .pb-store .pb-actions { margin-left: auto; }
+  .pb-store .pb-icon { width: 38px; height: 38px; }
+  .pb-store .pb-hero,
+  .pb-store .pb-hero-empty { padding: 30px 16px 42px; }
+  .pb-store .pb-hero h1 { font-size: clamp(2.35rem, 12vw, 3.35rem); line-height: .96; }
+  .pb-store .pb-hero p { font-size: 14px; line-height: 1.65; }
+  .pb-store .pb-hero-actions { flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+  .pb-store .pb-btn { min-height: 44px; padding: 11px 17px; }
+  .pb-store .pb-hero-media { margin-top: 24px; min-height: 280px; border-radius: 22px; }
+  .pb-store .pb-hero-media > img,
+  .pb-store .pb-hero-placeholder { min-height: 280px; }
+  .pb-store .pb-hero-placeholder span { font-size: 76px; }
+  .pb-store .pb-float-card { left: 12px; right: 12px; bottom: 12px; width: auto; }
+
+  .pb-store .pb-benefits { grid-template-columns: 1fr; padding: 0 16px 28px; }
+  .pb-store .pb-section { padding: 46px 16px; }
+  .pb-store .pb-section-head { margin-bottom: 22px; }
+  .pb-store .pb-section-head h2 { font-size: clamp(1.7rem, 8vw, 2rem); }
+  .pb-store .pb-section-head > p { width: 100%; }
+  .pb-store .pb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .pb-store .pb-card-media { border-radius: 16px; }
+  .pb-store .pb-card-body { padding: 10px 1px; }
+  .pb-store .pb-card-body h3 { font-size: 12px; }
+  .pb-store .pb-card-bottom { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .pb-store .pb-card-bottom > button { width: 100%; justify-content: center; min-height: 38px; }
+  .pb-store .pb-cats,
+  .pb-store .pb-why-grid,
+  .pb-store .pb-blog { grid-template-columns: 1fr; }
+  .pb-store .pb-promo,
+  .pb-store .pb-custom { width: calc(100% - 24px); margin-inline: 12px; padding: 30px 20px; border-radius: 22px; }
+  .pb-store .pb-promo-actions { width: 100%; }
+  .pb-store .pb-custom img { width: 100%; }
+  .pb-store .pb-footer-main { grid-template-columns: 1fr 1fr; gap: 24px; padding: 44px 16px; }
+  .pb-store .pb-footer-main > div:first-child,
+  .pb-store .pb-footer-main > div:last-child { grid-column: 1 / -1; }
+
+  .pb-store .pb-product-modal { width: 100%; max-height: 92vh; grid-template-columns: 1fr; border-radius: 22px; }
+  .pb-store .pb-modal-media { min-height: 270px; }
+  .pb-store .pb-modal-copy { padding: 24px 20px 28px; }
+  .pb-store .pb-modal-copy h2 { font-size: clamp(1.65rem, 7vw, 2rem); }
+  .pb-store .pb-modal-actions > * { flex: 1 1 100%; }
+  .pb-store .pb-checkout { width: 100%; padding: 20px 16px; border-radius: 22px; }
+  .pb-store .pb-form-grid { grid-template-columns: 1fr; }
+  .pb-store .pb-payment { display: grid; gap: 10px; }
+
+  /* Admin */
+  .website-admin main { padding: 12px !important; }
+  .website-admin header { gap: 8px; }
+  .website-admin header a { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .website-admin .rounded-3xl { border-radius: 20px; }
+  .website-admin .rounded-2xl { border-radius: 16px; }
+  .website-admin .grid { min-width: 0; }
+  .website-admin .min-w-full { min-width: 680px; }
+  .website-admin table th,
+  .website-admin table td { white-space: nowrap; }
+  .website-admin textarea { min-height: 110px; }
+}
+
+@media (width <= 479px) {
+  .pb-store .pb-grid { gap: 11px; }
+  .pb-store .pb-card-bottom b { font-size: 15px; }
+  .pb-store .pb-card-media i { width: 31px; height: 31px; top: 8px; right: 8px; }
+  .pb-store .pb-card-media em { top: 8px; left: 8px; font-size: 7px; }
+  .pb-store .pb-page { padding: 48px 16px; }
+  .pb-store .pb-cart { width: 100%; padding: 20px 16px; }
+  .pb-store .pb-cart-head h2 { font-size: 22px; }
+  .pb-store .pb-mobile-links a { font-size: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
