@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
 import '../website/website-theme.css';
+import '../responsive-layout.css';
 
 export const metadata = { title: 'PinkBox Admin', robots: { index: false, follow: false, nocache: true } };
 export const dynamic = 'force-dynamic';
@@ -42,8 +43,13 @@ export default async function AdminLayout({ children }) {
         .website-admin .glass-sidebar nav > div { margin-bottom: .875rem; }
         .website-admin .glass-sidebar nav a { gap: .625rem; border-radius: .5rem; padding: .45rem .6rem; font-size: 13px; line-height: 1.25rem; }
         .website-admin .glass-sidebar nav a svg { width: 15px; height: 15px; }
-        .website-admin main { zoom: .82; }
         .website-admin main > * { max-width: 1400px; }
+        @media (width <= 1023px) {
+          .website-admin .glass-sidebar { width: 13rem; }
+        }
+        @media (width <= 767px) {
+          .website-admin main > * { max-width: 100%; }
+        }
       `}</style>
       <div className="website-admin glass-shell flex min-h-screen">
         <aside className="hidden md:flex w-56 shrink-0 glass-sidebar flex-col">
@@ -64,11 +70,11 @@ export default async function AdminLayout({ children }) {
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/10 bg-black/20 px-3 backdrop-blur-xl sm:px-5">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-[11px] font-bold text-white md:hidden">PB</div>
-              <div><div className="text-[11px] text-gray-500">Online Store</div><div className="text-xs font-semibold text-white">PinkBox Admin</div></div>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-[11px] font-bold text-white md:hidden">PB</div>
+              <div className="min-w-0"><div className="text-[11px] text-gray-500">Online Store</div><div className="truncate text-xs font-semibold text-white">PinkBox Admin</div></div>
             </div>
-            <a href="/" target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-gray-200 transition hover:bg-white/10 hover:text-white">View Website ↗</a>
+            <a href="/" target="_blank" rel="noreferrer" className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-gray-200 transition hover:bg-white/10 hover:text-white">View Website ↗</a>
           </header>
           <main className="min-w-0 flex-1 p-3 pb-6 sm:p-5 lg:p-6">{children}</main>
         </div>
