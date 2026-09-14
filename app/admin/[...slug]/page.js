@@ -1,12 +1,14 @@
 import WebsiteResourceManager3 from '@/components/WebsiteResourceManager3';
-import { WebsiteDashboard, WebsiteInventory, WebsiteSettings } from '@/components/WebsiteSpecialPages';
+import { WebsiteDashboard, WebsiteInventory } from '@/components/WebsiteSpecialPages';
+import WebsiteSettingsWithUploads from '@/components/WebsiteSettingsWithUploads';
+import WebsiteBlogWithUploads from '@/components/WebsiteBlogWithUploads';
 import { ProductCategoryMapping, WebsiteAuditLog, Phase1Status } from '@/components/WebsitePhase1Extras';
 import { Phase2Manager } from '@/components/WebsitePhase2Catalog';
 import WebsiteProductCollectionMapping from '@/components/WebsiteProductCollectionMapping';
 import WebsiteBulkTools from '@/components/WebsiteBulkTools';
 import WebsiteCustomersPhase3 from '@/components/WebsiteCustomersPhase3';
 import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } from '@/components/WebsitePhase3Orders';
-import { Phase4Theme, Phase4SEO, Phase4Blog, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
+import { Phase4Theme, Phase4SEO, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
 import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
 import WebsiteProductsManagerWizard from '@/components/WebsiteProductsManagerWizard';
@@ -18,7 +20,7 @@ export default async function AdminModulePage({ params }) {
   const key = slug.join('/');
   if (key === '' || key === 'dashboard') return <WebsiteDashboard />;
   if (key === 'design') return <PinkBoxDesignStudio />;
-  if (key === 'settings') return <WebsiteSettings />;
+  if (key === 'settings') return <WebsiteSettingsWithUploads />;
   if (key === 'orders') return <Phase3Orders />;
   if (key === 'inventory') return <WebsiteInventory />;
   if (key === 'customers') return <WebsiteCustomersPhase3 />;
@@ -36,7 +38,7 @@ export default async function AdminModulePage({ params }) {
   if (key === 'abandoned-carts') return <Phase3AbandonedCarts />;
   if (key === 'theme') return <Phase4Theme />;
   if (key === 'seo') return <Phase4SEO />;
-  if (key === 'blog') return <Phase4Blog />;
+  if (key === 'blog') return <WebsiteBlogWithUploads />;
   if (key === 'footer') return <Phase4Footer />;
   if (key === 'homepage') return <PinkBoxHomepageBuilder />;
   if (key === 'homepage/legacy') return <Phase4Homepage />;
