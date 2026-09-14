@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
+import { absoluteUrl, getSiteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,7 +23,9 @@ export async function generateMetadata({ params }) {
   if (!p) return { title: 'Product | PinkBox' };
   return {
     title: p.seo_title || `${p.title} | ${p.website_name || 'PinkBox'}`,
-    description: p.seo_description || p.short_description || p.description || ''
+    description: p.seo_description || p.short_description || p.description || '',
+    alternates: { canonical: `/products/${encodeURIComponent(slug)}` },
+    openGraph: { type: 'website', url: `/products/${encodeURIComponent(slug)}`, title: p.seo_title || p.title, description: p.seo_description || p.short_description || p.description || '', images: p.images[0]?.image_url ? [p.images[0].image_url] : undefined },
   };
 }
 
@@ -30,8 +33,38 @@ export default async function ProductPage({ params }) {
   const { slug } = await params;
   const p = await getProduct(slug);
   if (!p) notFound();
+
+  const productUrl = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
+  const availability = Number(p.stock_quantity || 0) > 0
+    ? 'https://schema.org/InStock'
+    : p.allow_backorder
+      ? 'https://schema.org/BackOrder'
+      : 'https://schema.org/OutOfStock';
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.title,
+    description: p.short_description || p.description || undefined,
+    sku: p.sku || undefined,
+    brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
+    image: p.images.map(x => x.image_url).filter(Boolean),
+    url: productUrl,
+    offers: { '@type': 'Offer', url: productUrl, priceCurrency: 'INR', price: Number(p.price || 0).toFixed(2), availability, itemCondition: 'https://schema.org/NewCondition' },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: getSiteUrl() },
+      { '@type': 'ListItem', position: 2, name: p.brand || 'Products', item: absoluteUrl('/products') },
+      { '@type': 'ListItem', position: 3, name: p.title, item: productUrl },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white text-[#171717]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
       <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/" className="font-black tracking-tight">PinkBox</Link>
