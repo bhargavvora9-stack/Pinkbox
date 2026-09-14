@@ -1,4 +1,4 @@
 @import "tailwindcss";
 
-/* PinkBox global image rule: preserve complete image, never crop. */
-.pb-store img,.pb-home img{object-fit:contain!important;object-position:center!important;}
+/* PinkBox global image rule: preserve complete images and prevent any crop/zoom clipping. */
+img{object-fit:contain!important;object-position:center!important;transform:none!important;}
