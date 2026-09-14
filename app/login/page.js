@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 const ERROR_MESSAGES = {
   missing_credentials: 'Email and password are required.',
   invalid_credentials: 'Invalid email or password.',
+  auth_service_unavailable: 'Login service is temporarily unavailable. Please try again.',
   not_admin: 'You do not have Website Admin access.',
   no_company: 'Your admin account is not linked to a company.',
   subscription_inactive: 'PinkBox website subscription is not active.',
