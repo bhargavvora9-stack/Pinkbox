@@ -1,6 +1,7 @@
 import './globals.css';
 import './responsive-layout.css';
 import StorefrontAnalytics from '@/components/StorefrontAnalytics';
+import WebsiteImageDisplayFix from '@/components/WebsiteImageDisplayFix';
 import { getSiteUrl } from '@/lib/seo';
 
 export const metadata = {
@@ -10,5 +11,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en"><body><StorefrontAnalytics />{children}</body></html>;
+  return <html lang="en"><body><StorefrontAnalytics /><WebsiteImageDisplayFix />{children}</body></html>;
 }
