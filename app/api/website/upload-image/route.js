@@ -1,11 +1,18 @@
 import { getWebsiteAdminContext, cleanString, jsonError, audit } from '@/lib/website-admin';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { randomUUID } from 'crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const TYPES = new Map([['image/jpeg','jpg'],['image/png','png'],['image/webp','webp'],['image/gif','gif'],['image/svg+xml','svg']]);
+const TYPES = new Map([
+  ['image/jpeg','jpg'],
+  ['image/png','png'],
+  ['image/webp','webp'],
+  ['image/gif','gif'],
+  ['image/svg+xml','svg'],
+]);
 
 export async function POST(request){
   const ctx=await getWebsiteAdminContext();
@@ -15,13 +22,30 @@ export async function POST(request){
   const file=form?.get('file');
   const folder=cleanString(form?.get('folder'),60).replace(/[^a-zA-Z0-9_-]/g,'-')||'general';
   if(!file||typeof file.arrayBuffer!=='function')return jsonError('Image file is required.');
-  const ext=TYPES.get(file.type); if(!ext)return jsonError('Unsupported image type. Use JPG, PNG, WEBP, GIF or SVG.');
+  const ext=TYPES.get(file.type);
+  if(!ext)return jsonError('Unsupported image type. Use JPG, PNG, WEBP, GIF or SVG.');
   if(file.size>MAX_BYTES)return jsonError('Image must be 5 MB or smaller.');
+
+  // The route is protected by getWebsiteAdminContext(), then the trusted
+  // server-side admin client performs the Storage write. The service key is
+  // never exposed to the browser and the path is always company-scoped.
+  const admin=createAdminClient();
   const path=`${companyId}/${folder}/${randomUUID()}.${ext}`;
   const bytes=await file.arrayBuffer();
-  const {error}=await supabase.storage.from('website-images').upload(path,bytes,{contentType:file.type,cacheControl:'31536000',upsert:false});
+  const {error}=await admin.storage.from('website-images').upload(path,bytes,{
+    contentType:file.type,
+    cacheControl:'31536000',
+    upsert:false,
+  });
   if(error)return jsonError(error.message,500);
-  const {data}=supabase.storage.from('website-images').getPublicUrl(path);
-  await audit(supabase,{companyId,userId:user.id,action:'image.upload',entityType:'storage_object',newData:{bucket:'website-images',path,url:data.publicUrl,folder}});
+
+  const {data}=admin.storage.from('website-images').getPublicUrl(path);
+  await audit(supabase,{
+    companyId,
+    userId:user.id,
+    action:'image.upload',
+    entityType:'storage_object',
+    newData:{bucket:'website-images',path,url:data.publicUrl,folder},
+  });
   return Response.json({url:data.publicUrl,path},{status:201});
 }
