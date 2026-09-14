@@ -1,5 +1,6 @@
 import './globals.css';
 import './responsive-layout.css';
+import StorefrontAnalytics from '@/components/StorefrontAnalytics';
 
 export const metadata = {
   title: 'PinkBox',
@@ -7,5 +8,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body><StorefrontAnalytics />{children}</body></html>;
 }

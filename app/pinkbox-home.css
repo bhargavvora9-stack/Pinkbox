@@ -174,7 +174,10 @@
 .pb-home-footer>div:not(.pb-footer-brand){display:flex;flex-direction:column;gap:9px;min-width:0}
 .pb-home-footer b{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6a4b4e}
 .pb-home-footer a,.pb-home-footer span{display:inline-flex;align-items:center;gap:6px;color:#806c6e;font-size:11px;word-break:break-word}
-.pb-home-bottom{padding:16px;text-align:center;background:#ead8d5;color:#80686b;font-size:10px}
+.pb-home-bottom{padding:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 18px;text-align:center;background:#ead8d5;color:#80686b;font-size:10px}
+.pb-legal-links{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px}
+.pb-legal-links a{color:#6a4b4e;font-size:10px}
+.pb-legal-links a:hover{color:#c36f83;text-decoration:underline}
 
 .pb-home-state{min-height:100vh;display:grid;place-items:center;align-content:center;background:#fffaf7;color:#6a4b4e;padding:20px;text-align:center}
 .pb-home-state p{color:#8a7476}
