@@ -9,7 +9,7 @@ import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } fr
 import { Phase4Theme, Phase4SEO, Phase4Blog, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
 import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
-import WebsiteProductsManagerPro from '@/components/WebsiteProductsManagerPro';
+import WebsiteProductsManagerWizard from '@/components/WebsiteProductsManagerWizard';
 import PinkBoxDesignStudio from '@/components/PinkBoxDesignStudio';
 import PinkBoxHomepageBuilder from '@/components/PinkBoxHomepageBuilder';
 
@@ -23,7 +23,7 @@ export default async function AdminModulePage({ params }) {
   if (key === 'inventory') return <WebsiteInventory />;
   if (key === 'customers') return <WebsiteCustomersPhase3 />;
   if (key === 'audit-log') return <WebsiteAuditLog />;
-  if (key === 'products') return <WebsiteProductsManagerPro />;
+  if (key === 'products') return <WebsiteProductsManagerWizard />;
   if (key === 'products/categories') return <ProductCategoryMapping />;
   if (key === 'products/import-export') return <WebsiteBulkTools />;
   if (key === 'products/collections') return <WebsiteProductCollectionMapping />;

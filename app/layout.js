@@ -1,6 +1,5 @@
 import './globals.css';
 import './responsive-layout.css';
-import PinkBoxProductGalleryFix from '@/components/PinkBoxProductGalleryFix';
 
 export const metadata = {
   title: 'PinkBox',
@@ -8,5 +7,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en"><body><PinkBoxProductGalleryFix />{children}</body></html>;
+  return <html lang="en"><body>{children}</body></html>;
 }
