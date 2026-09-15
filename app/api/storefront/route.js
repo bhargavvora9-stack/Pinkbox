@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase-admin';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 async function getStore(){
  const db=createAdminClient();
@@ -28,13 +29,8 @@ export async function GET(request){
   const qErr=[products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews].find(x=>x.error)?.error;
   if(qErr)return Response.json({error:qErr.message},{status:500});
   const activeBanners=(banners.data||[]).filter(x=>(!x.starts_at||x.starts_at<=now)&&(!x.ends_at||x.ends_at>=now));
-  const imageMap={};
-  const imageListMap={};
-  (images.data||[]).forEach(x=>{
-   if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];
-   imageListMap[x.product_id].push(x);
-   if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;
-  });
+  const imageMap={}; const imageListMap={};
+  (images.data||[]).forEach(x=>{if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];imageListMap[x.product_id].push(x);if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;});
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
   const productData=(products.data||[]).map(p=>({...p,image_url:imageMap[p.id]||null,images:imageListMap[p.id]||[],category_id:catMap[p.id]||null}));
   const url=new URL(request.url),slug=url.searchParams.get('product');
@@ -54,7 +50,9 @@ export async function POST(request){
    if(!b.session_id)return Response.json({error:'session_id is required.'},{status:400});
    const payload={company_id:c,session_id:String(b.session_id).slice(0,200),customer_name:String(b.name||'').trim()||null,customer_phone:String(b.phone||'').trim()||null,customer_email:String(b.email||'').trim()||null,cart_items:Array.isArray(b.items)?b.items:[],total_amount:Number(b.subtotal||0),status:'abandoned',last_activity_at:new Date().toISOString(),updated_at:new Date().toISOString()};
    const {data,error}=await db.from('website_abandoned_carts').upsert(payload,{onConflict:'company_id,session_id'}).select('id,status').single();
-   if(error)return Response.json({error:error.message},{status:500});return Response.json({data});
+   if(error)return Response.json({error:error.message},{status:500});
+   try{await runWebsiteAutomations({companyId:c,trigger:'abandoned_cart',order:{customer_email:payload.customer_email,customer_phone:payload.customer_phone,order_status:'abandoned',id:data?.id}})}catch(e){console.error('Abandoned-cart automation failed:',e)}
+   return Response.json({data});
   }
   if(!b.name||!b.phone||!b.address||!Array.isArray(b.items)||!b.items.length)return Response.json({error:'Name, phone, address and at least one product are required.'},{status:400});
   const address={name:String(b.name).trim(),phone:String(b.phone).trim(),email:String(b.email||'').trim()||null,address:String(b.address).trim(),pincode:String(b.pincode||'').trim(),city:String(b.city||'').trim(),state:String(b.state||'').trim()};
@@ -62,6 +60,12 @@ export async function POST(request){
   const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:normalizedItems,p_payment_method:settings.online_payment_enabled&&String(b.payment_method||'').toUpperCase()==='ONLINE'?'ONLINE':'COD',p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
   if(data?.order_id&&b.session_id)await db.from('website_abandoned_carts').update({status:'recovered',recovered_order_id:data.order_id,updated_at:new Date().toISOString()}).eq('company_id',c).eq('session_id',String(b.session_id));
+  if(data?.order_id){
+   try{
+    const {data:createdOrder}=await db.from('website_orders').select('*').eq('company_id',c).eq('id',data.order_id).maybeSingle();
+    await runWebsiteAutomations({companyId:c,trigger:'order_created',order:createdOrder||{id:data.order_id,order_status:'pending',customer_email:address.email,customer_phone:address.phone,order_number:data.order_number}});
+   }catch(e){console.error('Order-created automation failed:',e)}
+  }
   return Response.json(data,{status:201});
  }catch(error){console.error('Storefront POST failed:',error);return Response.json({error:error instanceof Error?error.message:'Storefront request failed.'},{status:500})}
 }
