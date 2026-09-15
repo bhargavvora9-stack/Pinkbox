@@ -31,6 +31,12 @@ export async function GET(request){
   if(o.error||i.error||p.error)return jsonError((o.error||i.error||p.error).message,500);
   return Response.json({data:{orders:o.data||[],items:i.data||[],products:p.data||[]}});
  }
+ if(r==='health'){
+  const tables=['website_settings','website_products','website_categories','website_orders','website_order_items','customers','website_product_reviews','website_discounts'];
+  const checks=await Promise.all(tables.map(async t=>{const{count,error}=await supabase.from(t).select('id',{count:'exact',head:true}).eq('company_id',companyId);return{table:t,ok:!error,count:count||0,error:error?.message||null}}));
+  const status=checks.every(c=>c.ok)?'healthy':checks.some(c=>c.ok)?'degraded':'down';
+  return Response.json({data:{status,checks,checkedAt:new Date().toISOString()}});
+ }
  const t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);
  const{data,error}=await supabase.from(t).select('*').eq('company_id',companyId).order('created_at',{ascending:false});
  if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
