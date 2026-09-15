@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,15 +25,45 @@ async function getCollection(slug) {
 
 export async function generateMetadata({params}) {
   const {slug} = await params; const c = await getCollection(slug);
-  return { title: c ? `${c.category.name} | PinkBox` : 'Collection | PinkBox', description: c ? `Shop ${c.category.name} products from PinkBox.` : '' };
+  if (!c) return { title: 'Collection | PinkBox' };
+  const title = `${c.category.name} | PinkBox`;
+  const description = `Shop ${c.category.name} products at PinkBox. Explore product options, sizes, prices and everyday essentials.`;
+  return { title, description, alternates: { canonical: `/collections/${encodeURIComponent(c.category.slug)}` }, openGraph: { title, description, url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`), type: 'website' } };
 }
 
 export default async function CollectionPage({params}) {
   const {slug} = await params; const c = await getCollection(slug); if (!c) notFound();
+  const guideLinks = c.category.slug === 'sanitary-pads'
+    ? [
+        ['/pages/sanitary-pads', 'Sanitary Pads Guide'],
+        ['/pages/320mm-sanitary-pads', '320mm Sanitary Pads'],
+        ['/pages/sanitary-pads-for-heavy-flow', 'Sanitary Pads for Heavy Flow'],
+        ['/pages/anti-bacterial-sanitary-pads', 'Anti-Bacterial Sanitary Pads'],
+        ['/pages/24-care-sanitary-pads', '24 Care Sanitary Pads'],
+        ['/pages/7-soft-sanitary-pads', '7 Soft Sanitary Pads']
+      ]
+    : [['/pages/sanitary-pads', 'Sanitary Pads Guide']];
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: c.category.name,
+    url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`),
+    mainEntity: { '@type': 'ItemList', itemListElement: c.products.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: absoluteUrl(`/products/${encodeURIComponent(p.slug)}`), name: p.title })) }
+  };
+  const crumbs = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+      { '@type': 'ListItem', position: 2, name: c.category.name, item: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`) }
+    ]
+  };
   return <main className="min-h-screen bg-white text-[#171717]">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionSchema) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><div className="flex gap-4 text-sm font-semibold"><Link href="/account">Account</Link><Link href="/products">All products</Link></div></div></header>
-    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Collection</p><h1 className="mt-3 text-5xl font-black tracking-tight">{c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">Explore the PinkBox {c.category.name} collection.</p>
+    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Collection</p><h1 className="mt-3 text-5xl font-black tracking-tight">{c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">Explore the PinkBox {c.category.name} collection with product details, current prices and related guides.</p>
 {!c.products.length ? <div className="mt-10 rounded-3xl border border-dashed p-12 text-center text-gray-500">No products available in this collection yet.</div> : <div className="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">{c.products.map(p=><Link href={`/products/${p.slug}`} key={p.id} className="group"><div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f7f4f5]">{p.image_url ? <Image src={p.image_url} alt={p.title} fill sizes="(max-width:768px) 50vw, 25vw" style={{objectFit:'contain'}} className="transition group-hover:scale-[1.03]"/> : <div className="grid h-full place-items-center text-6xl font-black text-[#d9295f]/25">PB</div>}</div><p className="mt-3 text-xs text-gray-400">{p.sku || 'PinkBox'}</p><h2 className="mt-1 font-bold">{p.title}</h2><div className="mt-2 font-black">{money(p.price)} {Number(p.compare_at_price)>0 && <del className="ml-1 text-xs font-normal text-gray-400">{money(p.compare_at_price)}</del>}</div></Link>)}</div>}
+      <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Search guides</p><h2 className="mt-2 text-2xl font-black">Related sanitary pad topics</h2><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Journal</Link></div></div>
     </section>
   </main>;
 }
