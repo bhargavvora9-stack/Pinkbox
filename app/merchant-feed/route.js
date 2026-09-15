@@ -43,14 +43,10 @@ export async function GET() {
 
   const items = (products || []).map(p => {
     const inStock = Number(p.stock_quantity || 0) > 0 || p.allow_backorder === true;
-    const additionalImages = (images || [])
-      .filter(x => x.product_id === p.id && !x.is_primary && x.image_url)
-      .slice(0, 9)
-      .map(x => `      <g:additional_image_link>${xml(x.image_url)}</g:additional_image_link>`)
-      .join('\n');
     const description = p.short_description || p.description || `${p.brand || ''} ${p.title}`.trim();
     const id = p.sku || p.id;
-    return `  <item>\n    <g:id>${xml(id)}</g:id>\n    <g:title>${xml(p.title)}</g:title>\n    <g:description>${xml(description)}</g:description>\n    <g:link>${xml(absoluteUrl(`/products/${p.slug}`))}</g:link>\n    <g:image_link>${xml(imageMap[p.id] || '')}</g:image_link>\n${additionalImages ? `${additionalImages}\n` : ''}    <g:availability>${inStock ? 'in_stock' : 'out_of_stock'}</g:availability>\n    <g:condition>new</g:condition>\n    <g:price>${xml(Number(p.price || 0).toFixed(2))} INR</g:price>\n    <g:brand>${xml(p.brand || settings.website_name || 'PinkBox')}</g:brand>\n    <g:identifier_exists>no</g:identifier_exists>\n  </item>`;
+    const primaryImage = imageMap[p.id] ? absoluteUrl(`/merchant-image/${encodeURIComponent(id)}`) : '';
+    return `  <item>\n    <g:id>${xml(id)}</g:id>\n    <g:title>${xml(p.title)}</g:title>\n    <g:description>${xml(description)}</g:description>\n    <g:link>${xml(absoluteUrl(`/products/${p.slug}`))}</g:link>\n    <g:image_link>${xml(primaryImage)}</g:image_link>\n    <g:availability>${inStock ? 'in_stock' : 'out_of_stock'}</g:availability>\n    <g:condition>new</g:condition>\n    <g:price>${xml(Number(p.price || 0).toFixed(2))} INR</g:price>\n    <g:brand>${xml(p.brand || settings.website_name || 'PinkBox')}</g:brand>\n    <g:identifier_exists>no</g:identifier_exists>\n  </item>`;
   }).join('\n');
 
   const feed = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n<channel>\n  <title>${xml(settings.website_name || 'PinkBox')}</title>\n  <link>${xml(absoluteUrl('/'))}</link>\n  <description>PinkBox product feed for Google Merchant Center</description>\n${items}\n</channel>\n</rss>`;
