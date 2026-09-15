@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import { Star } from 'lucide-react';
+import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,9 +25,16 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await getProduct(slug);
   if (!p) return { title: 'Product | PinkBox' };
+  const url = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
+  const title = p.seo_title || `${p.title} | ${p.website_name || 'PinkBox'}`;
+  const description = p.seo_description || p.short_description || p.description || '';
+  const images = p.images.filter(x => x.image_url).map(x => x.image_url);
   return {
-    title: p.seo_title || `${p.title} | ${p.website_name || 'PinkBox'}`,
-    description: p.seo_description || p.short_description || p.description || ''
+    title,
+    description,
+    alternates: { canonical: `/products/${encodeURIComponent(p.slug)}` },
+    openGraph: { type: 'website', url, title, description, images },
+    twitter: { card: 'summary_large_image', title, description, images }
   };
 }
 
@@ -36,8 +44,50 @@ export default async function ProductPage({ params }) {
   if (!p) notFound();
   const waNumber = String(p.whatsapp_number || '').replace(/[^0-9]/g, '');
   const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I have a question about ${p.title}.`)}` : null;
+  const url = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
+  const imageUrls = p.images.filter(x => x.image_url).map(x => x.image_url);
+  const inStock = Number(p.stock_quantity || 0) > 0 || p.allow_backorder === true;
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.title,
+    description: p.seo_description || p.short_description || p.description || undefined,
+    sku: p.sku || undefined,
+    brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
+    image: imageUrls.length ? imageUrls : undefined,
+    url,
+    offers: {
+      '@type': 'Offer',
+      url,
+      priceCurrency: 'INR',
+      price: Number(p.price || 0).toFixed(2),
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition'
+    }
+  };
+  if (p.reviews.length) {
+    const averageRating = p.reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / p.reviews.length;
+    productSchema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: Number(averageRating.toFixed(2)),
+      reviewCount: p.reviews.length,
+      bestRating: 5,
+      worstRating: 1
+    };
+  }
+  const crumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+      { '@type': 'ListItem', position: 2, name: p.brand || 'Products', item: absoluteUrl('/products') },
+      { '@type': 'ListItem', position: 3, name: p.title, item: url }
+    ]
+  };
   return (
     <main className="min-h-screen bg-white text-[#171717]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
       <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/" className="font-black tracking-tight">PinkBox</Link>
