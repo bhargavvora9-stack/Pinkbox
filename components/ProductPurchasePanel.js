@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart, Minus, Plus, ShoppingBag, Copy, Check } from 'lucide-react';
+import Link from 'next/link';
+import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide-react';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -11,6 +12,7 @@ export default function ProductPurchasePanel({ product }) {
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
   const [status, setStatus] = useState('');
+  const [added, setAdded] = useState(false);
   const [copied, setCopied] = useState(false);
 
   function toggleWishlist() {
@@ -20,6 +22,7 @@ export default function ProductPurchasePanel({ product }) {
       localStorage.setItem('pinkbox_wishlist', JSON.stringify(next));
       setWished(next.includes(product.id));
       setStatus(next.includes(product.id) ? 'Saved to wishlist' : 'Removed from wishlist');
+      setAdded(false);
     } catch {
       setStatus('Unable to update wishlist');
     }
@@ -33,6 +36,7 @@ export default function ProductPurchasePanel({ product }) {
       const nextQty = existing ? existing.quantity + qty : qty;
       if (max > 0 && nextQty > max && !product.allow_backorder) {
         setStatus(`Only ${max} available`);
+        setAdded(false);
         setQty(Math.max(1, max - (existing?.quantity || 0)));
         return;
       }
@@ -40,9 +44,12 @@ export default function ProductPurchasePanel({ product }) {
         ? current.map((item) => item.id === product.id ? { ...item, quantity: nextQty } : item)
         : [...current, { ...product, quantity: qty }];
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
+      window.dispatchEvent(new Event('pinkbox-cart-updated'));
       setStatus(`${qty} item${qty === 1 ? '' : 's'} added to cart`);
+      setAdded(true);
     } catch {
       setStatus('Unable to add to cart');
+      setAdded(false);
     }
   }
 
@@ -51,6 +58,7 @@ export default function ProductPurchasePanel({ product }) {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setStatus('Product link copied');
+      setAdded(false);
       setTimeout(() => setCopied(false), 1600);
     } catch {
       setStatus('Copy this page link from your browser');
@@ -83,7 +91,12 @@ export default function ProductPurchasePanel({ product }) {
           </div>
         </>
       )}
-      {status && <p role="status" className="rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white">{status}</p>}
+      {status && (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white">
+          <span>{status}</span>
+          {added && <Link href="/cart" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-black">View cart <ArrowRight size={13}/></Link>}
+        </div>
+      )}
     </div>
   );
 }

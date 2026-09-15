@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
+import CartLink from '@/components/CartLink';
 import { Star } from 'lucide-react';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 
@@ -100,6 +101,7 @@ export default async function ProductPage({ params }) {
           <Link href="/" className="font-black tracking-tight">PinkBox</Link>
           <div className="flex items-center gap-4 text-sm font-semibold">
             <Link href="/account">Account</Link>
+            <CartLink className="text-gray-700" />
             <Link href="/#products" className="text-[#d9295f]">Continue shopping →</Link>
           </div>
         </div>
