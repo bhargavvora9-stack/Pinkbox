@@ -3,18 +3,21 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
+import ProductReviewForm from '@/components/ProductReviewForm';
+import { Star } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 async function getProduct(slug) {
   const db = createAdminClient();
-  const { data: settings } = await db.from('website_settings').select('company_id,website_name').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
+  const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
   const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).maybeSingle();
   if (!product) return null;
   const { data: images } = await db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order');
-  return { ...product, website_name: settings.website_name, images: images || [] };
+  const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
+  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, images: images || [], reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -31,6 +34,8 @@ export default async function ProductPage({ params }) {
   const { slug } = await params;
   const p = await getProduct(slug);
   if (!p) notFound();
+  const waNumber = String(p.whatsapp_number || '').replace(/[^0-9]/g, '');
+  const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I have a question about ${p.title}.`)}` : null;
   return (
     <main className="min-h-screen bg-white text-[#171717]">
       <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
@@ -62,8 +67,21 @@ export default async function ProductPage({ params }) {
             <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Secure checkout</b><p className="mt-1 text-xs text-gray-500">COD and online payment supported.</p></div>
             <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Easy support</b><p className="mt-1 text-xs text-gray-500">Help is available when you need it.</p></div>
           </div>
+          {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-bold text-white">Ask a question on WhatsApp</a>}
           {p.description && <details open className="mt-8 rounded-2xl border p-5"><summary className="cursor-pointer font-bold">Product details</summary><p className="mt-4 whitespace-pre-line leading-7 text-gray-600">{p.description}</p></details>}
         </section>
+      </div>
+      <div className="mx-auto max-w-3xl px-5 pb-20">
+        <h2 className="text-2xl font-black">Customer reviews {p.reviews.length > 0 && <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span>}</h2>
+        {p.reviews.length > 0 ? <div className="mt-6 space-y-4">{p.reviews.map(r => (
+          <div key={r.id} className="rounded-2xl border p-5">
+            <div className="flex gap-0.5 text-[#d9295f]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < r.rating ? 'currentColor' : 'none'} />)}</div>
+            {r.title && <b className="mt-2 block text-sm">{r.title}</b>}
+            <p className="mt-1 text-sm text-gray-600">{r.review_text}</p>
+            <p className="mt-2 text-xs font-semibold text-gray-400">{r.customer_name}</p>
+          </div>
+        ))}</div> : <p className="mt-4 text-sm text-gray-500">No reviews yet — be the first to share your experience after your order arrives.</p>}
+        <div className="mt-8"><ProductReviewForm productId={p.id} /></div>
       </div>
     </main>
   );
