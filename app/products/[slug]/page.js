@@ -1,8 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
-import { absoluteUrl, getSiteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,9 +23,7 @@ export async function generateMetadata({ params }) {
   if (!p) return { title: 'Product | PinkBox' };
   return {
     title: p.seo_title || `${p.title} | ${p.website_name || 'PinkBox'}`,
-    description: p.seo_description || p.short_description || p.description || '',
-    alternates: { canonical: `/products/${encodeURIComponent(slug)}` },
-    openGraph: { type: 'website', url: `/products/${encodeURIComponent(slug)}`, title: p.seo_title || p.title, description: p.seo_description || p.short_description || p.description || '', images: p.images[0]?.image_url ? [p.images[0].image_url] : undefined },
+    description: p.seo_description || p.short_description || p.description || ''
   };
 }
 
@@ -33,38 +31,8 @@ export default async function ProductPage({ params }) {
   const { slug } = await params;
   const p = await getProduct(slug);
   if (!p) notFound();
-
-  const productUrl = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
-  const availability = Number(p.stock_quantity || 0) > 0
-    ? 'https://schema.org/InStock'
-    : p.allow_backorder
-      ? 'https://schema.org/BackOrder'
-      : 'https://schema.org/OutOfStock';
-  const productJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: p.title,
-    description: p.short_description || p.description || undefined,
-    sku: p.sku || undefined,
-    brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
-    image: p.images.map(x => x.image_url).filter(Boolean),
-    url: productUrl,
-    offers: { '@type': 'Offer', url: productUrl, priceCurrency: 'INR', price: Number(p.price || 0).toFixed(2), availability, itemCondition: 'https://schema.org/NewCondition' },
-  };
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: getSiteUrl() },
-      { '@type': 'ListItem', position: 2, name: p.brand || 'Products', item: absoluteUrl('/products') },
-      { '@type': 'ListItem', position: 3, name: p.title, item: productUrl },
-    ],
-  };
-
   return (
     <main className="min-h-screen bg-white text-[#171717]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
       <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/" className="font-black tracking-tight">PinkBox</Link>
@@ -80,9 +48,9 @@ export default async function ProductPage({ params }) {
       <div className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 md:grid-cols-[1.05fr_.95fr]">
         <section>
           <div className="mx-auto max-w-sm overflow-hidden rounded-[28px] bg-[#f7f4f5] p-6">
-            {p.images[0]?.image_url ? <img src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} className="aspect-square w-full object-contain" /> : <div className="grid aspect-square place-items-center text-8xl font-black text-[#d9295f]/30">PB</div>}
+            {p.images[0]?.image_url ? <div className="relative aspect-square w-full"><Image src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} fill sizes="(max-width:640px) 90vw, 380px" style={{objectFit:'contain'}} priority /></div> : <div className="grid aspect-square place-items-center text-8xl font-black text-[#d9295f]/30">PB</div>}
           </div>
-          {p.images.length > 1 && <div className="mx-auto mt-4 grid max-w-sm grid-cols-5 gap-3">{p.images.slice(0, 5).map((x, i) => <div key={i} className="overflow-hidden rounded-2xl border bg-[#f7f4f5] p-1"><img src={x.image_url} alt={x.alt_text || `${p.title} ${i + 1}`} className="aspect-square w-full object-contain" /></div>)}</div>}
+          {p.images.length > 1 && <div className="mx-auto mt-4 grid max-w-sm grid-cols-5 gap-3">{p.images.slice(0, 5).map((x, i) => <div key={i} className="relative aspect-square overflow-hidden rounded-2xl border bg-[#f7f4f5] p-1"><Image src={x.image_url} alt={x.alt_text || `${p.title} ${i + 1}`} fill sizes="76px" style={{objectFit:'contain'}} /></div>)}</div>}
         </section>
         <section className="flex flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{p.brand || p.sku || 'PinkBox'}</p>

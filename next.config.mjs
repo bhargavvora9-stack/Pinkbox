@@ -13,11 +13,11 @@ const securityHeaders = [
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com",
+      "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com https://www.googletagmanager.com https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https:",
-      "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://*.razorpay.com",
+      "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://connect.facebook.net",
       "frame-src 'self' https://checkout.razorpay.com https://*.razorpay.com",
       "media-src 'self' blob: https:",
       "worker-src 'self' blob:",
@@ -28,6 +28,11 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
+    ],
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
