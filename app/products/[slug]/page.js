@@ -84,6 +84,13 @@ export default async function ProductPage({ params }) {
       { '@type': 'ListItem', position: 3, name: p.title, item: url }
     ]
   };
+  const topicLinks = [
+    { href: '/pages/sanitary-pads', label: 'Sanitary Pads Guide' },
+    { href: '/pages/320mm-sanitary-pads', label: '320mm Sanitary Pads' },
+    { href: '/pages/sanitary-pads-for-heavy-flow', label: 'Sanitary Pads for Heavy Flow' },
+    ...(String(p.brand || '').toLowerCase().includes('24 care') ? [{ href: '/pages/24-care-sanitary-pads', label: '24 Care Sanitary Pads' }] : []),
+    ...(String(p.brand || '').toLowerCase().includes('7 soft') ? [{ href: '/pages/7-soft-sanitary-pads', label: '7 Soft Sanitary Pads' }] : [])
+  ];
   return (
     <main className="min-h-screen bg-white text-[#171717]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }} />
@@ -121,6 +128,16 @@ export default async function ProductPage({ params }) {
           {p.description && <details open className="mt-8 rounded-2xl border p-5"><summary className="cursor-pointer font-bold">Product details</summary><p className="mt-4 whitespace-pre-line leading-7 text-gray-600">{p.description}</p></details>}
         </section>
       </div>
+      <section className="mx-auto max-w-7xl px-5 pb-12">
+        <div className="rounded-3xl border bg-[#fff9fb] p-6">
+          <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guides</p>
+          <h2 className="mt-2 text-2xl font-black">Choose the right sanitary pads</h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {topicLinks.map(link => <Link key={link.href} href={link.href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{link.label}</Link>)}
+            <Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Guides & Journal</Link>
+          </div>
+        </div>
+      </section>
       <div className="mx-auto max-w-3xl px-5 pb-20">
         <h2 className="text-2xl font-black">Customer reviews {p.reviews.length > 0 && <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span>}</h2>
         {p.reviews.length > 0 ? <div className="mt-6 space-y-4">{p.reviews.map(r => (
