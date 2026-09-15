@@ -1,4 +1,5 @@
 import './pinkbox-home.css';
+import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
 
@@ -45,14 +46,14 @@ export default async function HomePage(){
         <h2 id="sanitary-care-seo">Sanitary Pads & Sanitary Napkins Online</h2>
         <p>Shop sanitary pads and sanitary napkins online at PinkBox. Explore 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads, anti-bacterial sanitary pads and trusted 24 Care and 7 Soft options.</p>
         <nav aria-label="Sanitary care links" className="pb-home-seo-links">
-          <a href="/pages/sanitary-pads">Sanitary Pads</a>
-          <a href="/pages/320mm-sanitary-pads">320mm Sanitary Pads</a>
-          <a href="/pages/sanitary-pads-for-heavy-flow">Sanitary Pads for Heavy Flow</a>
-          <a href="/pages/anti-bacterial-sanitary-pads">Anti-Bacterial Sanitary Pads</a>
-          <a href="/pages/24-care-sanitary-pads">24 Care Sanitary Pads</a>
-          <a href="/pages/7-soft-sanitary-pads">7 Soft Sanitary Pads</a>
-          <a href="/collections/sanitary-pads">Shop Sanitary Pads</a>
-          <a href="/blog">Sanitary Pad Guides</a>
+          <Link href="/pages/sanitary-pads">Sanitary Pads</Link>
+          <Link href="/pages/320mm-sanitary-pads">320mm Sanitary Pads</Link>
+          <Link href="/pages/sanitary-pads-for-heavy-flow">Sanitary Pads for Heavy Flow</Link>
+          <Link href="/pages/anti-bacterial-sanitary-pads">Anti-Bacterial Sanitary Pads</Link>
+          <Link href="/pages/24-care-sanitary-pads">24 Care Sanitary Pads</Link>
+          <Link href="/pages/7-soft-sanitary-pads">7 Soft Sanitary Pads</Link>
+          <Link href="/collections/sanitary-pads">Shop Sanitary Pads</Link>
+          <Link href="/blog">Sanitary Pad Guides</Link>
         </nav>
       </div>
     </section>
