@@ -11,15 +11,42 @@ export async function GET(request,{params}){
   const {supabase,companyId,error}=await getWebsiteAdminContext();
   if(error)return jsonError(error==='UNAUTHENTICATED'?'Please login.':'Access denied.',error==='UNAUTHENTICATED'?401:403);
   if(resource==='dashboard'){
-    const [statsResult,orders,products,categories,settings]=await Promise.all([
+    const todayKey=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const todayStart=new Date(`${todayKey}T00:00:00+05:30`).toISOString();
+    const tomorrow=new Date(new Date(`${todayKey}T00:00:00+05:30`).getTime()+86400000);
+    const tomorrowStart=tomorrow.toISOString();
+    const queueStatuses=['pending','confirmed','processing','packed','shipped'];
+    const [statsResult,orders,products,categories,settings,todayOrders,...queueResults]=await Promise.all([
       supabase.rpc('get_website_dashboard_stats',{p_company_id:companyId}),
       supabase.from('website_orders').select('id,total_amount,order_status,created_at,order_number').eq('company_id',companyId).order('created_at',{ascending:false}).limit(8),
-      supabase.from('website_products').select('id,title,sku,price,stock_quantity,low_stock_threshold,is_active').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT),
+      supabase.from('website_products').select('id,title,sku,price,stock_quantity,low_stock_threshold,is_active,track_inventory').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT),
       supabase.from('website_categories').select('id,name,parent_id,is_active').eq('company_id',companyId).order('sort_order').limit(SAFE_LIMIT),
-      supabase.from('website_settings').select('*').eq('company_id',companyId).maybeSingle()
+      supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id',companyId).maybeSingle(),
+      supabase.from('website_orders').select('id,total_amount,payment_method,order_status').eq('company_id',companyId).gte('created_at',todayStart).lt('created_at',tomorrowStart),
+      ...queueStatuses.map(status=>supabase.from('website_orders').select('id',{count:'exact',head:true}).eq('company_id',companyId).eq('order_status',status))
     ]);
     if(statsResult.error)return jsonError(statsResult.error.message,500);
-    return Response.json({stats:statsResult.data||{sales:0,orders:0,products:0,customers:0},recentOrders:orders.data||[],lowStock:(products.data||[]).filter(p=>Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8),categories:categories.data||[],settings:settings.data||null});
+    const todayRows=todayOrders.data||[];
+    const validToday=todayRows.filter(o=>!['cancelled','returned'].includes(String(o.order_status||'').toLowerCase()));
+    const today={
+      orders:validToday.length,
+      cod:validToday.filter(o=>String(o.payment_method||'').toUpperCase()==='COD').length,
+      online:validToday.filter(o=>String(o.payment_method||'').toUpperCase()==='ONLINE').length,
+      sales:validToday.reduce((sum,o)=>sum+Number(o.total_amount||0),0)
+    };
+    const orderQueue=Object.fromEntries(queueStatuses.map((status,i)=>[status,queueResults[i]?.count||0]));
+    const lowStock=(products.data||[]).filter(p=>p.track_inventory!==false&&Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8);
+    return Response.json({
+      websiteName:settings.data?.website_name||'PinkBox',
+      whatsappNumber:settings.data?.whatsapp_number||'',
+      today,
+      orderQueue,
+      stats:statsResult.data||{sales:0,orders:0,products:0,customers:0},
+      recentOrders:orders.data||[],
+      lowStock,
+      categories:categories.data||[],
+      settings:settings.data||null
+    });
   }
   if(resource==='customers'){
     const {data,error:dbError}=await supabase.from('customers').select('id,client_name,phone1,email,address,pincode,city,state,gstin,created_at,updated_at').eq('company_id',companyId).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
