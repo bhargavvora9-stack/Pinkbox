@@ -15,7 +15,7 @@ set search_path=public
 as $function$
 begin
   if new.tracking_token is null or btrim(new.tracking_token)='' then
-    new.tracking_token := encode(gen_random_bytes(24),'hex');
+    new.tracking_token := replace(uuid_generate_v4()::text || uuid_generate_v4()::text,'-','');
   end if;
   return new;
 end;
