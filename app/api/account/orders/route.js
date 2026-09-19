@@ -32,7 +32,7 @@ export async function GET() {
       .from('website_orders')
       .select('id,order_number,total_amount,order_status,payment_status,created_at,shipping_address')
       .eq('company_id', settings.company_id)
-      .eq('customer_email', user.email)
+      .ilike('customer_email', user.email)
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) return Response.json({ error: 'Unable to load orders.' }, { status: 500 });
