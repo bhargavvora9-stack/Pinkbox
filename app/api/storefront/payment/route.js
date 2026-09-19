@@ -111,12 +111,12 @@ export async function POST(request) {
       if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return Response.json({ error: 'Missing payment verification details.' }, { status: 400 });
       }
-      const { keySecret } = await getRazorpayCreds(db, c);
-      if (!keySecret) return Response.json({ error: 'Online payment is not configured.' }, { status: 503 });
+      const { keyId, keySecret } = await getRazorpayCreds(db, c);
+      if (!keyId || !keySecret) return Response.json({ error: 'Online payment is not configured.' }, { status: 503 });
 
       const { data: order, error } = await db
         .from('website_orders')
-        .select('id, company_id, razorpay_order_id, payment_method, payment_status, order_status')
+        .select('id, company_id, total_amount, razorpay_order_id, payment_method, payment_status, order_status')
         .eq('id', order_id)
         .eq('company_id', c)
         .maybeSingle();
@@ -126,6 +126,26 @@ export async function POST(request) {
       if (order.payment_status === 'paid') return Response.json({ ok: true, already_paid: true });
       if (['cancelled', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
         return Response.json({ error: 'This order cannot be paid.' }, { status: 409 });
+      }
+
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      const paymentRes = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(razorpay_payment_id)}`, {
+        method: 'GET',
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      const paymentEntity = await paymentRes.json().catch(() => null);
+      if (!paymentRes.ok) {
+        console.error('Razorpay payment fetch failed:', paymentEntity);
+        return Response.json({ error: 'Unable to verify payment status with Razorpay. Please try again.' }, { status: 502 });
+      }
+      const expectedAmountPaise = Math.round(Number(order.total_amount) * 100);
+      if (
+        paymentEntity?.order_id !== razorpay_order_id ||
+        paymentEntity?.currency !== 'INR' ||
+        Number(paymentEntity?.amount) !== expectedAmountPaise ||
+        paymentEntity?.status !== 'captured'
+      ) {
+        return Response.json({ error: 'Payment is not confirmed as captured yet. Please wait a moment and try again.' }, { status: 409 });
       }
 
       const expected = crypto.createHmac('sha256', keySecret).update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
