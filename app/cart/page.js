@@ -121,7 +121,7 @@ export default function CartPage() {
             total: Number(j.total || 0),
             coupon: j.coupon || null,
           });
-          setError((prev) => (j.coupon && !j.coupon.valid ? j.coupon.message : prev));
+          setError(j.coupon && !j.coupon.valid ? j.coupon.message : '');
         }
       } catch (e) {
         if (!cancelled) setError(e.message);
