@@ -47,7 +47,7 @@ export async function GET(request){
 
 export async function POST(request){
  try{
-  const {db,settings}=await getStore();
+  const {db,settings,onlinePaymentReady}=await getStore();
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const b=await request.json().catch(()=>null);if(!b)return Response.json({error:'Invalid JSON.'},{status:400});
   const c=settings.company_id;
