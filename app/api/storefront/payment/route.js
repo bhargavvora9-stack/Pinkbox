@@ -130,30 +130,28 @@ export async function POST(request) {
 
       const expected = crypto.createHmac('sha256', keySecret).update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
       if (!safeSignatureEqual(expected, razorpay_signature)) {
-        await db.from('website_orders').update({ payment_status: 'failed', razorpay_payment_id, updated_at: new Date().toISOString() }).eq('id', order.id).eq('company_id', c);
+        const { error: cancelError } = await db.rpc('cancel_website_online_order', {
+          p_order_id: order.id,
+          p_reason: 'Razorpay payment verification failed',
+        });
+        if (cancelError) {
+          console.error('Failed to cancel invalid-payment order:', cancelError.message);
+          return Response.json({ error: 'Payment verification failed. Please contact support.' }, { status: 400 });
+        }
         return Response.json({ error: 'Payment verification failed.' }, { status: 400 });
       }
 
-      const { error: paidUpdateError } = await db
-        .from('website_orders')
-        .update({ payment_status: 'paid', order_status: 'confirmed', razorpay_payment_id, razorpay_signature, updated_at: new Date().toISOString() })
-        .eq('id', order.id)
-        .eq('company_id', c)
-        .neq('payment_status', 'paid');
+      const { data: finalized, error: paidUpdateError } = await db.rpc('finalize_website_online_payment', {
+        p_order_id: order.id,
+        p_razorpay_payment_id: razorpay_payment_id,
+        p_razorpay_signature: razorpay_signature,
+      });
       if (paidUpdateError) {
-        console.error('Payment status update failed:', paidUpdateError.message);
-        return Response.json({ error: 'Payment was verified but order update failed. Please contact support.' }, { status: 500 });
+        console.error('Payment finalization failed:', paidUpdateError.message);
+        return Response.json({ error: paidUpdateError.message.replace(/^.*ERROR:\s*/, '') || 'Payment was verified but order update failed. Please contact support.' }, { status: 500 });
       }
 
-      await db.from('website_order_status_history').insert({
-        company_id: c,
-        order_id: order.id,
-        status: 'confirmed',
-        note: 'Payment received via Razorpay',
-        created_at: new Date().toISOString(),
-      });
-
-      return Response.json({ ok: true });
+      return Response.json({ ok: true, already_paid: Boolean(finalized?.already_paid) });
     }
 
     return Response.json({ error: 'Unknown action.' }, { status: 400 });
