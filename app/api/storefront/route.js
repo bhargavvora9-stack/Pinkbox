@@ -3,13 +3,18 @@ import { runWebsiteAutomations } from '@/lib/website-automation';
 
 async function getStore(){
  const db=createAdminClient();
- const {data:settings}=await db.from('website_settings').select('*').eq('slug','pinkbox').eq('status','active').maybeSingle();
- return {db,settings};
+ const [{data:settings},{data:razorpay}]=await Promise.all([
+  db.from('website_settings').select('*').eq('slug','pinkbox').eq('status','active').maybeSingle(),
+  db.from('website_payment_methods').select('config').eq('provider','razorpay').eq('is_active',true).maybeSingle()
+ ]);
+ const cfg=razorpay?.config||{};
+ const onlinePaymentReady=Boolean(settings?.online_payment_enabled && (cfg.key_id||cfg.razorpay_key_id||process.env.RAZORPAY_KEY_ID||process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) && (cfg.key_secret||cfg.razorpay_key_secret||process.env.RAZORPAY_KEY_SECRET));
+ return {db,settings,onlinePaymentReady};
 }
 
 export async function GET(request){
  try{
-  const {db,settings}=await getStore();
+  const {db,settings,onlinePaymentReady}=await getStore();
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const c=settings.company_id,now=new Date().toISOString();
   const [products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews]=await Promise.all([
@@ -36,7 +41,7 @@ export async function GET(request){
   const url=new URL(request.url),slug=url.searchParams.get('product');
   const selectedProduct=slug?productData.find(p=>p.slug===slug)||null:null;
   const productReviews=slug&&selectedProduct?(reviews.data||[]).filter(r=>r.product_id===selectedProduct.id):null;
-  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:settings.online_payment_enabled,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description},products:productData,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],reviews:reviews.data||[],selectedProduct,productReviews});
+  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:onlinePaymentReady,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description},products:productData,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],reviews:reviews.data||[],selectedProduct,productReviews});
  }catch(error){console.error('Storefront GET failed:',error);return Response.json({error:error instanceof Error?error.message:'Storefront is temporarily unavailable.'},{status:500})}
 }
 
@@ -46,6 +51,9 @@ export async function POST(request){
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const b=await request.json().catch(()=>null);if(!b)return Response.json({error:'Invalid JSON.'},{status:400});
   const c=settings.company_id;
+  const requestedPayment=String(b.payment_method||'COD').trim().toUpperCase();
+  if(!['COD','ONLINE'].includes(requestedPayment))return Response.json({error:'Invalid payment method.'},{status:400});
+  if(requestedPayment==='ONLINE'&&!onlinePaymentReady)return Response.json({error:'Online payment is currently unavailable. Please choose Cash on Delivery.'},{status:400});
   if(b.action==='abandoned_cart'){
    if(!b.session_id)return Response.json({error:'session_id is required.'},{status:400});
    const payload={company_id:c,session_id:String(b.session_id).slice(0,200),customer_name:String(b.name||'').trim()||null,customer_phone:String(b.phone||'').trim()||null,customer_email:String(b.email||'').trim()||null,cart_items:Array.isArray(b.items)?b.items:[],total_amount:Number(b.subtotal||0),status:'abandoned',last_activity_at:new Date().toISOString(),updated_at:new Date().toISOString()};
@@ -57,7 +65,7 @@ export async function POST(request){
   if(!b.name||!b.phone||!b.address||!Array.isArray(b.items)||!b.items.length)return Response.json({error:'Name, phone, address and at least one product are required.'},{status:400});
   const address={name:String(b.name).trim(),phone:String(b.phone).trim(),email:String(b.email||'').trim()||null,address:String(b.address).trim(),pincode:String(b.pincode||'').trim(),city:String(b.city||'').trim(),state:String(b.state||'').trim()};
   const normalizedItems=b.items.map(x=>({product_id:x.product_id||x.id,quantity:Number(x.quantity||1)}));
-  const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:normalizedItems,p_payment_method:settings.online_payment_enabled&&String(b.payment_method||'').toUpperCase()==='ONLINE'?'ONLINE':'COD',p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
+  const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:normalizedItems,p_payment_method:requestedPayment,p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
   if(data?.order_id&&b.session_id)await db.from('website_abandoned_carts').update({status:'recovered',recovered_order_id:data.order_id,updated_at:new Date().toISOString()}).eq('company_id',c).eq('session_id',String(b.session_id));
   if(data?.order_id){
