@@ -174,15 +174,8 @@ export async function POST(request) {
 
       const expected = crypto.createHmac('sha256', keySecret).update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
       if (!safeSignatureEqual(expected, razorpay_signature)) {
-        const { error: cancelError } = await db.rpc('cancel_website_online_order', {
-          p_order_id: order.id,
-          p_reason: 'Razorpay payment verification failed',
-        });
-        if (cancelError) {
-          console.error('Failed to cancel invalid-payment order:', cancelError.message);
-          return Response.json({ error: 'Payment verification failed. Please contact support.' }, { status: 400 });
-        }
-        return Response.json({ error: 'Payment verification failed.' }, { status: 400 });
+        console.error('Razorpay signature mismatch for order:', order.id);
+        return Response.json({ error: 'Payment verification failed. The order was not marked paid.' }, { status: 400 });
       }
 
       const { data: finalized, error: paidUpdateError } = await db.rpc('finalize_website_online_payment', {
