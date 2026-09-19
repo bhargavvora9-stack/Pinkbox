@@ -55,7 +55,10 @@ export async function POST(request) {
       if (order.payment_status === 'paid') return Response.json({ error: 'This order is already paid.' }, { status: 400 });
 
       const amountPaise = Math.round(Number(order.total_amount) * 100);
-      if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) return Response.json({ error: 'Order amount is invalid.' }, { status: 400 });
+      if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) {
+        await db.rpc('cancel_website_online_order', { p_order_id: order.id, p_reason: 'Invalid online payment amount' });
+        return Response.json({ error: 'Order amount is invalid.' }, { status: 400 });
+      }
 
       const { keyId, keySecret } = await getRazorpayCreds(db, c);
       if (!keyId || !keySecret) return Response.json({ error: 'Online payment is not configured yet. Please choose Cash on Delivery.' }, { status: 503 });
@@ -84,6 +87,7 @@ export async function POST(request) {
       const rzData = await rzRes.json();
       if (!rzRes.ok) {
         console.error('Razorpay order create failed:', rzData);
+        await db.rpc('cancel_website_online_order', { p_order_id: order.id, p_reason: 'Razorpay order creation failed' });
         return Response.json({ error: rzData?.error?.description || 'Unable to start payment right now.' }, { status: 502 });
       }
 
@@ -94,6 +98,7 @@ export async function POST(request) {
         .eq('company_id', c);
       if (orderUpdateError) {
         console.error('Failed to persist Razorpay order id:', orderUpdateError.message);
+        await db.rpc('cancel_website_online_order', { p_order_id: order.id, p_reason: 'Unable to persist Razorpay order reference' });
         return Response.json({ error: 'Unable to prepare payment. Please try again.' }, { status: 500 });
       }
 
