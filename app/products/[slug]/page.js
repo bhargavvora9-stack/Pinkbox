@@ -18,8 +18,9 @@ async function getProduct(slug) {
   const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).maybeSingle();
   if (!product) return null;
   const { data: images } = await db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order');
+  const orderedImages = [...(images || [])].sort((a, b) => (Number(b.is_primary) - Number(a.is_primary)) || (Number(a.sort_order || 0) - Number(b.sort_order || 0)));
   const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
-  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, images: images || [], reviews: reviews || [] };
+  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, images: orderedImages, reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
