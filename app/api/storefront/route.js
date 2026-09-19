@@ -59,7 +59,6 @@ export async function POST(request){
    const payload={company_id:c,session_id:String(b.session_id).slice(0,200),customer_name:String(b.name||'').trim()||null,customer_phone:String(b.phone||'').trim()||null,customer_email:String(b.email||'').trim()||null,cart_items:Array.isArray(b.items)?b.items:[],total_amount:Number(b.subtotal||0),status:'abandoned',last_activity_at:new Date().toISOString(),updated_at:new Date().toISOString()};
    const {data,error}=await db.from('website_abandoned_carts').upsert(payload,{onConflict:'company_id,session_id'}).select('id,status').single();
    if(error)return Response.json({error:error.message},{status:500});
-   try{await runWebsiteAutomations({companyId:c,trigger:'abandoned_cart',order:{customer_email:payload.customer_email,customer_phone:payload.customer_phone,order_status:'abandoned',id:data?.id}})}catch(e){console.error('Abandoned-cart automation failed:',e)}
    return Response.json({data});
   }
   if(!b.name||!b.phone||!b.address||!Array.isArray(b.items)||!b.items.length)return Response.json({error:'Name, phone, address and at least one product are required.'},{status:400});
