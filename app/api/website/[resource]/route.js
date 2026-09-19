@@ -35,7 +35,7 @@ export async function GET(request,{params}){
       sales:validToday.reduce((sum,o)=>sum+Number(o.total_amount||0),0)
     };
     const orderQueue=Object.fromEntries(queueStatuses.map((status,i)=>[status,queueResults[i]?.count||0]));
-    const lowStock=(products.data||[]).filter(p=>p.track_inventory!==false&&Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8);
+    const lowStock=(products.data||[]).filter(p=>p.is_active!==false&&p.track_inventory!==false&&Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).slice(0,8);
     return Response.json({
       websiteName:settings.data?.website_name||'PinkBox',
       whatsappNumber:settings.data?.whatsapp_number||'',
