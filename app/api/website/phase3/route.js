@@ -1,7 +1,7 @@
 import { getWebsiteAdminContext, cleanString, audit, jsonError } from '@/lib/website-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
-const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
+const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };\nconst ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
 const ctxOrError = async () => { const c = await getWebsiteAdminContext(); return c; };
 
 export async function GET(request) {
@@ -31,7 +31,7 @@ export async function POST(request) {
     if(!b.id||!b.order_status)return jsonError('Order and status are required.');
     const {data:before,error:beforeError}=await supabase.from('website_orders').select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
     if(beforeError)return jsonError(beforeError.message,500); if(!before)return jsonError('Order not found.',404);
-    const nextStatus=cleanString(b.order_status,40);
+    const nextStatus=cleanString(b.order_status,40).toLowerCase(); if(!ORDER_STATUSES.includes(nextStatus))return jsonError('Invalid order status.');
     const {data,error}=await supabase.from('website_orders').update({order_status:nextStatus,updated_at:new Date().toISOString()}).eq('company_id',companyId).eq('id',b.id).select().single();
     if(error)return jsonError(error.message,500);
     await supabase.from('website_order_status_history').insert({company_id:companyId,order_id:b.id,status:data.order_status,note:cleanString(b.note,1000)||null,created_by:user.id});
