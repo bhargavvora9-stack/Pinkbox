@@ -23,29 +23,25 @@ export async function POST(request) {
   if (!productId) return jsonError('Please select a product.');
   if (!Number.isFinite(changeQty) || changeQty === 0) return jsonError('Enter a non-zero quantity, e.g. +10 or -5.');
 
-  const { data: product, error: pErr } = await supabase.from('website_products').select('id,stock_quantity').eq('company_id', companyId).eq('id', productId).maybeSingle();
-  if (pErr) return jsonError(pErr.message, 500);
-  if (!product) return jsonError('Product not found.', 404);
+  const { data: txn, error: rpcError } = await supabase.rpc('adjust_website_stock', {
+    p_company_id: companyId,
+    p_product_id: productId,
+    p_change: changeQty,
+    p_reason: cleanString(body?.reason, 500) || 'Manual adjustment',
+    p_user_id: user.id,
+  });
 
-  const before = Number(product.stock_quantity || 0);
-  const after = before + changeQty;
-  if (after < 0) return jsonError(`This would take stock below zero (currently ${before}).`);
+  if (rpcError) return jsonError(rpcError.message, rpcError.code === '42501' ? 403 : 400);
 
-  const { error: uErr } = await supabase.from('website_products').update({ stock_quantity: after, updated_at: new Date().toISOString() }).eq('company_id', companyId).eq('id', productId);
-  if (uErr) return jsonError(uErr.message, 500);
+  await audit(supabase, {
+    companyId,
+    userId: user.id,
+    action: 'inventory.adjust',
+    entityType: 'website_products',
+    entityId: productId,
+    oldData: { stock_quantity: Number(txn.quantity_before) },
+    newData: { stock_quantity: Number(txn.quantity_after) },
+  });
 
-  const { data: txn, error: tErr } = await supabase.from('website_inventory_transactions').insert({
-    company_id: companyId,
-    product_id: productId,
-    change_quantity: changeQty,
-    quantity_before: before,
-    quantity_after: after,
-    reason: cleanString(body.reason, 500) || 'Manual adjustment',
-    reference_type: 'manual',
-    created_by: user.id,
-  }).select().single();
-  if (tErr) return jsonError(tErr.message, 500);
-
-  await audit(supabase, { companyId, userId: user.id, action: 'inventory.adjust', entityType: 'website_products', entityId: productId, oldData: { stock_quantity: before }, newData: { stock_quantity: after } });
   return Response.json({ data: txn });
 }
