@@ -111,6 +111,25 @@ export async function POST(request) {
       });
     }
 
+    if (b.action === 'cancel') {
+      if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
+      const { data: order, error } = await db
+        .from('website_orders')
+        .select('id, company_id, payment_method, payment_status, order_status')
+        .eq('id', b.order_id)
+        .eq('company_id', c)
+        .maybeSingle();
+      if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
+      if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
+      if (order.payment_status === 'paid') return Response.json({ error: 'This payment is already completed.' }, { status: 409 });
+      const { data: cancelled, error: cancelError } = await db.rpc('cancel_website_online_order', {
+        p_order_id: order.id,
+        p_reason: 'Customer closed the Razorpay payment window',
+      });
+      if (cancelError) return Response.json({ error: cancelError.message.replace(/^.*ERROR:\s*/, '') || 'Unable to cancel unpaid order.' }, { status: 409 });
+      return Response.json({ ok: true, cancelled: Boolean(cancelled?.cancelled || cancelled?.already_cancelled) });
+    }
+
     if (b.action === 'verify') {
       const { order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
       if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
