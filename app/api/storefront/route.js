@@ -72,6 +72,7 @@ export async function POST(request){
    try{
     const {data:createdOrder}=await db.from('website_orders').select('*').eq('company_id',c).eq('id',data.order_id).maybeSingle();
     await runWebsiteAutomations({companyId:c,trigger:'order_created',order:createdOrder||{id:data.order_id,order_status:'pending',customer_email:address.email,customer_phone:address.phone,order_number:data.order_number}});
+    data.tracking_token=createdOrder?.tracking_token||null;
    }catch(e){console.error('Order-created automation failed:',e)}
   }
   return Response.json(data,{status:201});
