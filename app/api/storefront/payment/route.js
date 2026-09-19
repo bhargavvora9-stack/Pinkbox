@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import crypto from 'crypto';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 async function getSettings(db) {
   const { data } = await db.from('website_settings').select('*').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
@@ -186,6 +187,15 @@ export async function POST(request) {
       if (paidUpdateError) {
         console.error('Payment finalization failed:', paidUpdateError.message);
         return Response.json({ error: paidUpdateError.message.replace(/^.*ERROR:\s*/, '') || 'Payment was verified but order update failed. Please contact support.' }, { status: 500 });
+      }
+
+      try {
+        const { data: confirmedOrder } = await db.from('website_orders').select('*').eq('company_id', c).eq('id', order.id).maybeSingle();
+        if (!finalized?.already_paid) {
+          await runWebsiteAutomations({ companyId: c, trigger: 'confirmed', order: confirmedOrder || { id: order.id, order_status: 'confirmed', customer_email: null, order_number: null } });
+        }
+      } catch (automationError) {
+        console.error('Payment confirmation automation failed:', automationError);
       }
 
       return Response.json({ ok: true, already_paid: Boolean(finalized?.already_paid) });
