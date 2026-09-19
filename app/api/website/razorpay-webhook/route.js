@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import crypto from 'crypto';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 // Configure this exact URL in the Razorpay Dashboard → Settings → Webhooks:
 //   https://<your-domain>/api/website/razorpay-webhook
@@ -40,6 +41,12 @@ export async function POST(request) {
         if (error) {
           console.error('Webhook payment finalization failed:', error.message);
           return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
+        }
+        try {
+          const { data: confirmedOrder } = await db.from('website_orders').select('*').eq('id', order.id).maybeSingle();
+          await runWebsiteAutomations({ companyId: order.company_id, trigger: 'confirmed', order: confirmedOrder || { id: order.id, order_status: 'confirmed' } });
+        } catch (automationError) {
+          console.error('Webhook confirmation automation failed:', automationError);
         }
       }
     }
