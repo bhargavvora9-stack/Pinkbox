@@ -1,8 +1,19 @@
 import { getWebsiteAdminContext, cleanString, audit, jsonError } from '@/lib/website-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
-const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };\nconst ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
+const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
+const ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
 const ctxOrError = async () => { const c = await getWebsiteAdminContext(); return c; };
+
+const sanitizePayment = (row) => {
+  if (!row || row.provider !== 'razorpay') return row;
+  const c = row.config && typeof row.config === 'object' ? row.config : {};
+  return { ...row, config: {
+    key_id: c.key_id || c.razorpay_key_id || '',
+    key_secret: c.key_secret || c.razorpay_key_secret ? '***configured***' : '',
+    webhook_secret: c.webhook_secret || c.razorpay_webhook_secret ? '***configured***' : '',
+  }};
+};
 
 export async function GET(request) {
   const u = new URL(request.url); const resource = u.searchParams.get('resource'); const ctx = await ctxOrError();
@@ -21,7 +32,7 @@ export async function GET(request) {
   let q = supabase.from(table).select('*').eq('company_id',companyId).limit(500);
   if (resource === 'orders') { q=q.order('created_at',{ascending:false}); const status=u.searchParams.get('status'); if(status&&status!=='all') q=q.eq('order_status',status); }
   else q=q.order('created_at',{ascending:false});
-  const {data,error}=await q; if(error)return jsonError(error.message,500); return Response.json({data:data||[]});
+  const {data,error}=await q; if(error)return jsonError(error.message,500); const rows=data||[]; return Response.json({data:resource==='payments'?rows.map(sanitizePayment):rows});
 }
 
 export async function POST(request) {
@@ -44,11 +55,30 @@ export async function POST(request) {
   if(resource==='payments' && payload.config && typeof payload.config==='string'){try{payload.config=JSON.parse(payload.config)}catch{return jsonError('Payment configuration must be valid JSON.')}}
   if(resource==='shipping-zones'){if(typeof payload.states==='string')try{payload.states=JSON.parse(payload.states)}catch{return jsonError('States must be valid JSON.')};if(typeof payload.pincodes==='string')try{payload.pincodes=JSON.parse(payload.pincodes)}catch{return jsonError('Pincodes must be valid JSON.')}}
   if(resource==='shipping-rules'){for(const k of ['zone_id','method_id'])if(payload[k]==='')payload[k]=null;}
-  const {data,error}=await supabase.from(table).insert(payload).select().single(); if(error)return jsonError(error.message,500); await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.create`,entityType:table,entityId:data.id,newData:data}); return Response.json({data},{status:201});
+  const {data,error}=await supabase.from(table).insert(payload).select().single(); if(error)return jsonError(error.message,500);
+  await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.create`,entityType:table,entityId:data.id,newData:data});
+  return Response.json({data:resource==='payments'?sanitizePayment(data):data},{status:201});
 }
 
 export async function PATCH(request) {
-  const ctx=await ctxOrError();if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);const{supabase,companyId,user}=ctx;const b=await request.json().catch(()=>null);if(!b?.id||!b.resource)return jsonError('Resource and record id are required.');if(b.resource==='orders'&&b.order_status&&!ORDER_STATUSES.includes(cleanString(b.order_status,40).toLowerCase()))return jsonError('Invalid order status.');const table=tables[b.resource];if(!table)return jsonError('Unknown Phase 3 resource.',404);const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const p={...b,company_id:companyId};delete p.id;delete p.resource;delete p.created_at;p.updated_at=new Date().toISOString();if(p.config&&typeof p.config==='string')try{p.config=JSON.parse(p.config)}catch{return jsonError('Configuration must be valid JSON.')};const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:data.id,oldData,newData:data});return Response.json({data});
+  const ctx=await ctxOrError();if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+  const{supabase,companyId,user}=ctx;const b=await request.json().catch(()=>null);
+  if(!b?.id||!b.resource)return jsonError('Resource and record id are required.');
+  if(b.resource==='orders'&&b.order_status&&!ORDER_STATUSES.includes(cleanString(b.order_status,40).toLowerCase()))return jsonError('Invalid order status.');
+  const table=tables[b.resource];if(!table)return jsonError('Unknown Phase 3 resource.',404);
+  const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
+  if(!oldData)return jsonError('Record not found.',404);
+  const p={...b,company_id:companyId};delete p.id;delete p.resource;delete p.created_at;p.updated_at=new Date().toISOString();
+  if(p.config&&typeof p.config==='string')try{p.config=JSON.parse(p.config)}catch{return jsonError('Configuration must be valid JSON.')};
+  if(b.resource==='payments' && String(p.provider||oldData.provider||'').toLowerCase()==='razorpay'){
+    const incoming=p.config && typeof p.config==='object'?p.config:{};const previous=oldData.config && typeof oldData.config==='object'?oldData.config:{};
+    p.provider='razorpay';p.config={...previous,...incoming};
+    for(const key of ['key_secret','webhook_secret','razorpay_key_secret','razorpay_webhook_secret']) if(!String(incoming[key]??'').trim()) p.config[key]=previous[key];
+  }
+  const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
+  if(error)return jsonError(error.message,500);
+  await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:data.id,oldData,newData:data});
+  return Response.json({data:b.resource==='payments'?sanitizePayment(data):data});
 }
 
 export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData});return Response.json({ok:true}); }
