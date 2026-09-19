@@ -13,7 +13,6 @@ export async function GET() {
   const ctx = await getWebsiteAdminContext();
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
-
   const startOfToday = startOfIndiaDay();
 
   const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes] = await Promise.all([
@@ -29,11 +28,13 @@ export async function GET() {
   const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes].map(x => x.error).filter(Boolean);
   if (errs.length) return jsonError(errs[0].message, 500);
 
-  const eligible = (ordersRes.data || []).filter(o => !TERMINAL_INVALID.has(String(o.order_status || '').toLowerCase()));
+  const allOrders = ordersRes.data || [];
+  const eligible = allOrders.filter(o => !TERMINAL_INVALID.has(String(o.order_status || '').toLowerCase()));
   const sales = eligible.reduce((s, o) => s + Number(o.total_amount || 0), 0);
 
-  const lowStock = (lowStockRes.data || []).filter(p => Number(p.stock_quantity || 0) > 0 && Number(p.stock_quantity || 0) <= Number(p.low_stock_threshold || 0));
-  const outOfStock = (lowStockRes.data || []).filter(p => Number(p.stock_quantity || 0) <= 0);
+  const trackedProducts = lowStockRes.data || [];
+  const lowStock = trackedProducts.filter(p => Number(p.stock_quantity || 0) > 0 && Number(p.stock_quantity || 0) <= Number(p.low_stock_threshold || 0));
+  const outOfStock = trackedProducts.filter(p => Number(p.stock_quantity || 0) <= 0);
 
   const todayOrders = (todayRes.data || []).filter(o => !TERMINAL_INVALID.has(String(o.order_status || '').toLowerCase()));
   const today = {
@@ -46,7 +47,7 @@ export async function GET() {
   const queueStatuses = ['pending', 'new', 'confirmed', 'processing', 'packed', 'shipped'];
   const orderQueue = Object.fromEntries(queueStatuses.map(status => [
     status,
-    (ordersRes.data || []).filter(o => String(o.order_status || '').toLowerCase() === status).length,
+    allOrders.filter(o => String(o.order_status || '').toLowerCase() === status).length,
   ]));
 
   return Response.json({
