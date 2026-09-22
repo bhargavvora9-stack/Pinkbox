@@ -29,7 +29,7 @@ export async function POST(request) {
     if ((event === 'payment.captured' || event === 'order.paid') && paymentEntity?.order_id) {
       const { data: order } = await db
         .from('website_orders')
-        .select('id, payment_status')
+        .select('id, company_id, payment_status')
         .eq('razorpay_order_id', paymentEntity.order_id)
         .maybeSingle();
       if (order && order.payment_status !== 'paid') {
