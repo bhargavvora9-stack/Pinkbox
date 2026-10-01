@@ -89,3 +89,4 @@ export default async function sitemap() {
 }
 
 // SEO: sitemap emits lastModified only from real content timestamps.
+// Deployment trigger: keep sitemap freshness behavior active in production.
