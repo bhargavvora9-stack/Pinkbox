@@ -87,3 +87,5 @@ export default async function sitemap() {
 
   return urls;
 }
+
+// SEO: sitemap emits lastModified only from real content timestamps.
