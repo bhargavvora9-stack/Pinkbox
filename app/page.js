@@ -37,8 +37,16 @@ export default async function HomePage(){
     logo: s?.logo_url || undefined,
     url: process.env.NEXT_PUBLIC_SITE_URL || undefined,
   };
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name,
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app',
+    description: s?.meta_description || undefined,
+  };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
     <PinkBoxHome />
     <section aria-labelledby="sanitary-care-seo" className="pb-home-seo-footer">
       <div className="pb-home-seo-footer-inner">
