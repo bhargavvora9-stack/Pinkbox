@@ -29,3 +29,6 @@ export default async function robots() {
     ...(seo?.sitemap_enabled === false ? {} : { sitemap: `${base}/sitemap.xml` }),
   };
 }
+
+
+// SEO deployment sync
