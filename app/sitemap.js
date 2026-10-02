@@ -17,6 +17,7 @@ export default async function sitemap() {
   // Do not use the current time as a synthetic freshness signal.
   const urls = [
     { url: base },
+    { url: `${base}/products` },
     { url: `${base}/blog` },
   ];
 
