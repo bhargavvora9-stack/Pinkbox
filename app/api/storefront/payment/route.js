@@ -17,8 +17,8 @@ async function getRazorpayCreds(db, companyId) {
     .maybeSingle();
   const cfg = data?.config || {};
   return {
-    keyId: cfg.key_id || cfg.razorpay_key_id || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
-    keySecret: cfg.key_secret || cfg.razorpay_key_secret || process.env.RAZORPAY_KEY_SECRET || '',
+    keyId: String(cfg.key_id || cfg.razorpay_key_id || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim(),
+    keySecret: String(cfg.key_secret || cfg.razorpay_key_secret || process.env.RAZORPAY_KEY_SECRET || '').trim(),
   };
 }
 
