@@ -4,6 +4,7 @@ import { runWebsiteAutomations } from '@/lib/website-automation';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
+  // Vercel Cron sends the production CRON_SECRET as a Bearer token.
   const expected = process.env.CRON_SECRET;
   const auth = request.headers.get('authorization') || '';
   if (!expected || auth !== `Bearer ${expected}`) {
