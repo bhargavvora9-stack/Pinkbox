@@ -218,4 +218,6 @@ export async function POST(request) {
   }
 }
 
+// Production deployment trigger: Razorpay credential source hardened.
+
 export const dynamic = 'force-dynamic';
