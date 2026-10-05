@@ -40,7 +40,7 @@ export async function generateMetadata({params}) {
 }
 
 export default async function CollectionPage({params}) {
-  const {slug} = await params; const c = await getCollection(slug); if (!c) notFound();
+  const {slug} = await params; const c = await getCollection(slug); if (!c || !c.products?.length) notFound();
   const isSanitary = c.category.slug === 'sanitary-pads';
   const guideLinks = isSanitary
     ? [
