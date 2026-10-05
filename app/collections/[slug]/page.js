@@ -17,7 +17,7 @@ async function getCollection(slug) {
   if (!category) return null;
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
-  const { data: products } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).order('created_at',{ascending:false}) : {data:[]};
+  const { data: products } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).gt('price',0).order('created_at',{ascending:false}) : {data:[]};
   const { data: images } = ids.length ? await db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[]};
   const imageMap = {}; (images || []).forEach(x => { if (!imageMap[x.product_id] || x.is_primary) imageMap[x.product_id] = x.image_url; });
   return {category, products:(products || []).map(p => ({...p,image_url:imageMap[p.id]||null}))};
