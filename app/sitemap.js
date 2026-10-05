@@ -23,7 +23,7 @@ export default async function sitemap() {
 
   if (!settings) return urls;
 
-  const [posts, products, categories, pages] = await Promise.all([
+  const [posts, products, categories, pages, mappings] = await Promise.all([
     db
       .from('website_blog_posts')
       .select('slug,updated_at,published_at')
@@ -33,12 +33,13 @@ export default async function sitemap() {
       .order('published_at', { ascending: false }),
     db
       .from('website_products')
-      .select('slug,updated_at')
+      .select('id,slug,updated_at,price')
       .eq('company_id', settings.company_id)
-      .eq('is_active', true),
+      .eq('is_active', true)
+      .gt('price', 0),
     db
       .from('website_categories')
-      .select('slug,updated_at')
+      .select('id,slug,updated_at')
       .eq('company_id', settings.company_id)
       .eq('is_active', true),
     db
@@ -46,6 +47,10 @@ export default async function sitemap() {
       .select('slug,updated_at')
       .eq('company_id', settings.company_id)
       .eq('is_published', true),
+    db
+      .from('website_product_categories')
+      .select('category_id,product_id')
+      .eq('company_id', settings.company_id),
   ]);
 
   for (const p of posts.data || []) {
@@ -68,8 +73,15 @@ export default async function sitemap() {
     }
   }
 
+  const saleableProductIds = new Set((products.data || []).map((p) => p.id));
+  const categoryIdsWithProducts = new Set(
+    (mappings.data || [])
+      .filter((m) => saleableProductIds.has(m.product_id))
+      .map((m) => m.category_id)
+  );
+
   for (const c of categories.data || []) {
-    if (c.slug) {
+    if (c.slug && categoryIdsWithProducts.has(c.id)) {
       urls.push({
         url: `${base}/collections/${encodeURIComponent(c.slug)}`,
         ...(c.updated_at ? { lastModified: c.updated_at } : {}),
