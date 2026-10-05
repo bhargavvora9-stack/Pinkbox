@@ -14,15 +14,14 @@ const whyUs=[
  {icon:FlaskConical,title:'Skin-safe materials',desc:'No harsh chemicals, dermatologist-friendly formulation.'},
  {icon:PackageCheck,title:'Quality checked',desc:'Every batch is checked before it reaches your door.'},
 ];
-export default function PinkBoxHome(){
- const [data,setData]=useState(null),[slide,setSlide]=useState(0),[query,setQuery]=useState(''),[wish,setWish]=useState([]),[error,setError]=useState('');
- useEffect(()=>{try{setWish(JSON.parse(localStorage.getItem('pinkbox_wishlist')||'[]'))}catch{} fetch('/api/storefront',{cache:'no-store'}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Store unavailable');setData(j)}).catch(e=>setError(e.message))},[]);
+export default function PinkBoxHome({ initialData }){
+ const data=initialData||null;
+ const [slide,setSlide]=useState(0),[query,setQuery]=useState(''),[wish,setWish]=useState([]);
  useEffect(()=>localStorage.setItem('pinkbox_wishlist',JSON.stringify(wish)),[wish]);
  const banners=useMemo(()=>data?.banners?.filter(b=>b?.is_active!==false)||[],[data]);
  useEffect(()=>{if(banners.length<2)return;const id=setInterval(()=>setSlide(i=>(i+1)%banners.length),5500);return()=>clearInterval(id)},[banners.length]);
  useEffect(()=>{if(slide>=banners.length)setSlide(0)},[slide,banners.length]);
- if(error&&!data)return <main className="pb-home-state"><b>PinkBox is temporarily unavailable</b><p>{error}</p></main>;
- if(!data)return <main className="pb-home-state">Loading PinkBox…</main>;
+ if(!data)return <main className="pb-home-state"><b>PinkBox is temporarily unavailable</b><p>Store data could not be loaded.</p></main>;
  const s=data.settings||{},theme=data.theme||{},cats=data.categories||[],products=data.products||[],sections=(data.sections||[]).filter(x=>x?.is_active!==false),blog=(data.blog||[]).filter(Boolean).slice(0,3),nav=Array.isArray(data.menu?.items)?data.menu.items:[],reviews=(data.reviews||[]).filter(Boolean).slice(0,3);
  const activeBanner=banners[slide]; const arrivals=products.filter(p=>p.is_active!==false).slice(0,8);
  const filtered=products.filter(p=>p.is_active!==false&&(!query||[p.title,p.brand,p.sku,p.short_description].some(v=>String(v||'').toLowerCase().includes(query.toLowerCase())))).slice(0,4);const shopProducts=query?filtered:arrivals;
