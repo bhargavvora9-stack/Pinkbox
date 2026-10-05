@@ -15,8 +15,8 @@ async function getBlogStore(){
 export async function generateMetadata(){
  const {s}=await getBlogStore();
  if(!s)return {title:'Journal | PinkBox'};
- const title=s.meta_title? `Journal | ${s.website_name||'PinkBox'}` : `Sanitary Pad Guides & Journal | ${s.website_name||'PinkBox'}`;
- const description=s.meta_description||`Read sanitary pad guides, product education and updates from ${s.website_name||'PinkBox'}.`;
+ const title=`Sanitary Pad Guides & Journal | ${s.website_name||'PinkBox'}`;
+ const description=`Read sanitary pad guides, menstrual care education and product updates from ${s.website_name||'PinkBox'}.`;
  return {
   title,
   description,
