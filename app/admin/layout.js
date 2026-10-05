@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
-import AdminUniversalFilters from '@/components/AdminUniversalFilters';
+import AdminExcelTableFilters from '@/components/AdminExcelTableFilters';
 import '../website/website-theme.css';
 import '../responsive-layout.css';
 
@@ -75,7 +75,7 @@ export default async function AdminLayout({ children }) {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-[11px] font-bold text-white md:hidden">PB</div>
               <div className="min-w-0"><div className="text-[11px] text-gray-500">Online Store</div><div className="truncate text-xs font-semibold text-white">PinkBox Admin</div></div>
             </div>
-            <div className="flex items-center gap-2"><AdminUniversalFilters/><a href="/" target="_blank" rel="noreferrer" className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-gray-200 transition hover:bg-white/10 hover:text-white">View Website ↗</a></div>
+            <div className="flex items-center gap-2"><AdminExcelTableFilters/><a href="/" target="_blank" rel="noreferrer" className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-gray-200 transition hover:bg-white/10 hover:text-white">View Website ↗</a></div>
           </header>
           <main className="min-w-0 flex-1 p-3 pb-6 sm:p-5 lg:p-6">{children}</main>
         </div>
