@@ -17,10 +17,13 @@ async function getProduct(slug) {
   if (!settings) return null;
   const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
   if (!product) return null;
-  const { data: images } = await db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order');
+  const [{ data: images }, { data: variants }] = await Promise.all([
+    db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order'),
+    db.from('website_product_variants').select('id,sku,title,option_values,price,compare_at_price,stock_quantity,image_url,is_active').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_active', true).order('created_at'),
+  ]);
   const orderedImages = [...(images || [])].sort((a, b) => (Number(b.is_primary) - Number(a.is_primary)) || (Number(a.sort_order || 0) - Number(b.sort_order || 0)));
   const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
-  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, reviews: reviews || [] };
+  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, variants: variants || [], reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -121,7 +124,7 @@ export default async function ProductPage({ params }) {
           <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{p.brand || p.sku || 'PinkBox'}</p>
           <h1 className="mt-4 text-4xl font-black tracking-[-.04em] md:text-5xl">{p.title}</h1>
           {p.short_description && <p className="mt-5 text-base leading-7 text-gray-600">{p.short_description}</p>}
-          <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null }} /></div>
+          <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null, variants: p.variants }} /></div>
           <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
             {Number(p.free_shipping_threshold || 0) > 0 && <span className="rounded-full bg-[#fff3f6] px-3 py-2 text-[#c36f83]">Free shipping above ₹{Number(p.free_shipping_threshold).toLocaleString('en-IN')}</span>}
             {p.cod_enabled && <span className="rounded-full bg-[#f7f8ff] px-3 py-2 text-[#5b5d85]">COD available</span>}
