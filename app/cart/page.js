@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const readCart = () => {
@@ -202,6 +203,13 @@ export default function CartPage() {
       }
       if (!['COD', 'ONLINE'].includes(payment)) throw Error('Please select a payment method.');
 
+      trackGa4Event('begin_checkout', {
+        currency: 'INR',
+        value: total,
+        ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
+        items: toAnalyticsItems(items),
+      });
+
       const orderRes = await fetch('/api/storefront', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -213,6 +221,14 @@ export default function CartPage() {
       const trackingUrl = `/orders/${order.order_id}${order.tracking_token ? `?token=${encodeURIComponent(order.tracking_token)}` : ''}`;
 
       if (payment !== 'ONLINE') {
+        trackGa4Event('purchase', {
+          transaction_id: String(order.order_number || order.order_id),
+          currency: 'INR',
+          value: Number(order.total_amount || total),
+          ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
+          shipping: Number(quote.shipping || 0),
+          items: toAnalyticsItems(items),
+        });
         localStorage.removeItem('pinkbox_cart');
         sessionStorage.removeItem('pinkbox_checkout_form');
         sessionStorage.removeItem('pinkbox_payment_method');
@@ -276,6 +292,14 @@ export default function CartPage() {
         checkout.open();
       });
 
+      trackGa4Event('purchase', {
+        transaction_id: String(order.order_number || order.order_id),
+        currency: 'INR',
+        value: Number(total || 0),
+        ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
+        shipping: Number(quote.shipping || 0),
+        items: toAnalyticsItems(items),
+      });
       localStorage.removeItem('pinkbox_cart');
       sessionStorage.removeItem('pinkbox_checkout_form');
       sessionStorage.removeItem('pinkbox_payment_method');
