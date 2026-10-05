@@ -19,6 +19,11 @@ export async function proxy(request) {
     return NextResponse.redirect(url);
   }
 
+  // Razorpay calls this webhook server-to-server; it must stay public and must not be redirected to login.
+  if (path === '/api/website/razorpay-webhook') {
+    return NextResponse.next({ request });
+  }
+
   if (path === '/login') {
     const response = NextResponse.next({ request });
     response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
