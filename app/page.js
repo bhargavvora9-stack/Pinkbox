@@ -216,6 +216,10 @@ export default async function HomePage(){
       .pb-home-seo-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
       .pb-home-seo-links a{padding:8px 12px;border:1px solid #ead0d6;border-radius:999px;background:#fff;color:#815d65;font-size:11px;font-weight:700}
       .pb-home-seo-links a:hover{border-color:#d8899d;color:#c36f83}
+      .pb-whatsapp-float{position:fixed;right:18px;bottom:18px;z-index:80;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:999px;background:#25D366;color:#fff!important;box-shadow:0 12px 28px rgba(37,211,102,.28);font-size:12px;font-weight:800}
+      .pb-whatsapp-float span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#fff;color:#25D366;font-size:10px;font-weight:900}
+      .pb-whatsapp-float:hover{filter:brightness(.96);transform:translateY(-1px)}
+      @media(max-width:480px){.pb-whatsapp-float{right:12px;bottom:12px;padding:9px 11px}.pb-whatsapp-float b{display:none}}
     `}} />
   </>;
 }
