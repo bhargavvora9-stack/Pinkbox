@@ -11,9 +11,9 @@ export default function ProductPurchasePanel({ product }) {
   const variants = Array.isArray(product.variants) ? product.variants.filter(v => v?.is_active !== false) : [];
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || null);
   const selectedVariant = useMemo(() => variants.find(v => v.id === selectedVariantId) || variants[0] || null, [variants, selectedVariantId]);
-  const effectivePrice = Number(selectedVariant?.price ?? product.price ?? 0);
+  const effectivePrice = Number(selectedVariant && Number(selectedVariant.price) > 0 ? selectedVariant.price : product.price ?? 0);
   const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
-  const max = Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0);
+  const max = Number(selectedVariant && Number(selectedVariant.stock_quantity) > 0 ? selectedVariant.stock_quantity : product.stock_quantity || 0);
   const canBuy = max > 0 || product.allow_backorder;
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
