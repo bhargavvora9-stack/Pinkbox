@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide-react';
@@ -8,7 +8,12 @@ import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 export default function ProductPurchasePanel({ product }) {
-  const max = Number(product.stock_quantity || 0);
+  const variants = Array.isArray(product.variants) ? product.variants.filter(v => v?.is_active !== false) : [];
+  const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || null);
+  const selectedVariant = useMemo(() => variants.find(v => v.id === selectedVariantId) || variants[0] || null, [variants, selectedVariantId]);
+  const effectivePrice = Number(selectedVariant?.price ?? product.price ?? 0);
+  const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
+  const max = Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0);
   const canBuy = max > 0 || product.allow_backorder;
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
@@ -19,10 +24,10 @@ export default function ProductPurchasePanel({ product }) {
   useEffect(() => {
     trackGa4Event('view_item', {
       currency: 'INR',
-      value: Number(product.price || 0),
+      value: effectivePrice,
       items: toAnalyticsItems([product]),
     });
-  }, [product.id]);
+  }, [product.id, effectivePrice]);
 
   function toggleWishlist() {
     try {
@@ -41,7 +46,8 @@ export default function ProductPurchasePanel({ product }) {
     if (!canBuy) return;
     try {
       const current = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
-      const existing = current.find((item) => item.id === product.id);
+      const cartId = selectedVariant ? `${product.id}:${selectedVariant.id}` : product.id;
+      const existing = current.find((item) => item.id === cartId);
       const nextQty = existing ? existing.quantity + qty : qty;
       if (max > 0 && nextQty > max && !product.allow_backorder) {
         setStatus(`Only ${max} available`);
@@ -49,16 +55,28 @@ export default function ProductPurchasePanel({ product }) {
         setQty(Math.max(1, max - (existing?.quantity || 0)));
         return;
       }
+      const cartItem = {
+        ...product,
+        id: cartId,
+        product_id: product.id,
+        variant_id: selectedVariant?.id || null,
+        variant_title: selectedVariant?.title || null,
+        sku: selectedVariant?.sku || product.sku,
+        title: selectedVariant ? `${product.title} - ${selectedVariant.title}` : product.title,
+        price: effectivePrice,
+        image_url: effectiveImage,
+        quantity: qty,
+      };
       const next = existing
-        ? current.map((item) => item.id === product.id ? { ...item, quantity: nextQty } : item)
-        : [...current, { ...product, quantity: qty }];
+        ? current.map((item) => item.id === cartId ? { ...item, quantity: nextQty } : item)
+        : [...current, cartItem];
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
       window.dispatchEvent(new Event('pinkbox-cart-updated'));
       setStatus(`${qty} item${qty === 1 ? '' : 's'} added to cart`);
       trackGa4Event('add_to_cart', {
         currency: 'INR',
-        value: Number(product.price || 0) * qty,
-        items: toAnalyticsItems([{ ...product, quantity: qty }]),
+        value: effectivePrice * qty,
+        items: toAnalyticsItems([{ ...product, ...cartItem, quantity: qty }]),
       });
       setAdded(true);
     } catch {
@@ -82,9 +100,26 @@ export default function ProductPurchasePanel({ product }) {
   return (
     <div className="space-y-5">
       <div className="flex items-end gap-3">
-        <span className="text-3xl font-black">{money(product.price)}</span>
-        {Number(product.compare_at_price) > 0 && <del className="pb-1 text-sm text-gray-400">{money(product.compare_at_price)}</del>}
+        <span className="text-3xl font-black">{money(effectivePrice)}</span>
+        {Number(selectedVariant?.compare_at_price || product.compare_at_price) > effectivePrice && <del className="pb-1 text-sm text-gray-400">{money(selectedVariant?.compare_at_price || product.compare_at_price)}</del>}
       </div>
+      {variants.length > 0 && (
+        <div>
+          <div className="mb-2 text-sm font-semibold">Color</div>
+          <div className="flex flex-wrap gap-2">
+            {variants.map((variant) => (
+              <button
+                key={variant.id}
+                type="button"
+                onClick={() => { setSelectedVariantId(variant.id); setQty(1); setStatus(''); setAdded(false); }}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-[#d9295f] bg-[#fff0f5] text-[#d9295f]' : 'border-gray-200'}`}
+              >
+                {variant.title || variant.option_values?.Color || variant.sku}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-[#fff8fa] text-gray-700' : 'bg-gray-50 text-gray-500'}`}>
         {canBuy ? (max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}
       </div>
