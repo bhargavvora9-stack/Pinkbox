@@ -154,6 +154,7 @@ export default function CartPage() {
   }, [items, form.name, form.phone, form.email, quote.total, localSubtotal]);
 
   const total = Number(quote.total || localSubtotal);
+  const analyticsMerchandiseValue = Math.max(0, Number(quote.subtotal || localSubtotal) - Number(quote.discount || 0));
 
   const updateQty = (id, q) =>
     setItems((a) => a.map((x) => x.id === id ? { ...x, quantity: Math.max(1, Number(q) || 1) } : x));
@@ -205,7 +206,7 @@ export default function CartPage() {
 
       trackGa4Event('begin_checkout', {
         currency: 'INR',
-        value: total,
+        value: analyticsMerchandiseValue,
         ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
         items: toAnalyticsItems(items),
       });
@@ -224,7 +225,7 @@ export default function CartPage() {
         trackGa4Event('purchase', {
           transaction_id: String(order.order_number || order.order_id),
           currency: 'INR',
-          value: Number(order.total_amount || total),
+          value: analyticsMerchandiseValue,
           ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
           shipping: Number(quote.shipping || 0),
           items: toAnalyticsItems(items),
@@ -295,7 +296,7 @@ export default function CartPage() {
       trackGa4Event('purchase', {
         transaction_id: String(order.order_number || order.order_id),
         currency: 'INR',
-        value: Number(total || 0),
+        value: analyticsMerchandiseValue,
         ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
         shipping: Number(quote.shipping || 0),
         items: toAnalyticsItems(items),
