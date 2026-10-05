@@ -38,6 +38,7 @@ export async function POST(request) {
       if (!Number.isFinite(item.quantity) || item.quantity < 1 || item.quantity > 100 || item.quantity !== Math.trunc(item.quantity)) return Response.json({ error: 'Invalid cart quantity.' }, { status: 400 });
       const product = productMap.get(item.product_id);
       if (!product || product.is_active !== true) return Response.json({ error: 'One or more cart products are unavailable.' }, { status: 409 });
+      if (Number(product.price || 0) <= 0) return Response.json({ error: 'One or more cart products do not have a selling price yet.' }, { status: 409 });
       subtotal += Number(product.price || 0) * item.quantity;
     }
     subtotal = Number(subtotal.toFixed(2));
