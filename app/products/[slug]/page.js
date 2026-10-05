@@ -13,14 +13,14 @@ export const revalidate = 0;
 
 async function getProduct(slug) {
   const db = createAdminClient();
-  const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
+  const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
   const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
   if (!product) return null;
   const { data: images } = await db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order');
   const orderedImages = [...(images || [])].sort((a, b) => (Number(b.is_primary) - Number(a.is_primary)) || (Number(a.sort_order || 0) - Number(b.sort_order || 0)));
   const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
-  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, images: orderedImages, reviews: reviews || [] };
+  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -122,10 +122,15 @@ export default async function ProductPage({ params }) {
           <h1 className="mt-4 text-4xl font-black tracking-[-.04em] md:text-5xl">{p.title}</h1>
           {p.short_description && <p className="mt-5 text-base leading-7 text-gray-600">{p.short_description}</p>}
           <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null }} /></div>
-          <div className="mt-9 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
+            {Number(p.free_shipping_threshold || 0) > 0 && <span className="rounded-full bg-[#fff3f6] px-3 py-2 text-[#c36f83]">Free shipping above ₹{Number(p.free_shipping_threshold).toLocaleString('en-IN')}</span>}
+            {p.cod_enabled && <span className="rounded-full bg-[#f7f8ff] px-3 py-2 text-[#5b5d85]">COD available</span>}
+            {p.online_payment_enabled && <span className="rounded-full bg-[#f3fbf6] px-3 py-2 text-[#3e7a5a]">UPI / online payment</span>}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Quality checked</b><p className="mt-1 text-xs text-gray-500">Product information stays transparent.</p></div>
-            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Secure checkout</b><p className="mt-1 text-xs text-gray-500">COD and online payment supported.</p></div>
-            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Easy support</b><p className="mt-1 text-xs text-gray-500">Help is available when you need it.</p></div>
+            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">₹49 shipping below ₹499</b><p className="mt-1 text-xs text-gray-500">Free standard shipping from ₹499.</p></div>
+            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Easy support</b><p className="mt-1 text-xs text-gray-500">Questions? Chat with PinkBox on WhatsApp.</p></div>
           </div>
           {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-bold text-white">Ask a question on WhatsApp</a>}
           {p.description && <details open className="mt-8 rounded-2xl border p-5"><summary className="cursor-pointer font-bold">Product details</summary><p className="mt-4 whitespace-pre-line leading-7 text-gray-600">{p.description}</p></details>}
