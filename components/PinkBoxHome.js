@@ -30,7 +30,7 @@ export default function PinkBoxHome({ initialData }){
  const freeShipLabel=freeShipThreshold>0?`free shipping above ${money(freeShipThreshold)}`:'free shipping on all orders';
  const heroImage=activeBanner?.image_url||shopProducts[0]?.image_url||null;
  const heroLine='Cotton-soft pads, discreet home delivery, COD & UPI available.';
- const whatsappNumber=String(s.whatsapp_number||s.phone||'').replace(/\\D/g,'');
+ const whatsappNumber=String(s.whatsapp_number||s.phone||'').replace(/\D/g,'');
  const whatsappUrl=whatsappNumber?`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi PinkBox, I need help with an order.')}`:'';
  return <main className="pb-home" style={{'--pb-primary':theme.primary_color||'#d72d61'}}>
  <div className="pb-home-announcement"><span>{pick(s.announcement_bar,`${freeShipLabel} · Cotton-soft comfort · Discreet delivery`)}</span></div>
