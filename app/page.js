@@ -106,14 +106,29 @@ async function getStoreData() {
     category_id: catMap[product.id] || null,
   }));
 
+  // Never expose zero-priced products to customers. Keep them editable in Admin
+  // until a real selling price is entered.
+  const saleableProducts = productData.filter((product) => Number(product.price || 0) > 0);
+
+  const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
+  const categoryProductCounts = {};
+  for (const mapping of mappings.data || []) {
+    if (!saleableProductIds.has(mapping.product_id)) continue;
+    categoryProductCounts[mapping.category_id] = (categoryProductCounts[mapping.category_id] || 0) + 1;
+  }
+
+  const visibleCategories = (categories.data || []).filter(
+    (category) => Number(categoryProductCounts[category.id] || 0) > 0
+  );
+
   return {
     settings: {
       ...settings,
       meta_title: settings.meta_title || null,
       meta_description: settings.meta_description || null,
     },
-    products: productData,
-    categories: categories.data || [],
+    products: saleableProducts,
+    categories: visibleCategories,
     banners: activeBanners,
     sections: sections.data || [],
     menu: menu.data || null,
