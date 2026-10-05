@@ -123,6 +123,17 @@ async function getStoreData() {
   };
 }
 
+async function getStoreMeta() {
+  const db = createAdminClient();
+  const { data } = await db
+    .from('website_settings')
+    .select('website_name,meta_title,meta_description,logo_url')
+    .eq('slug', 'pinkbox')
+    .eq('status', 'active')
+    .maybeSingle();
+  return data;
+}
+
 export async function generateMetadata() {
   const data = await getStoreData();
   const s = data?.settings || null;
