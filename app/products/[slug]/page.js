@@ -141,18 +141,17 @@ export default async function ProductPage({ params }) {
           </div>
         </div>
       </section>
-      <div className="mx-auto max-w-3xl px-5 pb-20">
-        <h2 className="text-2xl font-black">Customer reviews {p.reviews.length > 0 && <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span>}</h2>
-        {p.reviews.length > 0 ? <div className="mt-6 space-y-4">{p.reviews.map(r => (
+      {p.reviews.length > 0 && <div className="mx-auto max-w-3xl px-5 pb-20">
+        <h2 className="text-2xl font-black">Customer reviews <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span></h2>
+        <div className="mt-6 space-y-4">{p.reviews.map(r => (
           <div key={r.id} className="rounded-2xl border p-5">
-            <div className="flex gap-0.5 text-[#d9295f]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < r.rating ? 'currentColor' : 'none'} />)}</div>
+            <div className="flex gap-0.5 text-[#d9295f]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < r.rating ? "currentColor" : "none"} />)}</div>
             {r.title && <b className="mt-2 block text-sm">{r.title}</b>}
             <p className="mt-1 text-sm text-gray-600">{r.review_text}</p>
             <p className="mt-2 text-xs font-semibold text-gray-400">{r.customer_name}</p>
           </div>
-        ))}</div> : <p className="mt-4 text-sm text-gray-500">No reviews yet — be the first to share your experience after your order arrives.</p>}
-        <div className="mt-8"><ProductReviewForm productId={p.id} /></div>
-      </div>
+        ))}</div>
+      </div>}
     </main>
   );
 }
