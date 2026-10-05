@@ -37,7 +37,7 @@ export default async function BlogPage({params}){
 
 export async function generateMetadata({params}){
  const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return {};
- const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url,featured_image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
+ const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
  const image=post?.cover_image_url||post?.featured_image_url;
  return post?{
   title:post.title,
