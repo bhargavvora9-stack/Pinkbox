@@ -262,3 +262,8 @@
 @media(prefers-reduced-motion:reduce){
 .pb-home *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+
+.pb-home-bulk{border:1px solid #eadfd9;border-radius:26px;background:#fff9fb;padding:26px}
+.pb-bulk-intro{max-width:760px;color:#7d6769;line-height:1.7;margin:0 0 20px}
+@media(max-width:768px){.pb-home-bulk{padding:18px;border-radius:20px}}
