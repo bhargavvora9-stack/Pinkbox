@@ -3,12 +3,23 @@ import { runWebsiteAutomations } from '@/lib/website-automation';
 
 async function getStore(){
  const db=createAdminClient();
- const [{data:settings},{data:razorpay}]=await Promise.all([
-  db.from('website_settings').select('*').eq('slug','pinkbox').eq('status','active').maybeSingle(),
-  db.from('website_payment_methods').select('config').eq('provider','razorpay').eq('is_active',true).maybeSingle()
- ]);
+ const {data:settings}=await db.from('website_settings').select('*').eq('slug','pinkbox').eq('status','active').maybeSingle();
+ if(!settings)return {db,settings:null,onlinePaymentReady:false};
+
+ const {data:razorpay}=await db
+  .from('website_payment_methods')
+  .select('config')
+  .eq('company_id',settings.company_id)
+  .eq('provider','razorpay')
+  .eq('is_active',true)
+  .order('updated_at',{ascending:false})
+  .limit(1)
+  .maybeSingle();
+
  const cfg=razorpay?.config||{};
- const onlinePaymentReady=Boolean(settings?.online_payment_enabled && (cfg.key_id||cfg.razorpay_key_id||process.env.RAZORPAY_KEY_ID||process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) && (cfg.key_secret||cfg.razorpay_key_secret||process.env.RAZORPAY_KEY_SECRET));
+ const dbReady=Boolean(cfg.key_id && cfg.key_secret) || Boolean(cfg.razorpay_key_id && cfg.razorpay_key_secret);
+ const envReady=Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+ const onlinePaymentReady=Boolean(settings.online_payment_enabled && (dbReady || envReady));
  return {db,settings,onlinePaymentReady};
 }
 
