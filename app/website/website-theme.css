@@ -40,3 +40,33 @@
 .website-admin ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:99px}
 .website-admin ::-webkit-scrollbar-thumb:hover{background:rgba(236,63,157,.45)}
 @media(max-width:767px){.website-admin{background:var(--pb-bg)!important}.website-admin main{padding:1rem!important}}
+
+
+/* ================= ADMIN READABILITY ================= */
+.website-admin{font-size:14px;line-height:1.5}
+.website-admin .text-xs{font-size:13px!important;line-height:1.45!important}
+.website-admin .text-sm{font-size:14px!important;line-height:1.5!important}
+.website-admin .text-base{font-size:15px!important}
+.website-admin label{font-size:13px!important;line-height:1.45!important}
+.website-admin button,
+.website-admin input,
+.website-admin textarea,
+.website-admin select{font-size:13px!important;line-height:1.4}
+.website-admin main p{font-size:13.5px;line-height:1.55}
+.website-admin main h1{font-size:clamp(1.5rem,2.4vw,2rem)!important;line-height:1.2!important}
+.website-admin main h2{font-size:clamp(1.25rem,2vw,1.6rem)!important;line-height:1.25!important}
+.website-admin main h3{font-size:clamp(1.05rem,1.6vw,1.3rem)!important;line-height:1.3!important}
+.website-admin table{font-size:13.5px!important}
+.website-admin thead th{font-size:12.5px!important;font-weight:700!important;padding:11px 12px!important;line-height:1.3!important}
+.website-admin tbody td{font-size:13.5px!important;padding:11px 12px!important;line-height:1.4!important}
+.website-admin .glass-sidebar nav a{font-size:13.5px!important;line-height:1.35!important}
+.website-admin header{font-size:13px}
+.website-admin main .text-[11px],
+.website-admin main .text-[10px],
+.website-admin main .text-[9px]{line-height:1.35!important}
+@media(max-width:767px){
+  .website-admin{font-size:13.5px}
+  .website-admin table{font-size:13px!important}
+  .website-admin thead th{padding:10px 11px!important}
+  .website-admin tbody td{padding:10px 11px!important}
+}
