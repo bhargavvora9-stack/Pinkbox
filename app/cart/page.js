@@ -154,6 +154,12 @@ export default function CartPage() {
   }, [items, form.name, form.phone, form.email, quote.total, localSubtotal]);
 
   const total = Number(quote.total || localSubtotal);
+  const freeShippingThreshold = Number(store?.free_shipping_threshold || 0);
+  const cartSubtotal = Number(quote.subtotal || localSubtotal);
+  const shippingProgress = freeShippingThreshold > 0 ? Math.min(100, (cartSubtotal / freeShippingThreshold) * 100) : 100;
+  const shippingMessage = freeShippingThreshold > 0
+    ? (cartSubtotal >= freeShippingThreshold ? 'You unlocked free shipping on this order.' : money(freeShippingThreshold - cartSubtotal) + ' more to unlock free shipping.')
+    : 'Free shipping is available on all orders.';
   const analyticsMerchandiseValue = Math.max(0, Number(quote.subtotal || localSubtotal) - Number(quote.discount || 0));
 
   const updateQty = (id, q) =>
@@ -360,8 +366,10 @@ export default function CartPage() {
                 </article>
               ))}
 
-              <div className="rounded-3xl border border-[#eadfd9] bg-[#f4e7e1] p-5 text-sm text-[#7d6769]">
-                {quoteLoading ? 'Updating delivery total…' : quote.shipping ? `Shipping charge: ${money(quote.shipping)}` : 'Free shipping'}
+              <div className="rounded-3xl border border-[#eadfd9] bg-[#fff4f7] p-5 text-sm text-[#7d6769]">
+                <div className="flex items-center justify-between gap-3"><b className="text-[#6a4b4e]">Free shipping</b><span className="font-semibold text-[#c36f83]">{shippingMessage}</span></div>
+                {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0d9df]"><div className="h-full rounded-full bg-[#d8899d]" style={{ width: shippingProgress + '%' }} /></div>}
+                <p className="mt-2">{quoteLoading ? 'Updating delivery total…' : quote.shipping ? 'Shipping charge: ' + money(quote.shipping) : 'No shipping charge.'}</p>
               </div>
             </section>
 
