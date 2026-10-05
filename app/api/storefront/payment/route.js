@@ -8,6 +8,16 @@ async function getSettings(db) {
 }
 
 async function getRazorpayCreds(db, companyId) {
+  const envKeyId = String(process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim();
+  const envKeySecret = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+  // Prefer the Vercel Production credential pair when both are configured.
+  // The Supabase payment-method config is retained as a fallback for environments
+  // where deployment-level Razorpay credentials are not configured.
+  if (envKeyId && envKeySecret) {
+    return { keyId: envKeyId, keySecret: envKeySecret };
+  }
+
   const { data } = await db
     .from('website_payment_methods')
     .select('config')
@@ -17,8 +27,8 @@ async function getRazorpayCreds(db, companyId) {
     .maybeSingle();
   const cfg = data?.config || {};
   return {
-    keyId: String(cfg.key_id || cfg.razorpay_key_id || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim(),
-    keySecret: String(cfg.key_secret || cfg.razorpay_key_secret || process.env.RAZORPAY_KEY_SECRET || '').trim(),
+    keyId: String(cfg.key_id || cfg.razorpay_key_id || '').trim(),
+    keySecret: String(cfg.key_secret || cfg.razorpay_key_secret || '').trim(),
   };
 }
 
