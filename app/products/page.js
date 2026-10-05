@@ -43,7 +43,7 @@ async function getProducts() {
     }
   }
 
-  return (products || []).map((product) => ({
+  return (products || []).filter((product) => Number(product.price || 0) > 0).map((product) => ({
     ...product,
     image_url: imageMap[product.id] || null,
   }));
