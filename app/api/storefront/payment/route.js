@@ -8,27 +8,29 @@ async function getSettings(db) {
 }
 
 async function getRazorpayCreds(db, companyId) {
-  const envKeyId = String(process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim();
-  const envKeySecret = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
-
-  // Prefer the Vercel Production credential pair when both are configured.
-  // The Supabase payment-method config is retained as a fallback for environments
-  // where deployment-level Razorpay credentials are not configured.
-  if (envKeyId && envKeySecret) {
-    return { keyId: envKeyId, keySecret: envKeySecret };
-  }
-
-  const { data } = await db
+  const { data: paymentMethod } = await db
     .from('website_payment_methods')
     .select('config')
     .eq('company_id', companyId)
     .eq('provider', 'razorpay')
     .eq('is_active', true)
+    .order('updated_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
-  const cfg = data?.config || {};
+
+  const cfg = paymentMethod?.config || {};
+  const dbKeyId = String(cfg.key_id || cfg.razorpay_key_id || '').trim();
+  const dbKeySecret = String(cfg.key_secret || cfg.razorpay_key_secret || '').trim();
+
+  // Prefer the company-scoped admin payment configuration. Vercel env vars remain
+  // a server-side fallback for bootstrap/legacy deployments.
+  if (dbKeyId && dbKeySecret) {
+    return { keyId: dbKeyId, keySecret: dbKeySecret };
+  }
+
   return {
-    keyId: String(cfg.key_id || cfg.razorpay_key_id || '').trim(),
-    keySecret: String(cfg.key_secret || cfg.razorpay_key_secret || '').trim(),
+    keyId: String(process.env.RAZORPAY_KEY_ID || '').trim(),
+    keySecret: String(process.env.RAZORPAY_KEY_SECRET || '').trim(),
   };
 }
 
@@ -217,7 +219,5 @@ export async function POST(request) {
     return Response.json({ error: error instanceof Error ? error.message : 'Payment request failed.' }, { status: 500 });
   }
 }
-
-// Production deployment trigger: Razorpay credential source hardened.
 
 export const dynamic = 'force-dynamic';
