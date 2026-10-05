@@ -1,12 +1,15 @@
 'use client';
-import {useEffect,useState} from 'react';
+
+import {useEffect,useRef,useState} from 'react';
 import {usePathname} from 'next/navigation';
 import Script from 'next/script';
 
 export default function StorefrontAnalytics(){
   const pathname=usePathname();
+  const previousPath=useRef(null);
   const [ids,setIds]=useState(null);
   const isAdmin=pathname?.startsWith('/admin')||pathname?.startsWith('/website')||pathname?.startsWith('/login');
+
   useEffect(()=>{
     if(isAdmin)return;
     fetch('/api/storefront',{cache:'no-store'}).then(r=>r.json()).then(j=>{
@@ -14,12 +17,28 @@ export default function StorefrontAnalytics(){
       setIds({ga4:s.ga4_measurement_id||'',pixel:s.meta_pixel_id||''});
     }).catch(()=>{});
   },[isAdmin]);
+
+  useEffect(()=>{
+    if(isAdmin || !ids?.ga4 || !pathname) return;
+    if(previousPath.current === null){
+      previousPath.current=pathname;
+      return;
+    }
+    if(previousPath.current !== pathname){
+      if(typeof window.gtag === 'function'){
+        window.gtag('event','page_view',{page_location:window.location.href,page_path:pathname});
+      }
+      previousPath.current=pathname;
+    }
+  },[isAdmin,ids?.ga4,pathname]);
+
   if(isAdmin||!ids||(!ids.ga4&&!ids.pixel))return null;
+
   return <>
     {ids.ga4&&<>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${ids.ga4}`} strategy="afterInteractive"/>
-      <Script id="ga4-init" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ids.ga4}');`}</Script>
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ids.ga4)}`} strategy="afterInteractive"/>
+      <Script id="ga4-init" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${ids.ga4}');`}</Script>
     </>}
-    {ids.pixel&&<Script id="meta-pixel-init" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${ids.pixel}');fbq('track','PageView');`}</Script>}
+    {ids.pixel&&<Script id="meta-pixel-init" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.apply(arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${ids.pixel}');fbq('track','PageView');`}</Script>}
   </>;
 }
