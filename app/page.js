@@ -2,6 +2,7 @@ import './pinkbox-home.css';
 import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -150,7 +151,8 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage(){
-  const s = await getStoreMeta();
+  const data = await getStoreData();
+  const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -168,8 +170,8 @@ export default async function HomePage(){
     description: s?.meta_description || undefined,
   };
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }} />
     <PinkBoxHome initialData={data} />
     <section aria-labelledby="sanitary-care-seo" className="pb-home-seo-footer">
       <div className="pb-home-seo-footer-inner">
