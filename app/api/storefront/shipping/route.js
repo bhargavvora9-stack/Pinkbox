@@ -49,9 +49,9 @@ export async function POST(request) {
       if (!product || product.is_active !== true) return Response.json({ error: 'One or more cart products are unavailable.' }, { status: 409 });
       const variant = item.variant_id ? variantMap.get(item.variant_id) : null;
       if (item.variant_id && (!variant || variant.product_id !== product.id || variant.is_active !== true)) return Response.json({ error: 'One or more selected variants are unavailable.' }, { status: 409 });
-      const effectivePrice = variant ? Number(variant.price ?? product.price ?? 0) : Number(product.price || 0);
+      const effectivePrice = variant ? Number(Number(variant.price) > 0 ? variant.price : product.price || 0) : Number(product.price || 0);
       if (effectivePrice <= 0) return Response.json({ error: 'One or more cart products do not have a selling price yet.' }, { status: 409 });
-      if (variant && Number(variant.stock_quantity || 0) < item.quantity) return Response.json({ error: 'Insufficient stock for selected variant.' }, { status: 409 });
+      if (variant && Number(variant.stock_quantity || 0) > 0 && Number(variant.stock_quantity) < item.quantity) return Response.json({ error: 'Insufficient stock for selected variant.' }, { status: 409 });
       subtotal += effectivePrice * item.quantity;
     }
     subtotal = Number(subtotal.toFixed(2));
