@@ -56,7 +56,7 @@ async function getStoreData() {
       .eq('company_id', companyId)
       .maybeSingle(),
     db.from('website_blog_posts')
-      .select('id,title,slug,excerpt,content,cover_image_url,featured_image_url,published_at')
+      .select('id,title,slug,excerpt,content,cover_image_url,published_at')
       .eq('company_id', companyId)
       .eq('is_published', true)
       .lte('published_at', now)
