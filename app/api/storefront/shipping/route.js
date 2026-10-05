@@ -20,7 +20,7 @@ export async function POST(request) {
     if (!Number.isFinite(clientSubtotal) || clientSubtotal < 0) return Response.json({ error: 'Invalid cart totals.' }, { status: 400 });
 
     const items = Array.isArray(body.items)
-      ? body.items.map((x) => ({ product_id: x.product_id || x.id, quantity: Number(x.quantity || 1) }))
+      ? body.items.map((x) => ({ product_id: x.product_id || x.id, variant_id: x.variant_id || null, quantity: Number(x.quantity || 1) }))
       : [];
     if (!items.length) return Response.json({ subtotal: 0, discount: 0, shipping: 0, total: 0, coupon: null });
     if (items.length > 100) return Response.json({ error: 'Too many cart items.' }, { status: 400 });
