@@ -3,6 +3,7 @@ import Image from 'next/image';
 import {createAdminClient} from '@/lib/supabase-admin';
 import {notFound} from 'next/navigation';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { sanitizeCmsHtml } from '@/lib/sanitize-html';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
@@ -31,7 +32,7 @@ export default async function BlogPage({params}){
   author:{'@type':'Organization',name:settings.website_name||'PinkBox',url:absoluteUrl('/')},
   publisher:{'@type':'Organization',name:settings.website_name||'PinkBox',url:absoluteUrl('/'),logo:settings.logo_url?{'@type':'ImageObject',url:settings.logo_url}:undefined},
  };
- return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(articleSchema)}} /><article className="mx-auto max-w-3xl px-5 py-16"><Link href="/" className="text-sm font-semibold text-[#d9295f]">← Back to {settings.website_name||'PinkBox'}</Link>{image&&<div className="relative mt-8 h-80 w-full overflow-hidden rounded-3xl"><Image src={image} alt={post.title} fill sizes="(max-width:768px) 100vw, 768px" style={{objectFit:'cover'}} priority/></div>}<div className="mt-8 text-xs font-bold uppercase tracking-widest text-[#d9295f]">{post.category||'PinkBox Journal'} · {post.published_at?new Date(post.published_at).toLocaleDateString('en-IN'):''}</div><h1 className="mt-3 text-4xl font-bold md:text-5xl">{post.title}</h1>{post.excerpt&&<p className="mt-5 text-lg text-gray-600">{post.excerpt}</p>}<div className="prose prose-lg mt-10 max-w-none" dangerouslySetInnerHTML={{__html:post.content?.html||''}}/></article></main>
+ return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(articleSchema)}} /><article className="mx-auto max-w-3xl px-5 py-16"><Link href="/" className="text-sm font-semibold text-[#d9295f]">← Back to {settings.website_name||'PinkBox'}</Link>{image&&<div className="relative mt-8 h-80 w-full overflow-hidden rounded-3xl"><Image src={image} alt={post.title} fill sizes="(max-width:768px) 100vw, 768px" style={{objectFit:'cover'}} priority/></div>}<div className="mt-8 text-xs font-bold uppercase tracking-widest text-[#d9295f]">{post.category||'PinkBox Journal'} · {post.published_at?new Date(post.published_at).toLocaleDateString('en-IN'):''}</div><h1 className="mt-3 text-4xl font-bold md:text-5xl">{post.title}</h1>{post.excerpt&&<p className="mt-5 text-lg text-gray-600">{post.excerpt}</p>}<div className="prose prose-lg mt-10 max-w-none" dangerouslySetInnerHTML={{__html:sanitizeCmsHtml(post.content?.html||'')}}/></article></main>
 }
 
 export async function generateMetadata({params}){
