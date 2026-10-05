@@ -61,9 +61,6 @@
 .website-admin tbody td{font-size:13.5px!important;padding:11px 12px!important;line-height:1.4!important}
 .website-admin .glass-sidebar nav a{font-size:13.5px!important;line-height:1.35!important}
 .website-admin header{font-size:13px}
-.website-admin main .text-[11px],
-.website-admin main .text-[10px],
-.website-admin main .text-[9px]{line-height:1.35!important}
 @media(max-width:767px){
   .website-admin{font-size:13.5px}
   .website-admin table{font-size:13px!important}
