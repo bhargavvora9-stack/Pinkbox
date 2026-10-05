@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide-react';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -14,6 +15,14 @@ export default function ProductPurchasePanel({ product }) {
   const [status, setStatus] = useState('');
   const [added, setAdded] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    trackGa4Event('view_item', {
+      currency: 'INR',
+      value: Number(product.price || 0),
+      items: toAnalyticsItems([product]),
+    });
+  }, [product.id]);
 
   function toggleWishlist() {
     try {
@@ -46,6 +55,11 @@ export default function ProductPurchasePanel({ product }) {
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
       window.dispatchEvent(new Event('pinkbox-cart-updated'));
       setStatus(`${qty} item${qty === 1 ? '' : 's'} added to cart`);
+      trackGa4Event('add_to_cart', {
+        currency: 'INR',
+        value: Number(product.price || 0) * qty,
+        items: toAnalyticsItems([{ ...product, quantity: qty }]),
+      });
       setAdded(true);
     } catch {
       setStatus('Unable to add to cart');
