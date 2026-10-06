@@ -3,7 +3,7 @@ import { getWebsiteAdminContext, cleanString, slugify, jsonError, audit } from '
 const MAX_ROWS = 1000;
 const columns = ['sku','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
 const moneyFields = new Set(['price','compare_at_price','cost_price','gst_percent','weight','stock_quantity','low_stock_threshold']);
-const boolFields = new Set(['track_inventory','allow_backorder','featured','is_active']);
+const boolFields = new Set(['track_inventory','allow_backorder','featured','is_active','delete']);
 const optionalText = new Set(['slug','brand','short_description','description','hsn_code','barcode','seo_title','seo_description','seo_keywords']);
 
 function csvEscape(value){const s=String(value ?? ''); return /[",\n\r]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;}
@@ -42,11 +42,55 @@ export async function POST(request){
   if(!body||!Array.isArray(body.rows))return jsonError('rows array is required.');
   if(body.rows.length>MAX_ROWS)return jsonError(`Maximum ${MAX_ROWS} rows per import.`);
   const normalized=[];
-  try{for(const row of body.rows) normalized.push({...normalizeRow(row),company_id:companyId});}
-  catch(e){return jsonError(e.message||'Invalid CSV row.');}
-  if(!normalized.length)return Response.json({count:0});
-  const {data,error}=await supabase.from('website_products').upsert(normalized,{onConflict:'company_id,sku'}).select('id,sku');
-  if(error)return jsonError(error.message,500);
-  await audit(supabase,{companyId,userId:user.id,action:'products.bulk_import',entityType:'website_products',entityId:null,newData:{count:data?.length||0}});
-  return Response.json({count:data?.length||normalized.length});
+  const deleteSkus=[];
+  const seenSkus=new Set();
+  try{
+    for(const row of body.rows){
+      const item=normalizeRow(row);
+      const key=String(item.sku||'').trim().toLowerCase();
+      if(seenSkus.has(key)) throw Error(`Duplicate SKU in import: ${item.sku}.`);
+      seenSkus.add(key);
+      if(item.delete===true) deleteSkus.push(item.sku);
+      else {
+        delete item.delete;
+        normalized.push({...item,company_id:companyId});
+      }
+    }
+  }catch(e){return jsonError(e.message||'Invalid CSV row.');}
+
+  let deleted=[];
+  if(deleteSkus.length){
+    const {data,error}=await supabase
+      .from('website_products')
+      .delete()
+      .eq('company_id',companyId)
+      .in('sku',deleteSkus)
+      .select('sku');
+    if(error)return jsonError(error.message,500);
+    deleted=data||[];
+    await audit(supabase,{
+      companyId,userId:user.id,action:'products.bulk_delete',entityType:'website_products',entityId:null,
+      newData:{count:deleted.length,skus:deleted.map(x=>x.sku)}
+    });
+  }
+
+  let imported=[];
+  if(normalized.length){
+    const {data,error}=await supabase.from('website_products').upsert(normalized,{onConflict:'company_id,sku'}).select('id,sku');
+    if(error)return jsonError(error.message,500);
+    imported=data||[];
+    await audit(supabase,{
+      companyId,userId:user.id,action:'products.bulk_import',entityType:'website_products',entityId:null,
+      newData:{count:imported.length}
+    });
+  }
+
+  const deletedSet=new Set(deleted.map(x=>String(x.sku).toLowerCase()));
+  const missingDeleteSkus=deleteSkus.filter(s=>!deletedSet.has(String(s).toLowerCase()));
+  return Response.json({
+    count:imported.length+deleted.length,
+    imported:imported.length,
+    deleted:deleted.length,
+    missing_delete_skus:missingDeleteSkus
+  });
 }
