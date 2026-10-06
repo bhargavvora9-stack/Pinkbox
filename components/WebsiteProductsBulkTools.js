@@ -4,12 +4,12 @@ import { useMemo, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload } from 'lucide-react';
 
-const columns = ['sku','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
+const columns = ['sku','delete','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
 const numeric = new Set(['price','compare_at_price','cost_price','gst_percent','weight','stock_quantity','low_stock_threshold']);
-const bools = new Set(['track_inventory','allow_backorder','featured','is_active']);
+const bools = new Set(['delete','track_inventory','allow_backorder','featured','is_active']);
 
 const templateRow = {
-  sku:'SKU001', title:'Example Product', slug:'example-product', brand:'PinkBox', short_description:'Short description', description:'Full product description',
+  sku:'SKU001', delete:'false', title:'Example Product', slug:'example-product', brand:'PinkBox', short_description:'Short description', description:'Full product description',
   price:'249', compare_at_price:'299', cost_price:'120', gst_percent:'12', hsn_code:'', barcode:'', weight:'0.25', stock_quantity:'100', low_stock_threshold:'5',
   track_inventory:'true', allow_backorder:'false', featured:'false', is_active:'true', seo_title:'', seo_description:'', seo_keywords:''
 };
@@ -37,8 +37,12 @@ function validateRows(rows){
       out[key]=value;
     }
     if(!out.sku) errors.push(`Row ${index+2}: SKU is required.`);
-    if(!out.title) errors.push(`Row ${index+2}: Title is required.`);
-    if(out.price === undefined || out.price === '') errors.push(`Row ${index+2}: Price is required.`);
+    if(out.delete === true) {
+      // Delete rows only need the SKU and delete=true.
+    } else {
+      if(!out.title) errors.push(`Row ${index+2}: Title is required.`);
+      if(out.price === undefined || out.price === '') errors.push(`Row ${index+2}: Price is required.`);
+    }
     const sku=String(out.sku||'').toLowerCase();
     if(sku){ if(seen.has(sku)) errors.push(`Row ${index+2}: duplicate SKU ${out.sku} in this file.`); else seen.add(sku); }
     return out;
@@ -63,17 +67,14 @@ export default function WebsiteProductsBulkTools(){
     if(file.size>5*1024*1024){setErrors(['Maximum CSV file size is 5 MB.']);return;}
     Papa.parse(file,{header:true,skipEmptyLines:'greedy',transformHeader:h=>String(h||'').trim().toLowerCase(),complete:result=>{
       const fields=result.meta.fields||[];
-      const missing=columns.filter(c=>!fields.includes(c));
       const unknown=fields.filter(f=>f&&!columns.includes(f));
       const fileErrors=[];
-      if(missing.includes('sku')) fileErrors.push('Missing required column: sku.');
-      if(missing.includes('title')) fileErrors.push('Missing required column: title.');
-      if(missing.includes('price')) fileErrors.push('Missing required column: price.');
+      if(!fields.includes('sku')) fileErrors.push('Missing required column: sku.');
       if(unknown.length) fileErrors.push(`Unknown columns will be ignored: ${unknown.join(', ')}`);
       if(result.errors?.length) fileErrors.push(...result.errors.slice(0,10).map(x=>`CSV parse error at row ${x.row+2}: ${x.message}`));
       const {normalized,errors:rowErrors}=validateRows(result.data||[]);
       setRows(normalized);setErrors([...fileErrors,...rowErrors].slice(0,50));
-      if(!fileErrors.some(x=>x.startsWith('Missing required column')) && !rowErrors.length) setStatus(`${normalized.length} row(s) ready to import.`);
+      if(!fileErrors.some(x=>x.startsWith('Missing required column')) && !rowErrors.length) setStatus(`${normalized.length} row(s) ready. Set delete=true for any SKU you want to permanently remove.`);
     }});
   };
 
@@ -84,7 +85,12 @@ export default function WebsiteProductsBulkTools(){
       const res=await fetch('/api/website/catalog-import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows})});
       const data=await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data.error||'Bulk import failed.');
-      setStatus(`Imported ${data.count||rows.length} product row(s). Existing SKUs are updated; new SKUs are created.`);
+      const imported=Number(data.imported||0), deleted=Number(data.deleted||0), missing=data.missing_delete_skus||[];
+      const parts=[];
+      if(imported) parts.push(`${imported} product(s) imported/updated`);
+      if(deleted) parts.push(`${deleted} product(s) permanently deleted`);
+      if(missing.length) parts.push(`${missing.length} delete SKU(s) not found`);
+      setStatus(parts.length ? parts.join(' · ') : 'No changes made.');
       setRows([]);setFileName('');if(fileRef.current) fileRef.current.value='';
     }catch(err){setErrors([err.message||'Bulk import failed.']);}
     finally{setSaving(false);}
@@ -101,7 +107,7 @@ export default function WebsiteProductsBulkTools(){
         <div className="mb-4 flex items-start gap-3"><div className="rounded-xl bg-gray-100 p-2"><Upload size={19}/></div><div><h2 className="font-semibold">1. Upload CSV</h2><p className="text-sm text-gray-500">Required: sku, title, price. Other product and SEO fields are supported.</p></div></div>
         <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="block w-full text-sm"/>
         {fileName&&<p className="mt-3 text-sm text-gray-600">Selected: <b>{fileName}</b></p>}
-        <div className="mt-4 rounded-xl bg-gray-50 p-4 text-xs leading-5 text-gray-600">Existing SKU + company match → update. New SKU → create. Import limit: 1,000 rows. The server revalidates and scopes records to the logged-in company.</div>
+        <div className="mt-4 space-y-2 text-xs leading-5 text-gray-600"><div className="rounded-xl bg-gray-50 p-4">Existing SKU + company match → update. New SKU → create. Import limit: 1,000 rows. The server revalidates and scopes records to the logged-in company.</div><div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"><b>Bulk delete:</b> set <code className="font-semibold">delete=true</code> for the SKU rows you want to permanently remove. Product images, variants, category links and reviews for that product are removed with it; order history keeps the item record.</div></div>
       </section>
       <section className="rounded-2xl border bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-start gap-3"><div className="rounded-xl bg-gray-100 p-2"><CheckCircle2 size={19}/></div><div><h2 className="font-semibold">2. Validate & import</h2><p className="text-sm text-gray-500">Review the preview before writing to the product table.</p></div></div>
@@ -112,7 +118,7 @@ export default function WebsiteProductsBulkTools(){
     {(status||errors.length>0)&&<div className={`rounded-xl border px-4 py-3 text-sm ${errors.length&&invalid?'border-red-200 bg-red-50 text-red-700':'border-green-200 bg-green-50 text-green-700'}`}>{errors.length&&invalid?<div className="flex gap-2"><AlertCircle size={18} className="mt-0.5 shrink-0"/><div><div className="font-semibold">Fix these issues before import</div><div className="mt-1 max-h-40 overflow-auto space-y-1">{errors.map((x,i)=><div key={`${x}-${i}`}>{x}</div>)}</div></div></div>:status}</div>}
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
       <div className="flex items-center justify-between border-b px-5 py-4"><div><h2 className="font-semibold">Preview</h2><p className="text-xs text-gray-500">Showing first 25 of {rows.length} parsed row(s).</p></div><span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{rows.length} rows</span></div>
-      {preview.length?<div className="overflow-auto"><table className="min-w-[980px] text-xs"><thead className="bg-gray-50 text-left uppercase text-gray-500"><tr><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Title</th><th className="px-3 py-2">Brand</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">GST</th><th className="px-3 py-2">Stock</th><th className="px-3 py-2">Active</th></tr></thead><tbody className="divide-y">{preview.map((r,i)=><tr key={`${r.sku}-${i}`}><td className="px-3 py-2 font-semibold">{r.sku}</td><td className="px-3 py-2">{r.title}</td><td className="px-3 py-2">{r.brand||'—'}</td><td className="px-3 py-2">{r.price}</td><td className="px-3 py-2">{r.gst_percent??'—'}</td><td className="px-3 py-2">{r.stock_quantity??'—'}</td><td className="px-3 py-2">{r.is_active===undefined?'—':r.is_active?'Yes':'No'}</td></tr>)}</tbody></table></div>:<div className="p-12 text-center text-sm text-gray-500">Upload a CSV to preview products.</div>}
+      {preview.length?<div className="overflow-auto"><table className="min-w-[980px] text-xs"><thead className="bg-gray-50 text-left uppercase text-gray-500"><tr><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Delete</th><th className="px-3 py-2">Title</th><th className="px-3 py-2">Brand</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">GST</th><th className="px-3 py-2">Stock</th><th className="px-3 py-2">Active</th></tr></thead><tbody className="divide-y">{preview.map((r,i)=><tr key={`${r.sku}-${i}`}><td className="px-3 py-2 font-semibold">{r.sku}</td><td className={`px-3 py-2 font-semibold ${r.delete?'text-red-600':''}`}>{r.delete?'YES':'—'}</td><td className="px-3 py-2">{r.title||'—'}</td><td className="px-3 py-2">{r.brand||'—'}</td><td className="px-3 py-2">{r.price}</td><td className="px-3 py-2">{r.gst_percent??'—'}</td><td className="px-3 py-2">{r.stock_quantity??'—'}</td><td className="px-3 py-2">{r.is_active===undefined?'—':r.is_active?'Yes':'No'}</td></tr>)}</tbody></table></div>:<div className="p-12 text-center text-sm text-gray-500">Upload a CSV to preview products.</div>}
     </section>
   </div>;
 }
