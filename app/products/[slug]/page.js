@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
@@ -11,11 +11,23 @@ import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Preserve old product URLs when a product slug is improved for SEO.
+const LEGACY_PRODUCT_SLUGS = {
+  e: 'maxi-care-3x-320mm-sanitary-pads',
+};
+
 async function getProduct(slug) {
   const db = createAdminClient();
   const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
-  const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
+  const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override';
+  const { data: matchedProduct } = await db.from('website_products').select(productFields).eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
+  let product = matchedProduct;
+  // If an old slug no longer exists, load its mapped destination so the page can issue a permanent redirect.
+  if (!product && LEGACY_PRODUCT_SLUGS[slug]) {
+    const { data: replacement } = await db.from('website_products').select(productFields).eq('company_id', settings.company_id).eq('slug', LEGACY_PRODUCT_SLUGS[slug]).eq('is_active', true).gt('price', 0).maybeSingle();
+    product = replacement;
+  }
   if (!product) return null;
   const [{ data: images }, { data: variants }] = await Promise.all([
     db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order'),
@@ -48,6 +60,7 @@ export default async function ProductPage({ params }) {
   const { slug } = await params;
   const p = await getProduct(slug);
   if (!p) notFound();
+  if (slug !== p.slug) permanentRedirect(`/products/${encodeURIComponent(p.slug)}`);
   const waNumber = String(p.whatsapp_number || '').replace(/[^0-9]/g, '');
   const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I have a question about ${p.title}.`)}` : null;
   const url = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
