@@ -13,7 +13,7 @@ async function getCollection(slug) {
   const db = createAdminClient();
   const { data: settings } = await db.from('website_settings').select('company_id,website_name').eq('slug','pinkbox').eq('status','active').maybeSingle();
   if (!settings) return null;
-  const { data: category } = await db.from('website_categories').select('id,name,slug,description,seo_title,seo_description,image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_active',true).maybeSingle();
+  const { data: category } = await db.from('website_categories').select('id,name,slug,description,seo_title,seo_description,seo_keywords,image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_active',true).maybeSingle();
   if (!category) return null;
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
@@ -34,6 +34,7 @@ export async function generateMetadata({params}) {
   return {
     title,
     description,
+    keywords: c.category.seo_keywords ? c.category.seo_keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean) : undefined,
     alternates: { canonical: `/collections/${encodeURIComponent(c.category.slug)}` },
     openGraph: { title, description, url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`), type: 'website' },
   };
