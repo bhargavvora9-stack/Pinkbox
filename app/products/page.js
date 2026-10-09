@@ -63,6 +63,11 @@ export const metadata = {
     type: 'website',
     url: '/products',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Sanitary Pads & Baby Diapers | PinkBox Products',
+    description: 'Shop PinkBox sanitary pads, baby diapers and everyday hygiene products across India.',
+  },
 };
 
 export default async function ProductsPage() {
