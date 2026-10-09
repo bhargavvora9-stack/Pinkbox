@@ -18,7 +18,7 @@ const LEGACY_PRODUCT_SLUGS = {
 
 async function getProduct(slug) {
   const db = createAdminClient();
-  const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
+  const { data: settings } = await db.from('website_settings').select('company_id,website_name,logo_url,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
   const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override';
   const { data: matchedProduct } = await db.from('website_products').select(productFields).eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
@@ -35,7 +35,7 @@ async function getProduct(slug) {
   ]);
   const orderedImages = [...(images || [])].sort((a, b) => (Number(b.is_primary) - Number(a.is_primary)) || (Number(a.sort_order || 0) - Number(b.sort_order || 0)));
   const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
-  return { ...product, website_name: settings.website_name, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, variants: variants || [], reviews: reviews || [] };
+  return { ...product, website_name: settings.website_name, logo_url: settings.logo_url, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, variants: variants || [], reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -81,7 +81,47 @@ export default async function ProductPage({ params }) {
       priceCurrency: 'INR',
       price: Number(p.price || 0).toFixed(2),
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      itemCondition: 'https://schema.org/NewCondition'
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: {
+        '@type': 'Organization',
+        '@id': absoluteUrl('/#organization'),
+        name: p.website_name || 'PinkBox',
+        url: absoluteUrl('/'),
+        ...(p.logo_url ? { logo: { '@type': 'ImageObject', url: p.logo_url } } : {}),
+        hasMerchantReturnPolicy: {
+          '@type': 'MerchantReturnPolicy',
+          '@id': absoluteUrl('/pages/refund-policy#return-policy'),
+          applicableCountry: 'IN',
+          merchantReturnLink: absoluteUrl('/pages/refund-policy')
+        }
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'IN'
+        },
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          maxValue: 49,
+          currency: 'INR'
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 2,
+            unitCode: 'DAY'
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 3,
+            maxValue: 7,
+            unitCode: 'DAY'
+          }
+        }
+      }
     }
   };
   if (p.reviews.length) {
