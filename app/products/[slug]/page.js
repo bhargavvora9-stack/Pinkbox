@@ -15,7 +15,7 @@ async function getProduct(slug) {
   const db = createAdminClient();
   const { data: settings } = await db.from('website_settings').select('company_id,website_name,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
-  const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
+  const { data: product } = await db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override').eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
   if (!product) return null;
   const [{ data: images }, { data: variants }] = await Promise.all([
     db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order'),
@@ -37,6 +37,7 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
+    keywords: p.seo_keywords ? p.seo_keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean) : undefined,
     alternates: { canonical: `/products/${encodeURIComponent(p.slug)}` },
     openGraph: { type: 'website', url, title, description, images },
     twitter: { card: 'summary_large_image', title, description, images }
