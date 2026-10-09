@@ -36,7 +36,8 @@ export async function generateMetadata({params}) {
     description,
     keywords: c.category.seo_keywords ? c.category.seo_keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean) : undefined,
     alternates: { canonical: `/collections/${encodeURIComponent(c.category.slug)}` },
-    openGraph: { title, description, url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`), type: 'website' },
+    openGraph: { title, description, url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`), type: 'website', images: c.category.image_url ? [c.category.image_url] : undefined },
+    twitter: { card: 'summary_large_image', title, description, images: c.category.image_url ? [c.category.image_url] : undefined },
   };
 }
 
