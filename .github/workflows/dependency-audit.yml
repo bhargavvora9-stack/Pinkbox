@@ -1,0 +1,63 @@
+name: Safe dependency audit
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/dependency-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies and sync lockfile
+        run: npm install
+      - name: Report vulnerabilities before fixes
+        shell: bash
+        run: |
+          npm audit --json > /tmp/audit-before.json || true
+          node <<'NODE'
+          const a = require('/tmp/audit-before.json');
+          console.log('BEFORE TOTALS:', JSON.stringify(a.metadata?.vulnerabilities || {}));
+          for (const [name, v] of Object.entries(a.vulnerabilities || {})) {
+            console.log('BEFORE:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'fixAvailable=' + JSON.stringify(v.fixAvailable));
+          }
+          NODE
+      - name: Apply semver-compatible fixes only
+        run: npm audit fix || true
+      - name: Report vulnerabilities after fixes
+        shell: bash
+        run: |
+          npm audit --json > /tmp/audit-after.json || true
+          node <<'NODE'
+          const a = require('/tmp/audit-after.json');
+          console.log('AFTER TOTALS:', JSON.stringify(a.metadata?.vulnerabilities || {}));
+          for (const [name, v] of Object.entries(a.vulnerabilities || {})) {
+            console.log('REMAINING:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'fixAvailable=' + JSON.stringify(v.fixAvailable));
+          }
+          NODE
+      - name: Commit updated lockfile when changes exist
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply compatible dependency security fixes"
+            git push
+          else
+            echo "No lockfile or package changes to commit."
+          fi
