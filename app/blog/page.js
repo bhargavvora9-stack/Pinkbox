@@ -32,7 +32,6 @@ export default async function BlogIndex(){
  if(!s)return <main className="p-10">PinkBox is not configured.</main>;
  const {data:rawPosts,error:postsError}=await db.from('website_blog_posts').select('id,title,slug,excerpt,cover_image_url,published_at').eq('company_id',s.company_id).eq('is_published',true).order('published_at',{ascending:false}).limit(50);
  if(postsError) throw new Error(postsError.message);
- const now=Date.now();
  const posts=(rawPosts||[]).filter(post=>!post.published_at || new Date(post.published_at).getTime()<=now);
  const blogSchema={
   '@context':'https://schema.org',
