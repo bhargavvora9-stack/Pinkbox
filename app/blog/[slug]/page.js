@@ -37,13 +37,16 @@ export default async function BlogPage({params}){
 
 export async function generateMetadata({params}){
  const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return {};
- const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
+ const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url,seo_title,seo_description,seo_keywords').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
  const image=post?.cover_image_url||post?.featured_image_url;
+ const title=post?.seo_title||post?.title;
+ const description=post?.seo_description||post?.excerpt||undefined;
  return post?{
-  title:post.title,
-  description:post.excerpt||undefined,
+  title,
+  description,
+  keywords:post.seo_keywords?post.seo_keywords.split(',').map(keyword=>keyword.trim()).filter(Boolean):undefined,
   alternates:{canonical:`/blog/${encodeURIComponent(post.slug)}`},
-  openGraph:{title:post.title,description:post.excerpt||undefined,url:absoluteUrl(`/blog/${encodeURIComponent(post.slug)}`),type:'article',images:image?[image]:undefined},
-  twitter:{card:'summary_large_image',title:post.title,description:post.excerpt||undefined,images:image?[image]:undefined}
+  openGraph:{title,description,url:absoluteUrl(`/blog/${encodeURIComponent(post.slug)}`),type:'article',images:image?[image]:undefined},
+  twitter:{card:'summary_large_image',title,description,images:image?[image]:undefined}
  }:{title:settings.website_name||'PinkBox'};
 }
