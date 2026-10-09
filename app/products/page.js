@@ -55,6 +55,7 @@ export const revalidate = 0;
 export const metadata = {
   title: 'Sanitary Pads & Baby Diapers | PinkBox Products',
   description: 'Shop PinkBox sanitary pads, baby diapers and everyday hygiene products with soft materials, reliable protection and discreet delivery across India.',
+  keywords: ['sanitary pads online', 'sanitary napkins online', 'baby diapers online', '320mm sanitary pads', 'PinkBox'],
   alternates: { canonical: '/products' },
   openGraph: {
     title: 'Sanitary Pads & Baby Diapers | PinkBox Products',
