@@ -33,7 +33,8 @@ jobs:
           const a = require('/tmp/audit-before.json');
           console.log('BEFORE TOTALS:', JSON.stringify(a.metadata?.vulnerabilities || {}));
           for (const [name, v] of Object.entries(a.vulnerabilities || {})) {
-            console.log('BEFORE:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'fixAvailable=' + JSON.stringify(v.fixAvailable));
+            const via = (v.via || []).map(x => typeof x === 'string' ? x : {name:x.name,title:x.title,url:x.url,range:x.range,severity:x.severity});
+            console.log('BEFORE:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'advisories=' + JSON.stringify(via), 'fixAvailable=' + JSON.stringify(v.fixAvailable));
           }
           NODE
       - name: Apply semver-compatible fixes only
@@ -46,7 +47,8 @@ jobs:
           const a = require('/tmp/audit-after.json');
           console.log('AFTER TOTALS:', JSON.stringify(a.metadata?.vulnerabilities || {}));
           for (const [name, v] of Object.entries(a.vulnerabilities || {})) {
-            console.log('REMAINING:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'fixAvailable=' + JSON.stringify(v.fixAvailable));
+            const via = (v.via || []).map(x => typeof x === 'string' ? x : {name:x.name,title:x.title,url:x.url,range:x.range,severity:x.severity});
+            console.log('REMAINING:', name, 'severity=' + v.severity, 'direct=' + v.isDirect, 'range=' + v.range, 'advisories=' + JSON.stringify(via), 'fixAvailable=' + JSON.stringify(v.fixAvailable));
           }
           NODE
       - name: Commit updated lockfile when changes exist
