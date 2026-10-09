@@ -20,6 +20,7 @@ export async function generateMetadata(){
  return {
   title,
   description,
+  keywords:['sanitary pad guides','320mm sanitary pads','sanitary pads for heavy flow','cottony sanitary pads','menstrual hygiene education'],
   alternates:{canonical:'/blog'},
   openGraph:{title,description,url:absoluteUrl('/blog'),type:'website',images:s.logo_url?[s.logo_url]:undefined},
   twitter:{card:'summary_large_image',title,description,images:s.logo_url?[s.logo_url]:undefined}
