@@ -68,7 +68,7 @@ export default function AdminExcelTableFilters() {
                   return allowed.some(value => normalize(value).toLowerCase() === raw);
                 }))
               .map(row => getCellValue(row.children[colIndex]))
-          ))).sort((a, b) => {
+          )).sort((a, b) => {
             if (!a) return 1;
             if (!b) return -1;
             return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
