@@ -1,293 +1,348 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, RotateCcw, Search, X } from 'lucide-react';
+import { ArrowDownAZ, ArrowDownWideNarrow, ArrowUpAZ, ArrowUpWideNarrow, Check, RotateCcw, Search, X } from 'lucide-react';
 
-const normalize = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
-const getCellValue = (cell) => normalize(cell?.textContent);
+const normalize = value => String(value ?? '').replace(/\s+/g, ' ').trim();
+const cellValue = (row, columnIndex) => normalize(row?.children?.[columnIndex]?.textContent);
+const compareText = (a, b) => normalize(a).localeCompare(normalize(b), undefined, { numeric: true, sensitivity: 'base' });
+const parseNumeric = value => {
+  const cleaned = String(value ?? '').replace(/[₹$,%\s,]/g, '');
+  if (!cleaned) return NaN;
+  return Number(cleaned);
+};
+const isNumericColumn = values => {
+  const nonEmpty = values.map(normalize).filter(Boolean);
+  return nonEmpty.length > 0 && nonEmpty.every(value => Number.isFinite(parseNumeric(value)));
+};
+
+const filterCss = [
+  '.pb-excel-filter-button{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;padding:0;border:1px solid transparent;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;line-height:1;opacity:.9}',
+  '.pb-excel-filter-button:hover{border-color:#c8c8c8;background:#eaf2fb;color:#1f2937;opacity:1}',
+  '.pb-excel-filter-button.pb-excel-filter-active,.pb-excel-filter-button.pb-excel-sort-active{border-color:#8aaee0;background:#dceafa;color:#174ea6;opacity:1}',
+  '.pb-excel-filter-menu{position:fixed;z-index:99999;width:304px;max-width:calc(100vw - 16px);max-height:min(520px,calc(100vh - 16px));overflow-y:auto;border:1px solid #b8b8b8;border-radius:3px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.22);color:#222;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.35}',
+  '.pb-excel-filter-menu *{box-sizing:border-box}',
+  '.pb-excel-filter-menu button{font:inherit;color:#222}',
+  '.pb-excel-filter-menu .pb-filter-muted{color:#666}',
+  '.pb-excel-filter-menu .pb-filter-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f6f6f6;border-bottom:1px solid #dedede}',
+  '.pb-excel-filter-menu .pb-filter-section{padding:9px 11px;border-bottom:1px solid #dedede}',
+  '.pb-excel-filter-menu .pb-filter-search{position:relative}',
+  '.pb-excel-filter-menu .pb-filter-input{display:block;width:100%;height:34px;padding:6px 9px 6px 30px;border:1px solid #a6a6a6;border-radius:2px;background:#fff;color:#222;outline:none}',
+  '.pb-excel-filter-menu .pb-filter-input:focus{border-color:#217346;box-shadow:0 0 0 1px #217346}',
+  '.pb-excel-filter-menu .pb-filter-menu-action{display:flex;width:100%;align-items:center;gap:9px;padding:7px 9px;border:0;background:transparent;text-align:left;cursor:pointer}',
+  '.pb-excel-filter-menu .pb-filter-menu-action:hover{background:#eaf2fb}',
+  '.pb-excel-filter-menu .pb-filter-rule{height:1px;margin:4px 0;background:#e2e2e2}',
+  '.pb-excel-filter-menu .pb-filter-list-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#fafafa;border-bottom:1px solid #ededed}',
+  '.pb-excel-filter-menu .pb-filter-link{padding:3px 4px;border:0;background:transparent;color:#1a5fb4;cursor:pointer}',
+  '.pb-excel-filter-menu .pb-filter-link:hover{text-decoration:underline}',
+  '.pb-excel-filter-menu .pb-filter-values{max-height:165px;overflow-y:auto;padding:4px}',
+  '.pb-excel-filter-menu .pb-filter-value{display:flex;width:100%;align-items:center;gap:8px;padding:6px 7px;border:1px solid transparent;border-radius:2px;background:#fff;text-align:left;cursor:pointer}',
+  '.pb-excel-filter-menu .pb-filter-value:hover{background:#eaf2fb;border-color:#d4e4f8}',
+  '.pb-excel-filter-menu .pb-filter-check{display:inline-flex;width:15px;height:15px;flex-shrink:0;align-items:center;justify-content:center;border:1px solid #777;border-radius:2px;background:#fff;color:#fff}',
+  '.pb-excel-filter-menu .pb-filter-check.is-checked{border-color:#217346;background:#217346}',
+  '.pb-excel-filter-menu .pb-filter-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;background:#f6f6f6;border-top:1px solid #dedede}',
+  '.pb-excel-filter-menu .pb-filter-btn{min-height:29px;padding:5px 13px;border:1px solid #b6b6b6;border-radius:2px;background:#fff;cursor:pointer}',
+  '.pb-excel-filter-menu .pb-filter-btn:hover{background:#f1f1f1}',
+  '.pb-excel-filter-menu .pb-filter-btn-primary{border-color:#185c37;background:#217346;color:#fff}',
+  '.pb-excel-filter-menu .pb-filter-btn-primary:hover{background:#185c37}'
+].join('\n');
+
+function applyTableView(table, tableKey, allFilters, allSorts) {
+  if (!table) return;
+  const tableFilters = allFilters[tableKey] || {};
+  const rows = Array.from(table.querySelectorAll('tbody > tr'));
+
+  rows.forEach(row => {
+    const visible = Object.entries(tableFilters).every(([columnKey, allowed]) => {
+      const value = cellValue(row, Number(columnKey));
+      return Array.isArray(allowed) && allowed.some(item => normalize(item).toLocaleLowerCase() === value.toLocaleLowerCase());
+    });
+    row.style.display = visible ? '' : 'none';
+  });
+
+  const sort = allSorts[tableKey];
+  if (sort) {
+    const sorted = [...rows].sort((rowA, rowB) => {
+      const a = cellValue(rowA, sort.columnIndex);
+      const b = cellValue(rowB, sort.columnIndex);
+      let order;
+      if (sort.type === 'number') {
+        const numA = parseNumeric(a);
+        const numB = parseNumeric(b);
+        order = Number.isFinite(numA) && Number.isFinite(numB)
+          ? numA - numB
+          : Number.isFinite(numA) ? -1 : Number.isFinite(numB) ? 1 : compareText(a, b);
+      } else {
+        order = compareText(a, b);
+      }
+      return sort.direction === 'desc' ? -order : order;
+    });
+    if (sorted.some((row, index) => row !== rows[index])) {
+      const body = table.querySelector('tbody');
+      sorted.forEach(row => body.appendChild(row));
+    }
+  }
+
+  Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, columnIndex) => {
+    const button = th.querySelector('.pb-excel-filter-button');
+    if (!button) return;
+    const filtered = Object.prototype.hasOwnProperty.call(tableFilters, String(columnIndex));
+    button.classList.toggle('pb-excel-filter-active', filtered);
+    button.classList.toggle('pb-excel-sort-active', sort?.columnIndex === columnIndex);
+    button.title = (th.dataset.pbExcelFilterLabel || normalize(th.textContent)) +
+      (filtered ? ' — filter active' : '') +
+      (sort?.columnIndex === columnIndex ? (sort.direction === 'asc' ? ' — ascending' : ' — descending') : '');
+  }));
+}
 
 export default function AdminExcelTableFilters() {
   const [activeMenu, setActiveMenu] = useState(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(new Set());
-  const [anchor, setAnchor] = useState(null);
   const [menuValues, setMenuValues] = useState([]);
   const [filters, setFilters] = useState({});
+  const [sorts, setSorts] = useState({});
   const filtersRef = useRef({});
+  const sortsRef = useRef({});
   filtersRef.current = filters;
+  sortsRef.current = sorts;
 
   const scanTables = () => {
-    document.querySelectorAll('.website-admin main table').forEach((table, tableIndex) => {
-      const headerRow = table.querySelector('thead tr');
-      if (!headerRow) return;
+    const tables = Array.from(document.querySelectorAll('.website-admin main table'));
+    tables.forEach((table, tableIndex) => {
+      const pathname = window.location.pathname || '/admin';
+      const tableKey = pathname + '::' + tableIndex;
+      table.dataset.pbExcelFilterTableId = tableKey;
 
-      Array.from(headerRow.children).forEach((th, colIndex) => {
-        if (th.dataset.excelFilterMounted === '1') return;
-
-        const original = normalize(th.textContent);
+      Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, colIndex) => {
+        if (th.tagName !== 'TH') return;
+        const original = th.dataset.pbExcelFilterLabel || normalize(th.textContent);
         if (!original || /^(actions|action)$/i.test(original)) return;
+        th.dataset.pbExcelFilterLabel = original;
+        th.style.position = th.style.position || 'relative';
+        if (!th.dataset.pbExcelFilterPaddingApplied) {
+          th.dataset.pbExcelFilterOldPaddingRight = th.style.paddingRight || '';
+          th.style.paddingRight = '30px';
+          th.dataset.pbExcelFilterPaddingApplied = '1';
+        }
 
-        th.dataset.excelFilterMounted = '1';
-        th.dataset.excelFilterLabel = original;
-        th.style.position = 'relative';
-        th.style.paddingRight = '34px';
-
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.setAttribute('aria-label', 'Filter ' + original);
-        button.title = 'Filter ' + original;
-        button.className = 'pb-excel-filter-button';
-        button.innerHTML = '<span style="font-size:11px">▼</span>';
-
-        button.onclick = (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-
-          const rect = button.getBoundingClientRect();
-          const nextAnchor = {
-            tableIndex,
-            colIndex,
-            label: original,
-            rect: {
-              top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 420)),
-              left: Math.max(8, Math.min(rect.left - 8, window.innerWidth - 316)),
-            },
-          };
-
-          const currentTable = table;
-          const prefix = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':';
-          const filterKey = prefix + String(colIndex);
-          const tableFilters = filtersRef.current;
-          const values = Array.from(new Set(
-            Array.from(currentTable.querySelectorAll('tbody > tr'))
-              .filter(row => Object.entries(tableFilters)
-                .filter(([key]) => key.startsWith(prefix) && key !== filterKey)
-                .every(([key, allowed]) => {
-                  const column = Number(key.split(':')[1]);
-                  const raw = getCellValue(row.children[column]).toLowerCase();
-                  return allowed.some(value => normalize(value).toLowerCase() === raw);
-                }))
-              .map(row => getCellValue(row.children[colIndex]))
-          )).sort((a, b) => {
-            if (!a) return 1;
-            if (!b) return -1;
-            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        let button = th.querySelector('.pb-excel-filter-button');
+        if (!button) {
+          button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'pb-excel-filter-button';
+          button.setAttribute('aria-label', 'Filter ' + original);
+          button.innerHTML = '<span aria-hidden="true">▼</span>';
+          button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const rect = button.getBoundingClientRect();
+            const currentTable = button.closest('table');
+            if (!currentTable) return;
+            const currentTableIndex = Array.from(document.querySelectorAll('.website-admin main table')).indexOf(currentTable);
+            const currentPath = window.location.pathname || '/admin';
+            const currentTableKey = currentPath + '::' + currentTableIndex;
+            currentTable.dataset.pbExcelFilterTableId = currentTableKey;
+            const tableFilters = filtersRef.current[currentTableKey] || {};
+            const columnKey = String(colIndex);
+            const values = Array.from(new Set(
+              Array.from(currentTable.querySelectorAll('tbody > tr'))
+                .filter(row => Object.entries(tableFilters)
+                  .filter(([key]) => key !== columnKey)
+                  .every(([key, allowed]) => allowed.some(item => normalize(item).toLocaleLowerCase() === cellValue(row, Number(key)).toLocaleLowerCase())))
+                .map(row => cellValue(row, colIndex))
+            )).sort((a, b) => {
+              if (!a) return 1;
+              if (!b) return -1;
+              return compareText(a, b);
+            });
+            const currentSelection = Object.prototype.hasOwnProperty.call(tableFilters, columnKey)
+              ? tableFilters[columnKey]
+              : values;
+            setQuery('');
+            setMenuValues(values);
+            setSelected(new Set(currentSelection));
+            setActiveMenu({
+              tableKey: currentTableKey,
+              tableIndex: currentTableIndex,
+              colIndex,
+              label: original,
+              numeric: isNumericColumn(values),
+              rect: {
+                top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 445)),
+                left: Math.max(8, Math.min(rect.left - 8, window.innerWidth - 316))
+              }
+            });
           });
-          const currentSelection = Object.prototype.hasOwnProperty.call(tableFilters, filterKey)
-            ? tableFilters[filterKey]
-            : values;
-          setQuery('');
-          setSelected(new Set(currentSelection));
-          setMenuValues(values);
-          setAnchor(nextAnchor);
-          setActiveMenu(tableIndex + ':' + colIndex);
-        };
+          th.appendChild(button);
+        }
+        button.title = 'Filter / Sort ' + original;
+      }));
 
-        th.appendChild(button);
-        const filterKeyForButton = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':' + String(colIndex);
-        button.classList.toggle('pb-excel-filter-active', Object.prototype.hasOwnProperty.call(filtersRef.current, filterKeyForButton));
-      });
-      const prefix = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':';
-      const activeFilters = Object.entries(filtersRef.current).filter(([key]) => key.startsWith(prefix));
-      if (activeFilters.length) {
-        Array.from(table.querySelectorAll('tbody > tr')).forEach(row => {
-          const show = activeFilters.every(([key, allowed]) => {
-            const column = Number(key.slice(prefix.length));
-            const raw = getCellValue(row.children[column]).toLowerCase();
-            return allowed.some(value => normalize(value).toLowerCase() === raw);
-          });
-          row.style.display = show ? '' : 'none';
-        });
-      }
+      applyTableView(table, tableKey, filtersRef.current, sortsRef.current);
     });
   };
 
   useEffect(() => {
     scanTables();
-
-    const observer = new MutationObserver(() => {
-      clearTimeout(window.__pbExcelFilterTimer);
-      window.__pbExcelFilterTimer = setTimeout(scanTables, 80);
-    });
-
+    let timer;
     const root = document.querySelector('.website-admin main') || document.body;
+    const observer = new MutationObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(scanTables, 100);
+    });
     observer.observe(root, { childList: true, subtree: true });
-
+    const close = () => setActiveMenu(null);
+    const closeOnScroll = () => setActiveMenu(null);
+    document.addEventListener('click', close);
+    window.addEventListener('scroll', closeOnScroll, true);
+    window.addEventListener('resize', closeOnScroll);
     return () => {
-      clearTimeout(window.__pbExcelFilterTimer);
+      clearTimeout(timer);
       observer.disconnect();
+      document.removeEventListener('click', close);
+      window.removeEventListener('scroll', closeOnScroll, true);
+      window.removeEventListener('resize', closeOnScroll);
+      document.querySelectorAll('.pb-excel-filter-button').forEach(button => button.remove());
+      document.querySelectorAll('.website-admin main table th[data-pb-excel-filter-padding-applied="1"]').forEach(th => {
+        th.style.paddingRight = th.dataset.pbExcelFilterOldPaddingRight || '';
+        delete th.dataset.pbExcelFilterPaddingApplied;
+        delete th.dataset.pbExcelFilterOldPaddingRight;
+        delete th.dataset.pbExcelFilterLabel;
+      });
     };
   }, []);
 
-  useEffect(() => {
-    const close = () => setActiveMenu(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, []);
-
   const visibleValues = query.trim()
-    ? menuValues.filter(v => (v === '' ? '(Blanks)' : v).toLowerCase().includes(query.trim().toLowerCase()))
+    ? menuValues.filter(value => (value === '' ? '(Blanks)' : value).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
     : menuValues;
 
-  const apply = (values) => {
-    if (!anchor) return;
-    const table = Array.from(document.querySelectorAll('.website-admin main table'))[anchor.tableIndex];
-    if (!table) return;
-    const prefix = String(window.location.pathname || '/admin') + '::' + String(anchor.tableIndex) + ':';
-    const filterKey = prefix + String(anchor.colIndex);
-    const nextFilters = { ...filtersRef.current };
-    const selectedValues = Array.from(values);
-    const allSelected = menuValues.length > 0 && selectedValues.length === menuValues.length && menuValues.every(value => values.has(value));
-    if (allSelected) delete nextFilters[filterKey];
-    else nextFilters[filterKey] = selectedValues;
-    filtersRef.current = nextFilters;
-    setFilters(nextFilters);
-    const activeFilters = Object.entries(nextFilters).filter(([key]) => key.startsWith(prefix));
-    Array.from(table.querySelectorAll('tbody > tr')).forEach(row => {
-      const show = activeFilters.every(([key, allowed]) => {
-        const column = Number(key.split(':')[1]);
-        const raw = getCellValue(row.children[column]).toLowerCase();
-        return allowed.some(value => normalize(value).toLowerCase() === raw);
-      });
-      row.style.display = show ? '' : 'none';
-    });
-    const th = table.querySelector('thead tr > *:nth-child(' + (anchor.colIndex + 1) + ')');
-    th?.querySelector('.pb-excel-filter-button')?.classList.toggle('pb-excel-filter-active', Object.prototype.hasOwnProperty.call(nextFilters, filterKey));
+  const apply = () => {
+    if (!activeMenu) return;
+    const next = { ...filtersRef.current };
+    const tableFilters = { ...(next[activeMenu.tableKey] || {}) };
+    const columnKey = String(activeMenu.colIndex);
+    const allSelected = menuValues.length > 0 && menuValues.every(value => selected.has(value)) && selected.size === menuValues.length;
+    if (allSelected) delete tableFilters[columnKey];
+    else tableFilters[columnKey] = Array.from(selected);
+    if (Object.keys(tableFilters).length) next[activeMenu.tableKey] = tableFilters;
+    else delete next[activeMenu.tableKey];
+    filtersRef.current = next;
+    setFilters(next);
+    const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
+    applyTableView(table, activeMenu.tableKey, next, sortsRef.current);
     setActiveMenu(null);
   };
 
-  const clear = () => {
-    if (!anchor) return;
-    const table = Array.from(document.querySelectorAll('.website-admin main table'))[anchor.tableIndex];
-    if (!table) return;
-    const prefix = String(anchor.tableIndex) + ':';
-    const filterKey = prefix + String(anchor.colIndex);
-    const nextFilters = { ...filtersRef.current };
-    delete nextFilters[filterKey];
-    filtersRef.current = nextFilters;
-    setFilters(nextFilters);
-    const activeFilters = Object.entries(nextFilters).filter(([key]) => key.startsWith(prefix));
-    Array.from(table.querySelectorAll('tbody > tr')).forEach(row => {
-      const show = activeFilters.every(([key, allowed]) => {
-        const column = Number(key.split(':')[1]);
-        const raw = getCellValue(row.children[column]).toLowerCase();
-        return allowed.some(value => normalize(value).toLowerCase() === raw);
-      });
-      row.style.display = show ? '' : 'none';
-    });
-    Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => {
-      Array.from(headerRow.children).forEach((header, columnIndex) => {
-        const key = prefix + String(columnIndex);
-        header.querySelector('.pb-excel-filter-button')?.classList.toggle('pb-excel-filter-active', Object.prototype.hasOwnProperty.call(nextFilters, key));
-      });
-    });
-    setSelected(new Set());
+  const clearColumnFilter = () => {
+    if (!activeMenu) return;
+    const next = { ...filtersRef.current };
+    const tableFilters = { ...(next[activeMenu.tableKey] || {}) };
+    delete tableFilters[String(activeMenu.colIndex)];
+    if (Object.keys(tableFilters).length) next[activeMenu.tableKey] = tableFilters;
+    else delete next[activeMenu.tableKey];
+    filtersRef.current = next;
+    setFilters(next);
+    const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
+    applyTableView(table, activeMenu.tableKey, next, sortsRef.current);
+    setSelected(new Set(menuValues));
     setQuery('');
     setActiveMenu(null);
   };
-  const toggleValue = (value) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
-      return next;
-    });
+
+  const sortBy = (type, direction) => {
+    if (!activeMenu) return;
+    const next = { ...sortsRef.current };
+    next[activeMenu.tableKey] = { columnIndex: activeMenu.colIndex, type, direction };
+    sortsRef.current = next;
+    setSorts(next);
+    const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
+    applyTableView(table, activeMenu.tableKey, filtersRef.current, next);
+    setActiveMenu(null);
   };
 
+  const clearSort = () => {
+    if (!activeMenu) return;
+    const next = { ...sortsRef.current };
+    delete next[activeMenu.tableKey];
+    sortsRef.current = next;
+    setSorts(next);
+    const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
+    applyTableView(table, activeMenu.tableKey, filtersRef.current, next);
+    setActiveMenu(null);
+  };
+
+  const toggleValue = value => setSelected(previous => {
+    const next = new Set(previous);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    return next;
+  });
+  const allVisibleSelected = visibleValues.length > 0 && visibleValues.every(value => selected.has(value));
   const selectAllVisible = () => setSelected(previous => {
     const next = new Set(previous);
-    if (visibleValues.length > 0 && visibleValues.every(value => next.has(value))) visibleValues.forEach(value => next.delete(value));
+    if (allVisibleSelected) visibleValues.forEach(value => next.delete(value));
     else visibleValues.forEach(value => next.add(value));
     return next;
   });
-  const allChecked = visibleValues.length > 0 && visibleValues.every(v => selected.has(v));
 
   return (
     <>
-      <style>{`.pb-excel-filter-button{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid transparent;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;opacity:.9}
-.pb-excel-filter-button:hover{border-color:#c8c8c8;background:#eaf2fb;color:#1f2937;opacity:1}
-.pb-excel-filter-button.pb-excel-filter-active{border-color:#8aaee0;background:#dceafa;color:#174ea6;opacity:1}
-.pb-excel-filter-menu{position:fixed;z-index:99999;width:304px;max-width:calc(100vw - 16px);max-height:min(440px,calc(100vh - 16px));overflow-y:auto;border:1px solid #b8b8b8;border-radius:3px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.22);color:#222;font-family:Arial,Helvetica,sans-serif;font-size:13px}
-.pb-excel-filter-menu button{font:inherit;color:#222}
-.pb-excel-filter-menu .filter-muted{color:#666!important}
-.pb-excel-filter-menu .filter-border{border-color:#dedede!important}
-.pb-excel-filter-menu .filter-surface{background:#f6f6f6!important}
-.pb-excel-filter-menu .filter-input{width:100%;border:1px solid #a6a6a6!important;background:#fff!important;color:#222!important;border-radius:2px;outline:none;box-shadow:none!important}
-.pb-excel-filter-menu .filter-input::placeholder{color:#777!important}
-.pb-excel-filter-menu .filter-input:focus{border-color:#217346!important;box-shadow:0 0 0 1px #217346!important}
-.pb-excel-filter-menu .value-row:hover{background:#eaf2fb!important}
-.pb-excel-filter-menu .select-box{border:1px solid #777;background:#fff;color:#fff}
-.pb-excel-filter-menu .select-box.checked{border-color:#217346;background:#217346;color:#fff}
-.pb-excel-filter-menu .apply-btn{background:#217346!important;color:#fff!important;border:1px solid #1b5e39;box-shadow:none}
-.pb-excel-filter-menu .apply-btn:hover{background:#185c37!important}
-.pb-excel-filter-menu .close-btn:hover,.pb-excel-filter-menu .action-link:hover{background:#eee!important;color:#111!important}`}</style>
-
-      {activeMenu && anchor && (
-        <div
-          className="pb-excel-filter-menu"
-          style={{ top: anchor.rect.top, left: anchor.rect.left }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between border-b filter-border px-3 py-2.5">
+      <style>{filterCss}</style>
+      {activeMenu && (
+        <div className="pb-excel-filter-menu" style={{ top: activeMenu.rect.top, left: activeMenu.rect.left }} onClick={event => event.stopPropagation()}>
+          <div className="pb-filter-header">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Filter: {anchor.label}</div>
-              <div className="text-[11px] filter-muted">Excel-style value filter</div>
+              <div style={{fontWeight:600,color:'#222'}}>Sort / Filter: {activeMenu.label}</div>
+              <div className="pb-filter-muted" style={{fontSize:11,marginTop:2}}>Excel-style column controls</div>
             </div>
-            <button type="button" onClick={() => setActiveMenu(null)} className="close-btn rounded-lg p-1 filter-muted hover:bg-white/10">
-              <X size={15} />
-            </button>
+            <button type="button" aria-label="Close" onClick={() => setActiveMenu(null)} className="pb-filter-btn"><X size={14}/></button>
           </div>
 
-          <div className="border-b filter-border p-2.5">
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search values..."
-                className="filter-input px-8 py-2.5 text-sm"
-              />
+          <div className="pb-filter-section">
+            <button type="button" className="pb-filter-menu-action" onClick={() => sortBy('text','asc')}><ArrowUpAZ size={16}/> Sort A to Z</button>
+            <button type="button" className="pb-filter-menu-action" onClick={() => sortBy('text','desc')}><ArrowDownAZ size={16}/> Sort Z to A</button>
+            {activeMenu.numeric && <>
+              <div className="pb-filter-rule"/>
+              <button type="button" className="pb-filter-menu-action" onClick={() => sortBy('number','asc')}><ArrowDownWideNarrow size={16}/> Sort Smallest to Largest</button>
+              <button type="button" className="pb-filter-menu-action" onClick={() => sortBy('number','desc')}><ArrowUpWideNarrow size={16}/> Sort Largest to Smallest</button>
+            </>}
+            {sorts[activeMenu.tableKey] && <button type="button" className="pb-filter-menu-action" onClick={clearSort}><RotateCcw size={15}/> Clear Sort</button>}
+          </div>
+
+          <div className="pb-filter-section">
+            <div className="pb-filter-search">
+              <Search size={14} style={{position:'absolute',left:9,top:10,color:'#666'}}/>
+              <input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Search values" className="pb-filter-input"/>
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-b filter-border filter-surface px-3 py-2.5 text-xs">
-            <button type="button" onClick={selectAllVisible} className="action-link rounded-md px-2 py-1 font-semibold text-gray-800">
-              {allChecked ? 'Clear visible' : 'Select all'}
-            </button>
-            <button type="button" onClick={clear} className="action-link rounded-md px-2 py-1 text-gray-800">
-              <RotateCcw size={12} /> Clear Filter
-            </button>
+          <div className="pb-filter-list-head">
+            <label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer'}}>
+              <input type="checkbox" checked={allVisibleSelected} onChange={selectAllVisible}/>
+              <span>Select All</span>
+            </label>
+            <button type="button" className="pb-filter-link" onClick={clearColumnFilter}>Clear Filter</button>
           </div>
 
-          <div className="max-h-52 overflow-y-auto p-2">
+          <div className="pb-filter-values">
             {!visibleValues.length ? (
-              <div className="px-3 py-8 text-center text-xs filter-muted">No values found.</div>
-            ) : (
-              visibleValues.map(value => {
-                const checked = selected.has(value);
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => toggleValue(value)}
-                    className="value-row flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-sm"
-                  >
-                    <span className={'select-box flex h-4 w-4 shrink-0 items-center justify-center rounded ' + (checked ? 'checked' : '')}>
-                      {checked && <Check size={11} />}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate" title={value === '' ? '(Blanks)' : value}>{value === '' ? '(Blanks)' : value}</span>
-                  </button>
-                );
-              })
-            )}
+              <div className="pb-filter-muted" style={{padding:'18px 8px',textAlign:'center'}}>No values found</div>
+            ) : visibleValues.map((value,index) => {
+              const checked = selected.has(value);
+              return <button type="button" key={value === '' ? '__blank__' : value + ':' + index} onClick={() => toggleValue(value)} className="pb-filter-value">
+                <span className={'pb-filter-check' + (checked ? ' is-checked' : '')}>{checked && <Check size={11}/>}</span>
+                <span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={value === '' ? '(Blanks)' : value}>{value === '' ? '(Blanks)' : value}</span>
+              </button>;
+            })}
           </div>
 
-          <div className="flex items-center justify-between gap-2 border-t filter-border filter-surface px-3 py-2.5">
-            <span className="text-[11px] filter-muted">{selected.size ? selected.size + ' selected' : 'No value selected'}</span>
-            <button type="button" onClick={() => apply(selected)} className="apply-btn rounded-lg px-4 py-2.5 text-sm font-semibold">
-              Apply
-            </button>
+          <div className="pb-filter-footer">
+            <span className="pb-filter-muted" style={{fontSize:11}}>{selected.size} selected</span>
+            <div style={{display:'flex',gap:7}}>
+              <button type="button" onClick={() => setActiveMenu(null)} className="pb-filter-btn">Cancel</button>
+              <button type="button" onClick={apply} className="pb-filter-btn pb-filter-btn-primary">OK</button>
+            </div>
           </div>
         </div>
       )}
