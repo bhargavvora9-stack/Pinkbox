@@ -92,6 +92,8 @@ export default async function ProductPage({ params }) {
           '@type': 'MerchantReturnPolicy',
           '@id': absoluteUrl('/pages/refund-policy#return-policy'),
           applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+          merchantReturnDays: 7,
           merchantReturnLink: absoluteUrl('/pages/refund-policy')
         }
       },
