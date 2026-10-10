@@ -81,6 +81,12 @@ function applyTableView(table, tableKey, allFilters, allSorts) {
       const body = table.querySelector('tbody');
       sorted.forEach(row => body.appendChild(row));
     }
+  } else {
+    const originalOrder = [...rows].sort((a, b) => Number(a.dataset.pbExcelOriginalOrder || 0) - Number(b.dataset.pbExcelOriginalOrder || 0));
+    if (originalOrder.some((row, index) => row !== rows[index])) {
+      const body = table.querySelector('tbody');
+      originalOrder.forEach(row => body.appendChild(row));
+    }
   }
 
   Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, columnIndex) => {
@@ -114,12 +120,20 @@ export default function AdminExcelTableFilters() {
       const tableKey = pathname + '::' + tableIndex;
       table.dataset.pbExcelFilterTableId = tableKey;
 
+      const bodyRows = Array.from(table.querySelectorAll('tbody > tr'));
+      if (bodyRows.some(row => row.dataset.pbExcelOriginalOrder === undefined)) {
+        bodyRows.forEach((row, index) => { row.dataset.pbExcelOriginalOrder = String(index); });
+      }
       Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, colIndex) => {
         if (th.tagName !== 'TH') return;
         const original = th.dataset.pbExcelFilterLabel || normalize(th.textContent);
         if (!original || /^(actions|action)$/i.test(original)) return;
         th.dataset.pbExcelFilterLabel = original;
-        th.style.position = th.style.position || 'relative';
+        if (!th.dataset.pbExcelFilterPositionApplied) {
+          th.dataset.pbExcelFilterOldPosition = th.style.position || '';
+          th.style.position = th.style.position || 'relative';
+          th.dataset.pbExcelFilterPositionApplied = '1';
+        }
         if (!th.dataset.pbExcelFilterPaddingApplied) {
           th.dataset.pbExcelFilterOldPaddingRight = th.style.paddingRight || '';
           th.style.paddingRight = '30px';
@@ -204,10 +218,13 @@ export default function AdminExcelTableFilters() {
       window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', closeOnScroll);
       document.querySelectorAll('.pb-excel-filter-button').forEach(button => button.remove());
-      document.querySelectorAll('.website-admin main table th[data-pb-excel-filter-padding-applied="1"]').forEach(th => {
-        th.style.paddingRight = th.dataset.pbExcelFilterOldPaddingRight || '';
+      document.querySelectorAll('.website-admin main table th[data-pb-excel-filter-padding-applied="1"], .website-admin main table th[data-pb-excel-filter-position-applied="1"]').forEach(th => {
+        if (th.dataset.pbExcelFilterPaddingApplied) th.style.paddingRight = th.dataset.pbExcelFilterOldPaddingRight || '';
+        if (th.dataset.pbExcelFilterPositionApplied) th.style.position = th.dataset.pbExcelFilterOldPosition || '';
         delete th.dataset.pbExcelFilterPaddingApplied;
         delete th.dataset.pbExcelFilterOldPaddingRight;
+        delete th.dataset.pbExcelFilterPositionApplied;
+        delete th.dataset.pbExcelFilterOldPosition;
         delete th.dataset.pbExcelFilterLabel;
       });
     };
