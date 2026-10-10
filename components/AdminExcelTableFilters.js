@@ -87,6 +87,18 @@ export default function AdminExcelTableFilters() {
         const filterKeyForButton = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':' + String(colIndex);
         button.classList.toggle('pb-excel-filter-active', Object.prototype.hasOwnProperty.call(filtersRef.current, filterKeyForButton));
       });
+      const prefix = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':';
+      const activeFilters = Object.entries(filtersRef.current).filter(([key]) => key.startsWith(prefix));
+      if (activeFilters.length) {
+        Array.from(table.querySelectorAll('tbody > tr')).forEach(row => {
+          const show = activeFilters.every(([key, allowed]) => {
+            const column = Number(key.slice(prefix.length));
+            const raw = getCellValue(row.children[column]).toLowerCase();
+            return allowed.some(value => normalize(value).toLowerCase() === raw);
+          });
+          row.style.display = show ? '' : 'none';
+        });
+      }
     });
   };
 
@@ -195,7 +207,7 @@ export default function AdminExcelTableFilters() {
       <style>{`.pb-excel-filter-button{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid transparent;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;opacity:.9}
 .pb-excel-filter-button:hover{border-color:#c8c8c8;background:#eaf2fb;color:#1f2937;opacity:1}
 .pb-excel-filter-button.pb-excel-filter-active{border-color:#8aaee0;background:#dceafa;color:#174ea6;opacity:1}
-.pb-excel-filter-menu{position:fixed;z-index:99999;width:304px;max-width:calc(100vw - 16px);overflow:hidden;border:1px solid #b8b8b8;border-radius:3px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.22);color:#222;font-family:Arial,Helvetica,sans-serif;font-size:13px}
+.pb-excel-filter-menu{position:fixed;z-index:99999;width:304px;max-width:calc(100vw - 16px);max-height:min(440px,calc(100vh - 16px));overflow-y:auto;border:1px solid #b8b8b8;border-radius:3px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.22);color:#222;font-family:Arial,Helvetica,sans-serif;font-size:13px}
 .pb-excel-filter-menu button{font:inherit;color:#222}
 .pb-excel-filter-menu .filter-muted{color:#666!important}
 .pb-excel-filter-menu .filter-border{border-color:#dedede!important}
@@ -248,7 +260,7 @@ export default function AdminExcelTableFilters() {
             </button>
           </div>
 
-          <div className="max-h-72 overflow-y-auto p-2">
+          <div className="max-h-52 overflow-y-auto p-2">
             {!visibleValues.length ? (
               <div className="px-3 py-8 text-center text-xs filter-muted">No values found.</div>
             ) : (
