@@ -49,13 +49,13 @@ export default function AdminExcelTableFilters() {
             colIndex,
             label: original,
             rect: {
-              top: rect.bottom + 6,
-              left: Math.max(8, Math.min(rect.left - 8, window.innerWidth - 330)),
+              top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 420)),
+              left: Math.max(8, Math.min(rect.left - 8, window.innerWidth - 316)),
             },
           };
 
           const currentTable = table;
-          const prefix = String(tableIndex) + ':';
+          const prefix = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':';
           const filterKey = prefix + String(colIndex);
           const tableFilters = filtersRef.current;
           const values = Array.from(new Set(
@@ -84,6 +84,8 @@ export default function AdminExcelTableFilters() {
         };
 
         th.appendChild(button);
+        const filterKeyForButton = String(window.location.pathname || '/admin') + '::' + String(tableIndex) + ':' + String(colIndex);
+        button.classList.toggle('pb-excel-filter-active', Object.prototype.hasOwnProperty.call(filtersRef.current, filterKeyForButton));
       });
     });
   };
@@ -119,7 +121,7 @@ export default function AdminExcelTableFilters() {
     if (!anchor) return;
     const table = Array.from(document.querySelectorAll('.website-admin main table'))[anchor.tableIndex];
     if (!table) return;
-    const prefix = String(anchor.tableIndex) + ':';
+    const prefix = String(window.location.pathname || '/admin') + '::' + String(anchor.tableIndex) + ':';
     const filterKey = prefix + String(anchor.colIndex);
     const nextFilters = { ...filtersRef.current };
     const selectedValues = Array.from(values);
@@ -216,7 +218,7 @@ export default function AdminExcelTableFilters() {
         >
           <div className="flex items-center justify-between border-b filter-border px-3 py-2.5">
             <div>
-              <div className="text-sm font-semibold text-white">Filter: {anchor.label}</div>
+              <div className="text-sm font-semibold text-gray-900">Filter: {anchor.label}</div>
               <div className="text-[11px] filter-muted">Excel-style value filter</div>
             </div>
             <button type="button" onClick={() => setActiveMenu(null)} className="close-btn rounded-lg p-1 filter-muted hover:bg-white/10">
@@ -238,10 +240,10 @@ export default function AdminExcelTableFilters() {
           </div>
 
           <div className="flex items-center justify-between border-b filter-border filter-surface px-3 py-2.5 text-xs">
-            <button type="button" onClick={allChecked ? () => setSelected(new Set()) : selectAllVisible} className="action-link rounded-md px-2 py-1 font-semibold text-gray-200">
+            <button type="button" onClick={selectAllVisible} className="action-link rounded-md px-2 py-1 font-semibold text-gray-800">
               {allChecked ? 'Clear visible' : 'Select all'}
             </button>
-            <button type="button" onClick={clear} className="action-link rounded-md px-2 py-1 text-gray-300">
+            <button type="button" onClick={clear} className="action-link rounded-md px-2 py-1 text-gray-800">
               <RotateCcw size={12} /> Clear Filter
             </button>
           </div>
