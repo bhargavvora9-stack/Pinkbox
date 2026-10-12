@@ -89,41 +89,6 @@ export default async function ProductPage({ params }) {
         url: absoluteUrl('/'),
         ...(p.logo_url ? { logo: { '@type': 'ImageObject', url: p.logo_url } } : {})
       },
-      hasMerchantReturnPolicy: {
-        '@type': 'MerchantReturnPolicy',
-        '@id': absoluteUrl('/pages/refund-policy#return-policy'),
-        applicableCountry: 'IN',
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: 7,
-        merchantReturnLink: absoluteUrl('/pages/refund-policy')
-      },
-      shippingDetails: {
-        '@type': 'OfferShippingDetails',
-        shippingDestination: {
-          '@type': 'DefinedRegion',
-          addressCountry: 'IN'
-        },
-        shippingRate: {
-          '@type': 'MonetaryAmount',
-          maxValue: 49,
-          currency: 'INR'
-        },
-        deliveryTime: {
-          '@type': 'ShippingDeliveryTime',
-          handlingTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 1,
-            maxValue: 2,
-            unitCode: 'DAY'
-          },
-          transitTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 3,
-            maxValue: 7,
-            unitCode: 'DAY'
-          }
-        }
-      }
     }
   };
   if (p.reviews.length) {
