@@ -110,8 +110,11 @@ export default function AdminExcelTableFilters() {
   const [sorts, setSorts] = useState({});
   const filtersRef = useRef({});
   const sortsRef = useRef({});
-  filtersRef.current = filters;
-  sortsRef.current = sorts;
+
+  useEffect(() => {
+    filtersRef.current = filters;
+    sortsRef.current = sorts;
+  }, [filters, sorts]);
 
   const scanTables = () => {
     const tables = Array.from(document.querySelectorAll('.website-admin main table'));
