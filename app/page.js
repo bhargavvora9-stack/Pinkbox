@@ -244,6 +244,14 @@ export default async function HomePage(){
           <Link href="/collections/sanitary-pads">Shop Sanitary Pads</Link>
           <Link href="/blog">Sanitary Pad Guides</Link>
         </nav>
+        <section aria-labelledby="baby-diapers-seo" className="pb-home-seo-topic">
+          <p className="pb-home-seo-eyebrow">BABY CARE</p>
+          <h3 id="baby-diapers-seo">Baby Diapers Online</h3>
+          <p>Shop 7 Soft baby diapers online at PinkBox. Compare sizes S, M, L and XL and pack quantities across Jumbo, Maha Jumbo and Premium packs, then check listed product details and current prices before ordering for delivery across India.</p>
+          <div className="pb-home-seo-links">
+            <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
+          </div>
+        </section>
       </div>
     </section>
     <style dangerouslySetInnerHTML={{__html:`
@@ -257,6 +265,9 @@ export default async function HomePage(){
       .pb-home-seo-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
       .pb-home-seo-links a{padding:8px 12px;border:1px solid #ead0d6;border-radius:999px;background:#fff;color:#815d65;font-size:11px;font-weight:700}
       .pb-home-seo-links a:hover{border-color:#d8899d;color:#c36f83}
+      .pb-home-seo-topic{margin-top:26px;padding-top:24px;border-top:1px solid #eadfd9}
+      .pb-home-seo-topic h3{margin:0;font:500 clamp(1.2rem,2.5vw,1.65rem)/1.2 Georgia,"Times New Roman",serif}
+      .pb-home-seo-topic p:not(.pb-home-seo-eyebrow){max-width:900px;margin:10px 0 0;color:#846f70;font-size:13px;line-height:1.7}
       .pb-whatsapp-float{position:fixed;right:18px;bottom:18px;z-index:80;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:999px;background:#25D366;color:#fff!important;box-shadow:0 12px 28px rgba(37,211,102,.28);font-size:12px;font-weight:800}
       .pb-whatsapp-float span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#fff;color:#25D366;font-size:10px;font-weight:900}
       .pb-whatsapp-float:hover{filter:brightness(.96);transform:translateY(-1px)}
