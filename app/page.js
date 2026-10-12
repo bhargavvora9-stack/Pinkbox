@@ -2,7 +2,7 @@ import './pinkbox-home.css';
 import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -169,13 +169,54 @@ export default async function HomePage(){
   const data = await getStoreData();
   const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': absoluteUrl('/#organization'),
     name,
     description: s?.meta_description || undefined,
     logo: s?.logo_url || undefined,
-    url: process.env.NEXT_PUBLIC_SITE_URL || undefined,
+    url: siteUrl,
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      '@id': absoluteUrl('/pages/refund-policy#return-policy'),
+      applicableCountry: 'IN',
+      merchantReturnLink: absoluteUrl('/pages/refund-policy')
+    },
+    hasShippingService: {
+      '@type': 'ShippingService',
+      '@id': absoluteUrl('/#standard-shipping'),
+      name: 'Standard shipping across India',
+      description: 'Standard shipping is ₹49 on orders below ₹499. Orders of ₹499 or more qualify for free standard shipping. Orders are typically processed within 1–2 business days and standard delivery usually takes 3–7 business days after dispatch.',
+      fulfillmentType: 'https://schema.org/FulfillmentTypeDelivery',
+      handlingTime: {
+        '@type': 'ServicePeriod',
+        duration: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 2, unitCode: 'DAY' }
+      },
+      shippingConditions: [
+        {
+          '@type': 'ShippingConditions',
+          shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
+          orderValue: { '@type': 'MonetaryAmount', minValue: 0, maxValue: 498.99, currency: 'INR' },
+          shippingRate: { '@type': 'MonetaryAmount', value: 49, currency: 'INR' },
+          transitTime: {
+            '@type': 'ServicePeriod',
+            duration: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' }
+          }
+        },
+        {
+          '@type': 'ShippingConditions',
+          shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
+          orderValue: { '@type': 'MonetaryAmount', minValue: 499, currency: 'INR' },
+          shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' },
+          transitTime: {
+            '@type': 'ServicePeriod',
+            duration: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' }
+          }
+        }
+      ]
+    }
   };
   const websiteJsonLd = {
     '@context': 'https://schema.org',
