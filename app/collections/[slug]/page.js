@@ -44,6 +44,7 @@ export async function generateMetadata({params}) {
 export default async function CollectionPage({params}) {
   const {slug} = await params; const c = await getCollection(slug); if (!c || !c.products?.length) notFound();
   const isSanitary = c.category.slug === 'sanitary-pads';
+  const isBabyDiapers = c.category.slug === 'baby-diapers';
   const guideLinks = isSanitary
     ? [
         ['/pages/sanitary-pads', 'Sanitary Pads Guide'],
@@ -53,7 +54,13 @@ export default async function CollectionPage({params}) {
         ['/pages/24-care-sanitary-pads', '24 Care Sanitary Pads'],
         ['/pages/7-soft-sanitary-pads', '7 Soft Sanitary Pads']
       ]
-    : [['/pages/sanitary-pads', 'Sanitary Pads Guide']];
+    : isBabyDiapers
+      ? [
+          ['/pages/shipping-policy', 'Shipping & Delivery'],
+          ['/pages/refund-policy', 'Returns & Refunds'],
+          ['/pages/contact-us', 'Customer Support']
+        ]
+      : [];
   const collectionSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -72,10 +79,11 @@ export default async function CollectionPage({params}) {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionSchema) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><div className="flex gap-4 text-sm font-semibold"><Link href="/account">Account</Link><Link href="/products">All products</Link></div></div></header>
-    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
+    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diapers online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
 {!c.products.length ? <div className="mt-10 rounded-3xl border border-dashed p-12 text-center text-gray-500">No products available in this collection yet.</div> : <div className="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">{c.products.map(p=><Link href={`/products/${p.slug}`} key={p.id} className="group"><div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f7f4f5]">{p.image_url ? <Image src={p.image_url} alt={p.title} fill sizes="(max-width:768px) 50vw, 25vw" style={{objectFit:'contain'}} className="transition group-hover:scale-[1.03]"/> : <div className="grid h-full place-items-center text-6xl font-black text-[#d9295f]/25">PB</div>}</div><p className="mt-3 text-xs text-gray-400">{p.sku || 'PinkBox'}</p><h2 className="mt-1 font-bold">{p.title}</h2><div className="mt-2 font-black">{money(p.price)} {Number(p.compare_at_price)>0 && <del className="ml-1 text-xs font-normal text-gray-400">{money(p.compare_at_price)}</del>}</div></Link>)}</div>}
       {isSanitary && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Explore sanitary care</p><h2 className="mt-2 text-2xl font-black">Sanitary pads for everyday, night and heavy flow</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">PinkBox covers common sanitary pad searches including sanitary pads, sanitary napkins, 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads and anti-bacterial sanitary pads. Use the guides below to compare the right type for your needs.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Journal</Link></div></div>}
-      {!isSanitary && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guide</p><h2 className="mt-2 text-2xl font-black">Sanitary Pad Journal</h2><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">View all articles</Link></div></div>}
+      {isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Baby care</p><h2 className="mt-2 text-2xl font-black">Compare Baby Diaper Sizes and Pack Counts</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">Browse 7 Soft disposable baby diapers in sizes S, M, L and XL. Compare Jumbo, Maha Jumbo and Premium packs by the listed size, piece count and current price before ordering.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}</div></div>}
+      {!isSanitary && !isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guide</p><h2 className="mt-2 text-2xl font-black">Explore PinkBox guides</h2><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">View all articles</Link></div></div>}
     </section>
   </main>;
 }
