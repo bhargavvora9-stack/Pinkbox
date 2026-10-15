@@ -20,7 +20,7 @@ async function getProduct(slug) {
   const db = createAdminClient();
   const { data: settings } = await db.from('website_settings').select('company_id,website_name,logo_url,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled').eq('slug', 'pinkbox').eq('status', 'active').maybeSingle();
   if (!settings) return null;
-  const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override';
+  const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label';
   const { data: matchedProduct } = await db.from('website_products').select(productFields).eq('company_id', settings.company_id).eq('slug', slug).eq('is_active', true).gt('price', 0).maybeSingle();
   let product = matchedProduct;
   // If an old slug no longer exists, load its mapped destination so the page can issue a permanent redirect.

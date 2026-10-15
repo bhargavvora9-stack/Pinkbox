@@ -356,6 +356,7 @@ export default function CartPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link href={`/products/${item.slug}`} className="font-semibold hover:text-[#c36f83]">{item.title}</Link>
+                    {item.personalization && <p className="mt-0.5 text-xs font-semibold text-[#9a3358]">Embroidered name: {item.personalization}</p>}
                     <p className="mt-1 text-sm text-[#846f70]">{money(item.price)}</p>
                     <div className="mt-3 flex items-center gap-3">
                       <input aria-label={`Quantity for ${item.title}`} type="number" min="1" value={item.quantity} onChange={(e) => updateQty(item.id, e.target.value)} className="w-20 rounded-xl border border-[#eadfd9] bg-[#fffaf7] px-3 py-2" />

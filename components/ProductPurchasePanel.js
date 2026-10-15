@@ -20,6 +20,8 @@ export default function ProductPurchasePanel({ product }) {
   const [status, setStatus] = useState('');
   const [added, setAdded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [personalization, setPersonalization] = useState('');
+  const [personalizationError, setPersonalizationError] = useState('');
 
   useEffect(() => {
     trackGa4Event('view_item', {
@@ -44,6 +46,11 @@ export default function ProductPurchasePanel({ product }) {
 
   function addToCart() {
     if (!canBuy) return;
+    if (product.requires_personalization && !personalization.trim()) {
+      setPersonalizationError('Please enter a name for embroidery.');
+      return;
+    }
+    setPersonalizationError('');
     try {
       const current = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
       const cartId = selectedVariant ? `${product.id}:${selectedVariant.id}` : product.id;
@@ -66,9 +73,10 @@ export default function ProductPurchasePanel({ product }) {
         price: effectivePrice,
         image_url: effectiveImage,
         quantity: qty,
+        personalization: product.requires_personalization ? personalization.trim() : null,
       };
       const next = existing
-        ? current.map((item) => item.id === cartId ? { ...item, quantity: nextQty } : item)
+        ? current.map((item) => item.id === cartId ? { ...item, quantity: nextQty, personalization: cartItem.personalization } : item)
         : [...current, cartItem];
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
       window.dispatchEvent(new Event('pinkbox-cart-updated'));
@@ -125,6 +133,14 @@ export default function ProductPurchasePanel({ product }) {
       </div>
       {canBuy && (
         <>
+          {product.requires_personalization && (
+            <div className="rounded-2xl border border-[#f1c7d5] bg-[#fff8fa] p-4">
+              <label className="block text-sm font-bold text-[#7a1f40]" htmlFor="personalization-input">{product.personalization_label || 'Name for embroidery'}</label>
+              <input id="personalization-input" value={personalization} onChange={(e) => { setPersonalization(e.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-[#e8bccb] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#d9295f]" />
+              <p className="mt-1.5 text-xs text-gray-500">Max 20 characters. This name will be hand-embroidered on your bag and cannot be changed after the order is placed.</p>
+              {personalizationError && <p className="mt-1.5 text-xs font-semibold text-red-600">{personalizationError}</p>}
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">Quantity</span>
             <div className="flex items-center rounded-full border">

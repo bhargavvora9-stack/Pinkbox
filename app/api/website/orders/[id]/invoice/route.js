@@ -75,7 +75,7 @@ export async function GET(request, { params }) {
   items.forEach((it, i) => {
     const rowH = 22;
     if (i % 2 === 1) { doc.rect(50, y, 495, rowH).fill('#faf6f4'); doc.fillColor('#222'); }
-    doc.text(it.product_name || '—', 58, y + 6, { width: 215 });
+    doc.text((it.product_name || '—') + (it.personalization_note ? `\nName: ${it.personalization_note}` : ''), 58, y + 4, { width: 215 });
     doc.text(it.sku || '—', 280, y + 6, { width: 80 });
     doc.text(String(it.quantity || 0), 365, y + 6, { width: 40, align: 'right' });
     doc.text(money(it.unit_price), 405, y + 6, { width: 65, align: 'right' });

@@ -57,7 +57,7 @@ export async function GET(request, { params }) {
   items.forEach((it, i) => {
     const rowH = 28;
     if (i % 2 === 1) { doc.rect(50, y, 495, rowH).fill('#faf6f4'); doc.fillColor('#222'); }
-    doc.text(it.product_name || '—', 60, y + 8, { width: 340 });
+    doc.text((it.product_name || '—') + (it.personalization_note ? `\nEMBROIDER NAME: ${it.personalization_note}` : ''), 60, y + 4, { width: 340 });
     doc.fontSize(14).text(String(it.quantity || 0), 470, y + 6, { width: 65, align: 'right' });
     doc.fontSize(12);
     y += rowH;
