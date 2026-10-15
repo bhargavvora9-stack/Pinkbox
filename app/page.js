@@ -250,6 +250,7 @@ export default async function HomePage(){
           <p>Shop 7 Soft baby diapers online at PinkBox. Compare sizes S, M, L and XL and pack quantities across Jumbo, Maha Jumbo and Premium packs, then check listed product details and current prices before ordering for delivery across India.</p>
           <div className="pb-home-seo-links">
             <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
+            <Link href="/pages/baby-diaper-size-guide">Baby Diaper Size Guide</Link>
           </div>
         </section>
       </div>
