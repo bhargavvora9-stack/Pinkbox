@@ -56,6 +56,7 @@ export default async function CollectionPage({params}) {
       ]
     : isBabyDiapers
       ? [
+          ['/pages/baby-diaper-size-guide', 'Baby Diaper Size Guide'],
           ['/pages/shipping-policy', 'Shipping & Delivery'],
           ['/pages/refund-policy', 'Returns & Refunds'],
           ['/pages/contact-us', 'Customer Support']
