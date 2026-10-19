@@ -29,13 +29,19 @@ async function getProduct(slug) {
     product = replacement;
   }
   if (!product) return null;
-  const [{ data: images }, { data: variants }] = await Promise.all([
+  const [{ data: images }, { data: variants }, { data: categoryMappings }] = await Promise.all([
     db.from('website_product_images').select('image_url,alt_text,is_primary,sort_order').eq('company_id', settings.company_id).eq('product_id', product.id).order('sort_order'),
     db.from('website_product_variants').select('id,sku,title,option_values,price,compare_at_price,stock_quantity,image_url,is_active').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_active', true).order('created_at'),
+    db.from('website_product_categories').select('category_id').eq('company_id', settings.company_id).eq('product_id', product.id),
   ]);
+  const categoryIds = [...new Set((categoryMappings || []).map((x) => x.category_id).filter(Boolean))];
+  const { data: categories } = categoryIds.length
+    ? await db.from('website_categories').select('slug').eq('company_id', settings.company_id).in('id', categoryIds).eq('is_active', true)
+    : { data: [] };
+  const category_slugs = (categories || []).map((category) => category.slug);
   const orderedImages = [...(images || [])].sort((a, b) => (Number(b.is_primary) - Number(a.is_primary)) || (Number(a.sort_order || 0) - Number(b.sort_order || 0)));
   const { data: reviews } = await db.from('website_product_reviews').select('id,customer_name,rating,title,review_text,created_at').eq('company_id', settings.company_id).eq('product_id', product.id).eq('is_approved', true).order('created_at', { ascending: false });
-  return { ...product, website_name: settings.website_name, logo_url: settings.logo_url, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, variants: variants || [], reviews: reviews || [] };
+  return { ...product, category_slugs, website_name: settings.website_name, logo_url: settings.logo_url, whatsapp_number: settings.whatsapp_number, free_shipping_threshold: settings.free_shipping_threshold, default_shipping_charge: settings.default_shipping_charge, cod_enabled: settings.cod_enabled, online_payment_enabled: settings.online_payment_enabled, images: orderedImages, variants: variants || [], reviews: reviews || [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -110,13 +116,22 @@ export default async function ProductPage({ params }) {
       { '@type': 'ListItem', position: 3, name: p.title, item: url }
     ]
   };
-  const topicLinks = [
-    { href: '/pages/sanitary-pads', label: 'Sanitary Pads Guide' },
-    { href: '/pages/320mm-sanitary-pads', label: '320mm Sanitary Pads' },
-    { href: '/pages/sanitary-pads-for-heavy-flow', label: 'Sanitary Pads for Heavy Flow' },
-    ...(String(p.brand || '').toLowerCase().includes('24 care') ? [{ href: '/pages/24-care-sanitary-pads', label: '24 Care Sanitary Pads' }] : []),
-    ...(String(p.brand || '').toLowerCase().includes('7 soft') ? [{ href: '/pages/7-soft-sanitary-pads', label: '7 Soft Sanitary Pads' }] : [])
-  ];
+  const isBabyDiaper = (p.category_slugs || []).includes('baby-diapers');
+  const isSanitaryProduct = (p.category_slugs || []).includes('sanitary-pads');
+  const topicLinks = isBabyDiaper
+    ? [
+        { href: '/pages/baby-diaper-size-guide', label: 'Baby Diaper Size Guide' },
+        { href: '/collections/baby-diapers', label: 'Browse Baby Diapers' }
+      ]
+    : isSanitaryProduct
+      ? [
+          { href: '/pages/sanitary-pads', label: 'Sanitary Pads Guide' },
+          { href: '/pages/320mm-sanitary-pads', label: '320mm Sanitary Pads' },
+          { href: '/pages/sanitary-pads-for-heavy-flow', label: 'Sanitary Pads for Heavy Flow' },
+          ...(String(p.brand || '').toLowerCase().includes('24 care') ? [{ href: '/pages/24-care-sanitary-pads', label: '24 Care Sanitary Pads' }] : []),
+          ...(String(p.brand || '').toLowerCase().includes('7 soft') ? [{ href: '/pages/7-soft-sanitary-pads', label: '7 Soft Sanitary Pads' }] : [])
+        ]
+      : [];
   return (
     <main className="min-h-screen bg-white text-[#171717]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }} />
@@ -160,16 +175,16 @@ export default async function ProductPage({ params }) {
           {p.description && <details open className="mt-8 rounded-2xl border p-5"><summary className="cursor-pointer font-bold">Product details</summary><p className="mt-4 whitespace-pre-line leading-7 text-gray-600">{p.description}</p></details>}
         </section>
       </div>
-      <section className="mx-auto max-w-7xl px-5 pb-12">
+      {topicLinks.length > 0 && <section className="mx-auto max-w-7xl px-5 pb-12">
         <div className="rounded-3xl border bg-[#fff9fb] p-6">
           <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guides</p>
-          <h2 className="mt-2 text-2xl font-black">Choose the right sanitary pads</h2>
+          <h2 className="mt-2 text-2xl font-black">{isBabyDiaper ? 'Choose the right diaper size' : 'Choose the right sanitary pads'}</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {topicLinks.map(link => <Link key={link.href} href={link.href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{link.label}</Link>)}
-            <Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Guides & Journal</Link>
+            {isSanitaryProduct && <Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Guides & Journal</Link>}
           </div>
         </div>
-      </section>
+      </section>}
       <div className="mx-auto max-w-3xl px-5 pb-20">
         {p.reviews.length > 0 && <>
           <h2 className="text-2xl font-black">Customer reviews <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span></h2>
