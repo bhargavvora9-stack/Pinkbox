@@ -26,7 +26,7 @@ export async function GET(request) {
       supabase.from('website_order_items').select('*').eq('company_id',companyId).eq('order_id',id).order('id'),
       supabase.from('website_order_status_history').select('*').eq('company_id',companyId).eq('order_id',id).order('created_at')
     ]);
-    if (order.error) return jsonError(order.error.message,500); return Response.json({order:order.data,items:items.data||[],history:history.data||[]});
+    if (order.error || items.error || history.error) return jsonError(order.error?.message || items.error?.message || history.error?.message || 'Unable to load order details.',500); return Response.json({order:order.data,items:items.data||[],history:history.data||[]});
   }
   const table = tables[resource]; if (!table) return jsonError('Unknown Phase 3 resource.',404);
   let q = supabase.from(table).select('*').eq('company_id',companyId).limit(500);
@@ -40,12 +40,17 @@ export async function POST(request) {
   const {supabase,companyId,user}=ctx; const b=await request.json().catch(()=>({}));
   if(b.resource==='order-status'){
     if(!b.id||!b.order_status)return jsonError('Order and status are required.');
-    const {data:before,error:beforeError}=await supabase.from('website_orders').select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
-    if(beforeError)return jsonError(beforeError.message,500); if(!before)return jsonError('Order not found.',404);
     const nextStatus=cleanString(b.order_status,40).toLowerCase(); if(!ORDER_STATUSES.includes(nextStatus))return jsonError('Invalid order status.');
-    const {data,error}=await supabase.from('website_orders').update({order_status:nextStatus,updated_at:new Date().toISOString()}).eq('company_id',companyId).eq('id',b.id).select().single();
-    if(error)return jsonError(error.message,500);
-    await supabase.from('website_order_status_history').insert({company_id:companyId,order_id:b.id,status:data.order_status,note:cleanString(b.note,1000)||null,created_by:user.id});
+    const {data:result,error:statusError}=await supabase.rpc('update_website_order_status',{
+      p_company_id:companyId,
+      p_order_id:b.id,
+      p_status:nextStatus,
+      p_note:cleanString(b.note,1000)||null,
+    });
+    if(statusError)return jsonError(statusError.message,statusError.code==='42501'?403:statusError.code==='P0002'?404:400);
+    const before=result?.before;
+    const data=result?.data;
+    if(!data)return jsonError('Order status update returned no order.',500);
     await audit(supabase,{companyId,userId:user.id,action:'order.status',entityType:'website_order',entityId:b.id,oldData:before,newData:data});
     try{await runWebsiteAutomations({companyId,trigger:data.order_status,order:data});}catch(e){console.error('Order automation failed:',e)}
     return Response.json({data});
