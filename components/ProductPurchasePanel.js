@@ -13,8 +13,9 @@ export default function ProductPurchasePanel({ product }) {
   const selectedVariant = useMemo(() => variants.find(v => v.id === selectedVariantId) || variants[0] || null, [variants, selectedVariantId]);
   const effectivePrice = Number(selectedVariant && Number(selectedVariant.price) > 0 ? selectedVariant.price : product.price ?? 0);
   const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
-  const max = Number(selectedVariant && Number(selectedVariant.stock_quantity) > 0 ? selectedVariant.stock_quantity : product.stock_quantity || 0);
-  const canBuy = max > 0 || product.allow_backorder;
+  const tracksInventory = product.track_inventory !== false;
+  const max = tracksInventory ? Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0) : 0;
+  const canBuy = !tracksInventory || max > 0 || product.allow_backorder;
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
   const [status, setStatus] = useState('');
@@ -129,7 +130,7 @@ export default function ProductPurchasePanel({ product }) {
         </div>
       )}
       <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-[#fff8fa] text-gray-700' : 'bg-gray-50 text-gray-500'}`}>
-        {canBuy ? (max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}
+        {canBuy ? (tracksInventory && max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}
       </div>
       {canBuy && (
         <>
@@ -146,7 +147,7 @@ export default function ProductPurchasePanel({ product }) {
             <div className="flex items-center rounded-full border">
               <button type="button" aria-label="Decrease quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((v) => Math.max(1, v - 1))}><Minus size={15}/></button>
               <span className="min-w-8 text-center text-sm font-bold">{qty}</span>
-              <button type="button" aria-label="Increase quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((v) => (max > 0 && !product.allow_backorder ? Math.min(max, v + 1) : v + 1))}><Plus size={15}/></button>
+              <button type="button" aria-label="Increase quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((v) => (tracksInventory && max > 0 && !product.allow_backorder ? Math.min(max, v + 1) : v + 1))}><Plus size={15}/></button>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
