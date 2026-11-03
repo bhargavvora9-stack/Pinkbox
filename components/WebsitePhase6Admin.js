@@ -17,7 +17,7 @@ export function Phase6Automations(){
  const load=()=>api('automations').then(setD).catch(e=>setErr(e.message));
  useEffect(()=>{load()},[]);
  const set=(key,value)=>setForm(v=>({...v,[key]:value}));
- const open=(row=null)=>{setEditing(row?.id||null);setForm(row?{...blank,...row,config:{...blank.config,...(row.config||{})}}:{...blank,config:{...blank.config}});setErr('');setMsg('')};
+ const open=(row=null)=>{setEditing(row?.id||null);setForm(row?{...blank,...row,config:{...blank.config,...(row.config||{}),message:row.config?.message??row.config?.body??''}}:{...blank,config:{...blank.config}});setErr('');setMsg('')};
  const save=async e=>{e.preventDefault();setBusy(true);setErr('');setMsg('');try{
   const config=form.action_type==='update_order'?{order_status:form.config.order_status}:{channel:form.config.channel,subject:form.config.subject,message:form.config.message};
   await api('automations',{method:editing?'PATCH':'POST',body:JSON.stringify({resource:'automations',...(editing?{id:editing}:{}),name:form.name,trigger_type:form.trigger_type,action_type:form.action_type,config,is_active:form.is_active})});
