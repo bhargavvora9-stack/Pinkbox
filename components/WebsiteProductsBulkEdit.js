@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, RefreshCw, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, RefreshCw, Save, X } from 'lucide-react';
 
 const input = 'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/10';
 const fields = [
@@ -22,11 +22,20 @@ const fields = [
 ];
 
 const money = n => `₹${Number(n || 0).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+const normalize = value => String(value ?? '')
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .toLocaleLowerCase();
 
 export default function WebsiteProductsBulkEdit(){
   const [rows,setRows] = useState([]);
   const [selected,setSelected] = useState(new Set());
   const [search,setSearch] = useState('');
+  const [statusFilter,setStatusFilter] = useState('all');
+  const [brandFilter,setBrandFilter] = useState('all');
+  const [stockFilter,setStockFilter] = useState('all');
   const [field,setField] = useState('price');
   const [value,setValue] = useState('');
   const [stockMode,setStockMode] = useState('set');
@@ -41,19 +50,55 @@ export default function WebsiteProductsBulkEdit(){
       const r = await fetch('/api/website/products',{cache:'no-store'});
       const j = await r.json();
       if(!r.ok) throw new Error(j.error || 'Unable to load products.');
-      setRows(j.data || []);
+      setRows(Array.isArray(j.data) ? j.data : []);
       setSelected(new Set());
     }catch(e){ setError(e.message || 'Unable to load products.'); }
     finally{ setLoading(false); }
   };
   useEffect(()=>{load();},[]);
 
-  const filtered = useMemo(()=>rows.filter(r=>`${r.title||''} ${r.sku||''} ${r.brand||''}`.toLowerCase().includes(search.toLowerCase())),[rows,search]);
+  const brands = useMemo(() => Array.from(new Set(
+    rows.map(row => String(row.brand || '').trim()).filter(Boolean)
+  )).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base',numeric:true})),[rows]);
+
+  const filtered = useMemo(()=>{
+    const terms = normalize(search).split(' ').filter(Boolean);
+    return rows.filter(row => {
+      const searchable = normalize([
+        row.title, row.sku, row.brand, row.slug,
+        row.price, row.stock_quantity, row.gst_percent
+      ].join(' '));
+      const matchesSearch = terms.every(term => searchable.includes(term));
+      const matchesStatus = statusFilter === 'all'
+        || (statusFilter === 'active' && row.is_active === true)
+        || (statusFilter === 'draft' && row.is_active !== true);
+      const matchesBrand = brandFilter === 'all'
+        || normalize(row.brand) === normalize(brandFilter);
+      const quantity = Number(row.stock_quantity || 0);
+      const matchesStock = stockFilter === 'all'
+        || (stockFilter === 'in_stock' && quantity > 0)
+        || (stockFilter === 'out_of_stock' && quantity <= 0);
+      return matchesSearch && matchesStatus && matchesBrand && matchesStock;
+    });
+  },[rows,search,statusFilter,brandFilter,stockFilter]);
+
   const allVisibleSelected = filtered.length>0 && filtered.every(r=>selected.has(r.id));
   const meta = fields.find(x=>x[0]===field);
+  const activeFilterCount = Number(statusFilter !== 'all') + Number(brandFilter !== 'all') + Number(stockFilter !== 'all');
 
   const toggle = id => setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
-  const toggleAll = () => setSelected(prev=>{const n=new Set(prev);if(allVisibleSelected) filtered.forEach(r=>n.delete(r.id));else filtered.forEach(r=>n.add(r.id));return n;});
+  const toggleAll = () => setSelected(prev=>{
+    const n=new Set(prev);
+    if(allVisibleSelected) filtered.forEach(r=>n.delete(r.id));
+    else filtered.forEach(r=>n.add(r.id));
+    return n;
+  });
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+    setBrandFilter('all');
+    setStockFilter('all');
+  };
 
   const parsedValue = () => {
     if(meta?.[2] === 'boolean') return value === 'true';
@@ -87,7 +132,7 @@ export default function WebsiteProductsBulkEdit(){
   return <div className="space-y-5 text-gray-900">
     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <div><h1 className="text-2xl font-semibold">Bulk Edit / Bulk Update</h1><p className="mt-1 text-sm text-gray-500">Select multiple products and change one controlled field at a time. Maximum 200 products per operation.</p></div>
-      <button type="button" onClick={load} className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"><RefreshCw size={17}/>Refresh</button>
+      <button type="button" onClick={load} disabled={loading||saving} className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><RefreshCw size={17}/>Refresh</button>
     </div>
 
     {(error||notice)&&<div className={`rounded-xl border px-4 py-3 text-sm ${error?'border-red-200 bg-red-50 text-red-700':'border-green-200 bg-green-50 text-green-700'}`}>{error?<span className="flex gap-2"><AlertCircle size={18}/>{error}</span>:<span className="flex gap-2"><CheckCircle2 size={18}/>{notice}</span>}</div>}
@@ -103,8 +148,22 @@ export default function WebsiteProductsBulkEdit(){
     </section>
 
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b px-5 py-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Selected {selected.size} of {rows.length}. The current API list is capped at 200 rows.</p></div><input className={`${input} lg:w-96`} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, SKU or brand…"/></div>
-      <div className="overflow-auto"><table className="min-w-[900px] w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll}/></th><th className="px-4 py-3">Product</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Stock</th><th className="px-4 py-3">GST</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y">{loading?<tr><td colSpan="7" className="p-12 text-center text-gray-500">Loading…</td></tr>:filtered.length?filtered.map(r=><tr key={r.id} className={selected.has(r.id)?'bg-pink-50/40':''}><td className="px-4 py-3"><input type="checkbox" checked={selected.has(r.id)} onChange={()=>toggle(r.id)}/></td><td className="px-4 py-3 font-semibold">{r.title}<div className="text-xs text-gray-500">{r.brand||'No brand'}</div></td><td className="px-4 py-3">{r.sku||'—'}</td><td className="px-4 py-3">{money(r.price)}</td><td className="px-4 py-3">{r.stock_quantity??0}</td><td className="px-4 py-3">{r.gst_percent??0}%</td><td className="px-4 py-3">{r.is_active?'Active':'Draft'}</td></tr>):<tr><td colSpan="7" className="p-12 text-center text-gray-500">No products found.</td></tr>}</tbody></table></div>
+      <div className="border-b px-5 py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Showing {filtered.length} of {rows.length} · Selected {selected.size}. Selection is preserved when filters change.</p></div>
+          <label className="w-full lg:w-96"><span className="sr-only">Search products</span><input className={input} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, SKU, brand, price, stock…"/></label>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label><span className="mb-1 block text-xs font-semibold text-gray-600">Product status</span><select className={input} value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="active">Active only</option><option value="draft">Draft only</option></select></label>
+          <label><span className="mb-1 block text-xs font-semibold text-gray-600">Brand</span><select className={input} value={brandFilter} onChange={e=>setBrandFilter(e.target.value)}><option value="all">All brands</option>{brands.map(brand=><option key={brand} value={brand}>{brand}</option>)}</select></label>
+          <label><span className="mb-1 block text-xs font-semibold text-gray-600">Stock</span><select className={input} value={stockFilter} onChange={e=>setStockFilter(e.target.value)}><option value="all">All stock levels</option><option value="in_stock">In stock</option><option value="out_of_stock">Out of stock (0)</option></select></label>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-gray-500">{activeFilterCount ? `${activeFilterCount} filter(s) active` : 'No filters applied'} · Select all applies to visible results only.</p>
+          {(search || activeFilterCount > 0) && <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"><X size={13}/>Clear filters</button>}
+        </div>
+      </div>
+      <div className="overflow-auto"><table className="min-w-[900px] w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Select all visible products"/></th><th className="px-4 py-3">Product</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Stock</th><th className="px-4 py-3">GST</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y">{loading?<tr><td colSpan="7" className="p-12 text-center text-gray-500">Loading…</td></tr>:filtered.length?filtered.map(r=><tr key={r.id} className={selected.has(r.id)?'bg-pink-50/40':''}><td className="px-4 py-3"><input type="checkbox" checked={selected.has(r.id)} onChange={()=>toggle(r.id)} aria-label={`Select ${r.title}`}/></td><td className="px-4 py-3 font-semibold">{r.title}<div className="text-xs text-gray-500">{r.brand||'No brand'}</div></td><td className="px-4 py-3">{r.sku||'—'}</td><td className="px-4 py-3">{money(r.price)}</td><td className="px-4 py-3">{r.stock_quantity??0}</td><td className="px-4 py-3">{r.gst_percent??0}%</td><td className="px-4 py-3">{r.is_active?'Active':'Draft'}</td></tr>):<tr><td colSpan="7" className="p-12 text-center text-gray-500">No products match these filters. Try clearing a filter or changing your search.</td></tr>}</tbody></table></div>
     </section>
   </div>;
 }
