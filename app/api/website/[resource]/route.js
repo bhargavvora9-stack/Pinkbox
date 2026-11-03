@@ -69,7 +69,7 @@ export async function POST(request,{params}){
   const {resource}=await params; const ctx=await getWebsiteAdminContext();
   if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
   const {supabase,companyId,user}=ctx; let body; try{body=await request.json()}catch{return jsonError('Invalid JSON.')}
-  if(resource==='products'&&Object.prototype.hasOwnProperty.call(body,'stock_quantity'))return jsonError('Use Inventory or the bulk stock tool to change product stock.');
+  if(resource==='products'&&body&&Object.prototype.hasOwnProperty.call(body,'stock_quantity'))return jsonError('Use Inventory or the bulk stock tool to change product stock.');
   if(resource==='inventory'){
     const productId=cleanString(body.product_id,100), change=Number(body.change_quantity);
     if(!productId||!Number.isFinite(change)||change===0)return jsonError('Product and a non-zero stock adjustment are required.');
