@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase-admin';
 import { getWebsiteAdminContext, jsonError } from '@/lib/website-admin';
 
 const MAX_PRODUCTS = 200;
@@ -32,8 +33,8 @@ function validateValue(field, value){
 export async function PATCH(request){
   const ctx = await getWebsiteAdminContext();
   if(ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
-  const { supabase, companyId, user } = ctx;
-  const body = await request.json().catch(() => null);
+  const { companyId, user } = ctx;
+  const body = await request.json().catch(()=>null);
   if(!body?.product_ids || !Array.isArray(body.product_ids)) return jsonError('product_ids array is required.');
   if(body.product_ids.length < 1) return jsonError('Select at least one product.');
   if(body.product_ids.length > MAX_PRODUCTS) return jsonError(`Maximum ${MAX_PRODUCTS} products per bulk update.`);
@@ -46,7 +47,12 @@ export async function PATCH(request){
   const stockMode = field === 'stock_quantity' ? String(body.stock_mode || 'set') : 'set';
   if(field === 'stock_quantity' && !['set','increase','decrease'].includes(stockMode)) return jsonError('Invalid stock mode.');
 
-  const { data, error } = await supabase.rpc('bulk_update_website_products', {
+  // The authenticated admin/company check above remains on the user-scoped client.
+  // The RPC is intentionally restricted to service_role, so invoke it server-side
+  // only after that check. The database function also verifies the supplied user
+  // is an active admin for this company and scopes every product update by company.
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc('bulk_update_website_products', {
     p_company_id: companyId,
     p_user_id: user.id,
     p_product_ids: ids,
