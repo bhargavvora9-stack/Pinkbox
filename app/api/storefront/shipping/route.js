@@ -28,7 +28,7 @@ export async function POST(request) {
     const ids = items.map(x => x.product_id);
     if (ids.some(id => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) return Response.json({ error: 'Invalid product in cart.' }, { status: 400 });
     const { data: products, error: productError } = await db.from('website_products')
-      .select('id,price,is_active,shipping_charge_override')
+      .select('id,price,is_active,shipping_charge_override,stock_quantity,track_inventory,allow_backorder')
       .eq('company_id', settings.company_id)
       .in('id', [...new Set(ids)]);
     if (productError) return Response.json({ error: 'Unable to validate cart.' }, { status: 500 });
@@ -36,12 +36,19 @@ export async function POST(request) {
     const variantIds = items.map(x => x.variant_id).filter(Boolean);
     if (variantIds.some(id => typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id))) return Response.json({ error: 'Invalid variant in cart.' }, { status: 400 });
     const { data: variants, error: variantError } = variantIds.length
-      ? await db.from('website_product_variants').select('id,product_id,price,stock_quantity,is_active,shipping_charge_override,title,sku').eq('company_id', settings.company_id).in('id', [...new Set(variantIds)])
+      ? await db.from('website_product_variants').select('id,product_id,price,stock_quantity,is_active,title,sku').eq('company_id', settings.company_id).in('id', [...new Set(variantIds)])
       : { data: [], error: null };
     if (variantError) return Response.json({ error: 'Unable to validate cart variants.' }, { status: 500 });
 
     const productMap = new Map((products || []).map(p => [p.id, p]));
     const variantMap = new Map((variants || []).map(v => [v.id, v]));
+    const productQuantity = new Map();
+    const variantQuantity = new Map();
+    for (const item of items) {
+      const totals = item.variant_id ? variantQuantity : productQuantity;
+      const key = item.variant_id || item.product_id;
+      totals.set(key, (totals.get(key) || 0) + item.quantity);
+    }
     let subtotal = 0;
     for (const item of items) {
       if (!Number.isFinite(item.quantity) || item.quantity < 1 || item.quantity > 100 || item.quantity !== Math.trunc(item.quantity)) return Response.json({ error: 'Invalid cart quantity.' }, { status: 400 });
@@ -51,7 +58,14 @@ export async function POST(request) {
       if (item.variant_id && (!variant || variant.product_id !== product.id || variant.is_active !== true)) return Response.json({ error: 'One or more selected variants are unavailable.' }, { status: 409 });
       const effectivePrice = variant ? Number(Number(variant.price) > 0 ? variant.price : product.price || 0) : Number(product.price || 0);
       if (effectivePrice <= 0) return Response.json({ error: 'One or more cart products do not have a selling price yet.' }, { status: 409 });
-      if (variant && Number(variant.stock_quantity || 0) > 0 && Number(variant.stock_quantity) < item.quantity) return Response.json({ error: 'Insufficient stock for selected variant.' }, { status: 409 });
+      if (product.track_inventory && !product.allow_backorder) {
+        if (variant && Number(variant.stock_quantity || 0) < (variantQuantity.get(variant.id) || item.quantity)) {
+          return Response.json({ error: 'Insufficient stock for selected variant.' }, { status: 409 });
+        }
+        if (!variant && Number(product.stock_quantity || 0) < (productQuantity.get(product.id) || item.quantity)) {
+          return Response.json({ error: 'Insufficient stock for one or more products.' }, { status: 409 });
+        }
+      }
       subtotal += effectivePrice * item.quantity;
     }
     subtotal = Number(subtotal.toFixed(2));
