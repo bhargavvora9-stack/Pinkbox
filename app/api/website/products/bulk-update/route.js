@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
-import { getWebsiteAdminContext, jsonError } from '@/lib/website-admin';
+import { getWebsiteAdminContext, jsonError, audit } from '@/lib/website-admin';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const MAX_PRODUCTS = 200;
 const FIELDS = new Set([
@@ -33,7 +34,7 @@ function validateValue(field, value){
 export async function PATCH(request){
   const ctx = await getWebsiteAdminContext();
   if(ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
-  const { companyId, user } = ctx;
+  const { companyId, user, supabase } = ctx;
   const body = await request.json().catch(()=>null);
   if(!body?.product_ids || !Array.isArray(body.product_ids)) return jsonError('product_ids array is required.');
   if(body.product_ids.length < 1) return jsonError('Select at least one product.');
@@ -61,5 +62,44 @@ export async function PATCH(request){
     p_stock_mode: stockMode,
   });
   if(error) return jsonError(error.message, 500);
+
+  await audit(supabase, {
+    companyId,
+    userId: user.id,
+    action: 'products.bulk_update',
+    entityType: 'website_products',
+    entityId: null,
+    newData: { count: data?.updated_count ?? data?.count ?? 0, field, stock_mode: stockMode, product_ids: ids },
+  });
+
+  if(field === 'stock_quantity') {
+    try {
+      const { data: products, error: productsError } = await supabase
+        .from('website_products')
+        .select('id,title,sku,stock_quantity,low_stock_threshold,track_inventory')
+        .eq('company_id', companyId)
+        .in('id', ids);
+      if(productsError) throw productsError;
+      for(const product of products || []) {
+        const threshold = Number(product.low_stock_threshold ?? 5);
+        const stock = Number(product.stock_quantity ?? 0);
+        if(product.track_inventory !== false && stock <= threshold) {
+          await runWebsiteAutomations({
+            companyId,
+            trigger: 'low_stock',
+            order: {
+              product_title: product.title,
+              product_sku: product.sku || '',
+              stock_quantity: stock,
+              low_stock_threshold: threshold,
+            },
+          });
+        }
+      }
+    } catch(automationError) {
+      console.error('Bulk low-stock automation failed:', automationError);
+    }
+  }
+
   return Response.json({ ok: true, ...data });
 }
