@@ -283,7 +283,7 @@ export default async function HomePage(){
           {showDiapers && <section aria-labelledby="baby-diapers-seo" className="pb-home-seo-topic">
             <p className="pb-home-seo-eyebrow">BABY CARE</p>
             <h2 id="baby-diapers-seo">Baby Diapers Online</h2>
-            <p>Explore the baby diaper sizes and pack options currently available at PinkBox. Check the exact product page for the pack's printed size guidance and details.</p>
+            <p>Explore the baby diaper sizes and pack options currently available at PinkBox. Check the exact product page for the pack&apos;s printed size guidance and details.</p>
             <div className="pb-home-seo-links">
               <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
               <Link href="/pages/baby-diaper-size-guide">Baby Diaper Size Guide</Link>
