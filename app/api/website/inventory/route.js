@@ -24,11 +24,11 @@ export async function POST(request) {
   const { supabase, companyId, user } = ctx;
   const body = await request.json().catch(() => null);
   const productId = body?.product_id;
+  const variantId = body?.variant_id ? cleanString(body.variant_id, 100) : null;
   const changeQty = Number(body?.change_quantity);
-  if (!productId) return jsonError('Please select a product.');
+  if (!productId && !variantId) return jsonError('Please select a product or variant.');
   if (!Number.isFinite(changeQty) || changeQty === 0) return jsonError('Enter a non-zero quantity, e.g. +10 or -5.');
 
-  const variantId = body?.variant_id ? cleanString(body.variant_id, 100) : null;
   const { data: txn, error: rpcError } = variantId
     ? await supabase.rpc('adjust_website_variant_stock', {
         p_company_id: companyId,
