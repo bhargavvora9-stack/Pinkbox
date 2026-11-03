@@ -71,5 +71,4 @@ begin
 
   return v_txn;
 end;
-$function$
-
+$function$;
