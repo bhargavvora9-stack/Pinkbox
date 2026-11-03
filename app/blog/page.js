@@ -15,12 +15,12 @@ async function getBlogStore(){
 export async function generateMetadata(){
  const {s}=await getBlogStore();
  if(!s)return {title:'Journal | PinkBox'};
- const title=`Sanitary Pad Guides & Journal | ${s.website_name||'PinkBox'}`;
- const description=`Read sanitary pad guides, menstrual care education and product updates from ${s.website_name||'PinkBox'}.`;
+ const title=`Journal & Guides | ${s.website_name||'PinkBox'}`;
+ const description=`Ideas, practical product guides and updates from ${s.website_name||'PinkBox'}.`;
  return {
   title,
   description,
-  keywords:['sanitary pad guides','320mm sanitary pads','sanitary pads for heavy flow','cottony sanitary pads','menstrual hygiene education'],
+  keywords:['PinkBox journal','product guides','shopping guides','product updates','baby diaper size guide','sanitary pad guides'],
   alternates:{canonical:'/blog'},
   openGraph:{title,description,url:absoluteUrl('/blog'),type:'website',images:s.logo_url?[s.logo_url]:undefined},
   twitter:{card:'summary_large_image',title,description,images:s.logo_url?[s.logo_url]:undefined}
@@ -36,9 +36,9 @@ export default async function BlogIndex(){
  const blogSchema={
   '@context':'https://schema.org',
   '@type':'Blog',
-  name:`Sanitary Pad Guides & Journal | ${s.website_name||'PinkBox'}`,
+  name:`PinkBox Journal | ${s.website_name||'PinkBox'}`,
   url:absoluteUrl('/blog'),
-  description:`Sanitary pad guides, product education and updates from ${s.website_name||'PinkBox'}.`,
+  description:`Product guides, useful shopping information and updates from ${s.website_name||'PinkBox'}.`,
   publisher:{'@type':'Organization',name:s.website_name||'PinkBox',url:absoluteUrl('/'),...(s.logo_url?{logo:{'@type':'ImageObject',url:s.logo_url}}:{})}
  };
  const crumbs={
@@ -52,7 +52,11 @@ export default async function BlogIndex(){
  return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]">
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(blogSchema)}}/>
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(crumbs)}}/>
-  <header className="mx-auto max-w-6xl px-5 py-10"><Link href="/" className="font-semibold text-[#d9295f]">← {s.website_name||'PinkBox'}</Link><h1 className="mt-10 text-5xl font-bold">Journal</h1><p className="mt-3 max-w-2xl text-gray-600">Stories, guides and updates from {s.website_name||'PinkBox'}.</p></header>
+  <header className="mx-auto max-w-6xl px-5 py-10">
+   <Link href="/" className="font-semibold text-[#d9295f]">← {s.website_name||'PinkBox'}</Link>
+   <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-[#d9295f]">FROM THE JOURNAL</p>
+   <h1 className="mt-3 text-4xl font-bold md:text-5xl">Ideas, guides &amp; updates</h1>
+  </header>
   <section className="mx-auto grid max-w-6xl gap-6 px-5 pb-16 md:grid-cols-3">{(posts||[]).map(p=><Link key={p.id} href={`/blog/${p.slug}`} className="overflow-hidden rounded-3xl bg-white shadow-sm"><div className="h-52 bg-[#f4dbe4] relative">{p.cover_image_url&&<Image src={p.cover_image_url} alt={p.title} fill sizes="(max-width:768px) 100vw, 33vw" style={{objectFit:'cover'}}/>}</div><div className="p-6"><span className="text-xs font-semibold uppercase tracking-widest text-[#d9295f]">{p.published_at?new Date(p.published_at).toLocaleDateString('en-IN'):''}</span><h2 className="mt-2 text-xl font-bold">{p.title}</h2><p className="mt-2 text-sm text-gray-600">{p.excerpt||''}</p></div></Link>)}</section>
  </main>
 }
