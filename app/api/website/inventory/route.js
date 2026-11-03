@@ -5,12 +5,17 @@ export async function GET() {
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
   const [products, transactions] = await Promise.all([
-    supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).order('title'),
-    supabase.from('website_inventory_transactions').select('id,product_id,change_quantity,quantity_before,quantity_after,reason,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50),
+    supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold,track_inventory').eq('company_id', companyId).eq('is_active', true).order('title'),
+    supabase.from('website_inventory_transactions').select('id,product_id,variant_id,change_quantity,quantity_before,quantity_after,reason,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50),
   ]);
   if (products.error) return jsonError(products.error.message, 500);
   if (transactions.error) return jsonError(transactions.error.message, 500);
-  return Response.json({ products: products.data || [], transactions: transactions.data || [] });
+  const trackedProductIds = (products.data || []).filter(p => p.track_inventory !== false).map(p => p.id);
+  const variants = trackedProductIds.length
+    ? await supabase.from('website_product_variants').select('id,product_id,sku,title,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).in('product_id', trackedProductIds).order('title')
+    : { data: [], error: null };
+  if (variants.error) return jsonError(variants.error.message, 500);
+  return Response.json({ products: products.data || [], variants: variants.data || [], transactions: transactions.data || [] });
 }
 
 export async function POST(request) {
@@ -23,22 +28,31 @@ export async function POST(request) {
   if (!productId) return jsonError('Please select a product.');
   if (!Number.isFinite(changeQty) || changeQty === 0) return jsonError('Enter a non-zero quantity, e.g. +10 or -5.');
 
-  const { data: txn, error: rpcError } = await supabase.rpc('adjust_website_stock', {
-    p_company_id: companyId,
-    p_product_id: productId,
-    p_change: changeQty,
-    p_reason: cleanString(body?.reason, 500) || 'Manual adjustment',
-    p_user_id: user.id,
-  });
+  const variantId = body?.variant_id ? cleanString(body.variant_id, 100) : null;
+  const { data: txn, error: rpcError } = variantId
+    ? await supabase.rpc('adjust_website_variant_stock', {
+        p_company_id: companyId,
+        p_variant_id: variantId,
+        p_change: changeQty,
+        p_reason: cleanString(body?.reason, 500) || 'Manual variant adjustment',
+        p_user_id: user.id,
+      })
+    : await supabase.rpc('adjust_website_stock', {
+        p_company_id: companyId,
+        p_product_id: productId,
+        p_change: changeQty,
+        p_reason: cleanString(body?.reason, 500) || 'Manual adjustment',
+        p_user_id: user.id,
+      });
 
   if (rpcError) return jsonError(rpcError.message, rpcError.code === '42501' ? 403 : 400);
 
   await audit(supabase, {
     companyId,
     userId: user.id,
-    action: 'inventory.adjust',
-    entityType: 'website_products',
-    entityId: productId,
+    action: variantId ? 'inventory.variant.adjust' : 'inventory.adjust',
+    entityType: variantId ? 'website_product_variants' : 'website_products',
+    entityId: variantId || productId,
     oldData: { stock_quantity: Number(txn.quantity_before) },
     newData: { stock_quantity: Number(txn.quantity_after) },
   });
