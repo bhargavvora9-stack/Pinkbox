@@ -52,3 +52,31 @@ export async function POST(request){
  await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.create`,entityType:t,entityId:data.id,newData:data});return Response.json({data},{status:201});
 }
 export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
+
+export async function PATCH(request){
+ const r=new URL(request.url).searchParams.get('resource');
+ const ctx=await getWebsiteAdminContext();
+ if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+ const{supabase,companyId,user}=ctx;
+ const b=await request.json().catch(()=>null);
+ const t=tableMap[r];
+ if(!t||!b?.id)return jsonError('Resource and record id are required.');
+ const{data:oldData,error:readError}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
+ if(readError)return jsonError(readError.message,500);
+ if(!oldData)return jsonError('Record not found.',404);
+ const p={};
+ if(r==='automations'){
+  if(b.name!==undefined){const name=clean(b.name,120);if(!name)return jsonError('Automation name is required.');p.name=name;}
+  if(b.trigger_type!==undefined){const trigger=clean(b.trigger_type,80);if(!allowedTriggers.has(trigger))return jsonError('Invalid automation trigger.');p.trigger_type=trigger;}
+  if(b.action_type!==undefined){const action=clean(b.action_type,80);if(!allowedActions.has(action))return jsonError('Invalid automation action.');p.action_type=action;}
+  if(b.config!==undefined){if(!b.config||typeof b.config!=='object'||Array.isArray(b.config))return jsonError('Automation config must be an object.');p.config=b.config;}
+  if(b.is_active!==undefined){if(typeof b.is_active!=='boolean')return jsonError('is_active must be boolean.');p.is_active=b.is_active;}
+ }else{
+  return jsonError('This resource does not support updates.',405);
+ }
+ if(!Object.keys(p).length)return jsonError('No changes supplied.');
+ const{data,error}=await supabase.from(t).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
+ if(error)return jsonError(error.message,500);
+ await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.update`,entityType:t,entityId:b.id,oldData,newData:data});
+ return Response.json({data});
+}
