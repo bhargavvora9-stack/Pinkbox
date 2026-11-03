@@ -202,5 +202,4 @@ begin
     'total_amount',v_total,'item_count',jsonb_array_length(p_items)
   );
 end;
-$function$
-
+$function$;
