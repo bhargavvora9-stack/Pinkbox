@@ -98,11 +98,13 @@ export async function POST(request){
     if(products.error||variants.error)throw (products.error||variants.error);
     const productMap=new Map((products.data||[]).map(x=>[x.id,x]));
     const variantMap=new Map((variants.data||[]).map(x=>[x.id,x]));
-    const notified=new Set();
+    const latestMoves=new Map();
     for(const move of moves||[]){
       const key=move.variant_id||move.product_id;
-      if(notified.has(key))continue;
-      notified.add(key);
+      const previous=latestMoves.get(key);
+      if(!previous||Number(move.quantity_after)<Number(previous.quantity_after))latestMoves.set(key,move);
+    }
+    for(const move of latestMoves.values()){
       const product=productMap.get(move.product_id);
       const variant=move.variant_id?variantMap.get(move.variant_id):null;
       const threshold=Number(variant?.low_stock_threshold??product?.low_stock_threshold??5);
