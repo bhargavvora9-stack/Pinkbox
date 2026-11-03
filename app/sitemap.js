@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase-admin';
+import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,14 +27,14 @@ export default async function sitemap() {
   const [posts, products, categories, pages, mappings] = await Promise.all([
     db
       .from('website_blog_posts')
-      .select('slug,updated_at,published_at')
+      .select('slug,title,excerpt,content,seo_keywords,updated_at,published_at')
       .eq('company_id', settings.company_id)
       .eq('is_published', true)
       .lte('published_at', new Date().toISOString())
       .order('published_at', { ascending: false }),
     db
       .from('website_products')
-      .select('id,slug,updated_at,price')
+      .select('id,slug,is_active,updated_at,price')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .gt('price', 0),
@@ -44,7 +45,7 @@ export default async function sitemap() {
       .eq('is_active', true),
     db
       .from('website_pages')
-      .select('slug,updated_at')
+      .select('slug,title,content,seo_title,seo_description,seo_keywords,updated_at')
       .eq('company_id', settings.company_id)
       .eq('is_published', true),
     db
@@ -53,8 +54,14 @@ export default async function sitemap() {
       .eq('company_id', settings.company_id),
   ]);
 
+  const contentContext = {
+    categories: categories.data || [],
+    products: products.data || [],
+    mappings: mappings.data || [],
+  };
+
   for (const p of posts.data || []) {
-    if (p.slug) {
+    if (p.slug && isContentLiveForAvailableCategory(p, contentContext, { keepUncategorized: false })) {
       urls.push({
         url: `${base}/blog/${encodeURIComponent(p.slug)}`,
         ...(p.updated_at || p.published_at
@@ -90,7 +97,7 @@ export default async function sitemap() {
   }
 
   for (const p of pages.data || []) {
-    if (p.slug) {
+    if (p.slug && isContentLiveForAvailableCategory(p, contentContext, { keepUncategorized: true })) {
       urls.push({
         url: `${base}/pages/${encodeURIComponent(p.slug)}`,
         ...(p.updated_at ? { lastModified: p.updated_at } : {}),
