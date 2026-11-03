@@ -34,7 +34,7 @@ begin
     raise exception 'Product not found.' using errcode = 'P0002';
   end if;
 
-  if p_relation not in ('categories', 'collections') then
+  if p_relation is null or p_relation not in ('categories', 'collections') then
     raise exception 'Unsupported product relation.';
   end if;
 
