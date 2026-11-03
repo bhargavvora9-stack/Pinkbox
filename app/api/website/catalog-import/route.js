@@ -1,8 +1,8 @@
 import { getWebsiteAdminContext, cleanString, slugify, jsonError, audit } from '@/lib/website-admin';
 
 const MAX_ROWS = 1000;
-const columns = ['sku','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','stock_quantity','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
-const moneyFields = new Set(['price','compare_at_price','cost_price','gst_percent','weight','stock_quantity','low_stock_threshold']);
+const columns = ['sku','title','slug','brand','short_description','description','price','compare_at_price','cost_price','gst_percent','hsn_code','barcode','weight','low_stock_threshold','track_inventory','allow_backorder','featured','is_active','seo_title','seo_description','seo_keywords'];
+const moneyFields = new Set(['price','compare_at_price','cost_price','gst_percent','weight','low_stock_threshold']);
 const boolFields = new Set(['track_inventory','allow_backorder','featured','is_active','delete']);
 const optionalText = new Set(['slug','brand','short_description','description','hsn_code','barcode','seo_title','seo_description','seo_keywords']);
 
@@ -87,10 +87,12 @@ export async function POST(request){
 
   const deletedSet=new Set(deleted.map(x=>String(x.sku).toLowerCase()));
   const missingDeleteSkus=deleteSkus.filter(s=>!deletedSet.has(String(s).toLowerCase()));
+  const ignoredStockRows=body.rows.filter(row=>row?.stock_quantity!==undefined&&String(row.stock_quantity).trim()!=='').length;
   return Response.json({
     count:imported.length+deleted.length,
     imported:imported.length,
     deleted:deleted.length,
-    missing_delete_skus:missingDeleteSkus
+    missing_delete_skus:missingDeleteSkus,
+    warnings:ignoredStockRows?[`${ignoredStockRows} row(s) contained stock values; stock was not imported. Use Inventory to adjust stock.`]:[]
   });
 }
