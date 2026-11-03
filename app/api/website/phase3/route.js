@@ -84,6 +84,7 @@ export async function PATCH(request) {
     if(statusError)return jsonError(statusError.message,statusError.code==='42501'?403:statusError.code==='P0002'?404:400);
     statusUpdate=statusResult?.data||null;
     delete p.order_status;
+    delete p.status_note;
   }
   const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
   if(error)return jsonError(error.message,500);
