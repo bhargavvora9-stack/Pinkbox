@@ -3,6 +3,7 @@ import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -120,6 +121,14 @@ async function getStoreData() {
   const visibleCategories = (categories.data || []).filter(
     (category) => Number(categoryProductCounts[category.id] || 0) > 0
   );
+  const contentContext = {
+    categories: categories.data || [],
+    products: saleableProducts,
+    mappings: mappings.data || [],
+  };
+  const liveBlogPosts = (blog.data || []).filter((post) =>
+    isContentLiveForAvailableCategory(post, contentContext, { keepUncategorized: false })
+  );
 
   return {
     settings: {
@@ -129,12 +138,13 @@ async function getStoreData() {
     },
     products: saleableProducts,
     categories: visibleCategories,
+    availableCategorySlugs: visibleCategories.map((category) => category.slug),
     banners: activeBanners,
     sections: sections.data || [],
     menu: menu.data || null,
     theme: theme.data || null,
     footer: footer.data || null,
-    blog: blog.data || [],
+    blog: liveBlogPosts,
     reviews: reviews.data || [],
   };
 }
@@ -154,8 +164,17 @@ export async function generateMetadata() {
   const data = await getStoreData();
   const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
-  const title = s?.meta_title || `${name} — Soft, Safe & Skin-Friendly Sanitary Pads`;
-  const description = s?.meta_description || 'PinkBox offers ultra-soft, dermatologist-friendly sanitary pads with long-lasting protection. ISO-certified, lab-tested and delivered discreetly across India.';
+  const categoryNames = (data?.categories || []).map((category) => {
+    if (category.slug === 'bags') return 'Personalized Cotton Tote Bags';
+    if (category.slug === 'sanitary-pads') return 'Sanitary Pads';
+    if (category.slug === 'baby-diapers') return 'Baby Diapers';
+    return category.name;
+  }).filter(Boolean);
+  const categoryLabel = categoryNames.join(' & ');
+  const title = categoryLabel ? `${categoryLabel} | ${name}` : `${name} | Online Store`;
+  const description = categoryLabel
+    ? `Explore ${categoryLabel.toLowerCase()} currently available at ${name}. Review the details on each product page before ordering.`
+    : `Explore current products and collections at ${name}.`;
   return {
     title,
     description,
@@ -175,7 +194,7 @@ export default async function HomePage(){
     '@type': 'Organization',
     '@id': absoluteUrl('/#organization'),
     name,
-    description: s?.meta_description || undefined,
+    description: data?.categories?.length ? `Explore ${data.categories.map((category) => category.name).join(', ')} currently available at ${name}.` : undefined,
     logo: s?.logo_url || undefined,
     url: siteUrl,
     hasMerchantReturnPolicy: {
@@ -223,38 +242,56 @@ export default async function HomePage(){
     '@type': 'WebSite',
     name,
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app',
-    description: s?.meta_description || undefined,
+    description: data?.categories?.length ? `Explore ${data.categories.map((category) => category.name).join(', ')} currently available at ${name}.` : undefined,
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }} />
     <PinkBoxHome initialData={data} />
-    <section aria-labelledby="sanitary-care-seo" className="pb-home-seo-footer">
-      <div className="pb-home-seo-footer-inner">
-        <p className="pb-home-seo-eyebrow">PINKBOX SANITARY CARE</p>
-        <h2 id="sanitary-care-seo">Sanitary Pads & Sanitary Napkins Online</h2>
-        <p>Shop sanitary pads and sanitary napkins online at PinkBox. Explore 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads, anti-bacterial sanitary pads and trusted 24 Care and 7 Soft options.</p>
-        <nav aria-label="Sanitary care links" className="pb-home-seo-links">
-          <Link href="/pages/sanitary-pads">Sanitary Pads</Link>
-          <Link href="/pages/320mm-sanitary-pads">320mm Sanitary Pads</Link>
-          <Link href="/pages/sanitary-pads-for-heavy-flow">Sanitary Pads for Heavy Flow</Link>
-          <Link href="/pages/anti-bacterial-sanitary-pads">Anti-Bacterial Sanitary Pads</Link>
-          <Link href="/pages/24-care-sanitary-pads">24 Care Sanitary Pads</Link>
-          <Link href="/pages/7-soft-sanitary-pads">7 Soft Sanitary Pads</Link>
-          <Link href="/collections/sanitary-pads">Shop Sanitary Pads</Link>
-          <Link href="/blog">Sanitary Pad Guides</Link>
-        </nav>
-        <section aria-labelledby="baby-diapers-seo" className="pb-home-seo-topic">
-          <p className="pb-home-seo-eyebrow">BABY CARE</p>
-          <h3 id="baby-diapers-seo">Baby Diapers Online</h3>
-          <p>Shop 7 Soft baby diapers online at PinkBox. Compare sizes S, M, L and XL and pack quantities across Jumbo, Maha Jumbo and Premium packs, then check listed product details and current prices before ordering for delivery across India.</p>
-          <div className="pb-home-seo-links">
-            <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
-            <Link href="/pages/baby-diaper-size-guide">Baby Diaper Size Guide</Link>
-          </div>
-        </section>
-      </div>
-    </section>
+    {(() => {
+      const active = new Set(data?.availableCategorySlugs || []);
+      const showSanitary = active.has('sanitary-pads');
+      const showDiapers = active.has('baby-diapers');
+      const showBags = active.has('bags');
+      if (!showSanitary && !showDiapers && !showBags) return null;
+      return <section className="pb-home-seo-footer">
+        <div className="pb-home-seo-footer-inner">
+          {showBags && <section aria-labelledby="bags-seo">
+            <p className="pb-home-seo-eyebrow">PINKBOX BAGS</p>
+            <h2 id="bags-seo">Personalized Cotton Tote Bags</h2>
+            <p>Explore PinkBox tote bags with embroidered butterfly, daisy, evil eye, hummingbird, lotus and wildflower designs. Each listed bag includes a Name for embroidery field on its product page.</p>
+            <nav aria-label="Bag collection links" className="pb-home-seo-links">
+              <Link href="/collections/bags">Shop Bags</Link>
+              <Link href="/blog/personalized-cotton-tote-bags-pinkbox">Tote Bag Design Guide</Link>
+            </nav>
+          </section>}
+          {showSanitary && <section aria-labelledby="sanitary-care-seo">
+            <p className="pb-home-seo-eyebrow">PINKBOX SANITARY CARE</p>
+            <h2 id="sanitary-care-seo">Sanitary Pads &amp; Sanitary Napkins Online</h2>
+            <p>Explore the sanitary pad options currently available at PinkBox and review each product page for its listed features.</p>
+            <nav aria-label="Sanitary care links" className="pb-home-seo-links">
+              <Link href="/pages/sanitary-pads">Sanitary Pads</Link>
+              <Link href="/pages/320mm-sanitary-pads">320mm Sanitary Pads</Link>
+              <Link href="/pages/sanitary-pads-for-heavy-flow">Sanitary Pads for Heavy Flow</Link>
+              <Link href="/pages/anti-bacterial-sanitary-pads">Anti-Bacterial Sanitary Pads</Link>
+              <Link href="/pages/24-care-sanitary-pads">24 Care Sanitary Pads</Link>
+              <Link href="/pages/7-soft-sanitary-pads">7 Soft Sanitary Pads</Link>
+              <Link href="/collections/sanitary-pads">Shop Sanitary Pads</Link>
+              <Link href="/blog">Journal</Link>
+            </nav>
+          </section>}
+          {showDiapers && <section aria-labelledby="baby-diapers-seo" className="pb-home-seo-topic">
+            <p className="pb-home-seo-eyebrow">BABY CARE</p>
+            <h2 id="baby-diapers-seo">Baby Diapers Online</h2>
+            <p>Explore the baby diaper sizes and pack options currently available at PinkBox. Check the exact product page for the pack&apos;s printed size guidance and details.</p>
+            <div className="pb-home-seo-links">
+              <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
+              <Link href="/pages/baby-diaper-size-guide">Baby Diaper Size Guide</Link>
+            </div>
+          </section>}
+        </div>
+      </section>;
+    })()}
     <style dangerouslySetInnerHTML={{__html:`
       .pb-home-hero-art>img,.pb-category-card img,.pb-journal-thumb img,.pb-home-custom img{object-fit:contain!important}
       .pb-home-hero-art>img,.pb-category-card img,.pb-journal-thumb img{background:#f7f1ee}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {createAdminClient} from '@/lib/supabase-admin';
 import {absoluteUrl, safeJsonLd} from '@/lib/seo';
+import {isContentLiveForAvailableCategory} from '@/lib/available-content';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
@@ -20,7 +21,7 @@ export async function generateMetadata(){
  return {
   title,
   description,
-  keywords:['PinkBox journal','product guides','shopping guides','product updates','baby diaper size guide','sanitary pad guides'],
+  keywords:['PinkBox journal','product guides','shopping guides','product updates'],
   alternates:{canonical:'/blog'},
   openGraph:{title,description,url:absoluteUrl('/blog'),type:'website',images:s.logo_url?[s.logo_url]:undefined},
   twitter:{card:'summary_large_image',title,description,images:s.logo_url?[s.logo_url]:undefined}
@@ -30,9 +31,18 @@ export async function generateMetadata(){
 export default async function BlogIndex(){
  const {db,s,now}=await getBlogStore();
  if(!s)return <main className="p-10">PinkBox is not configured.</main>;
- const {data:rawPosts,error:postsError}=await db.from('website_blog_posts').select('id,title,slug,excerpt,cover_image_url,published_at').eq('company_id',s.company_id).eq('is_published',true).order('published_at',{ascending:false}).limit(50);
- if(postsError) throw new Error(postsError.message);
- const posts=(rawPosts||[]).filter(post=>!post.published_at || new Date(post.published_at).getTime()<=now);
+ const [postsResult,categoriesResult,productsResult,mappingsResult]=await Promise.all([
+  db.from('website_blog_posts').select('id,title,slug,excerpt,content,seo_title,seo_description,seo_keywords,cover_image_url,published_at').eq('company_id',s.company_id).eq('is_published',true).order('published_at',{ascending:false}).limit(50),
+  db.from('website_categories').select('id,name,slug').eq('company_id',s.company_id).eq('is_active',true),
+  db.from('website_products').select('id,slug,is_active,price').eq('company_id',s.company_id).eq('is_active',true).gt('price',0),
+  db.from('website_product_categories').select('product_id,category_id').eq('company_id',s.company_id),
+ ]);
+ if(postsResult.error) throw new Error(postsResult.error.message);
+ if(categoriesResult.error||productsResult.error||mappingsResult.error) throw new Error('Unable to load live category information.');
+ const context={categories:categoriesResult.data||[],products:productsResult.data||[],mappings:mappingsResult.data||[]};
+ const posts=(postsResult.data||[])
+  .filter(post=>!post.published_at || new Date(post.published_at).getTime()<=now)
+  .filter(post=>isContentLiveForAvailableCategory(post,context,{keepUncategorized:false}));
  const blogSchema={
   '@context':'https://schema.org',
   '@type':'Blog',
