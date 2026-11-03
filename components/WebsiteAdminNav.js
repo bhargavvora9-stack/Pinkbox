@@ -8,7 +8,7 @@ import {
   Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation,
   Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen,
   Send, Shield, Workflow, HeartPulse, FileBarChart, WandSparkles,
-  SlidersHorizontal, ListChecks, Menu, X, ChevronDown
+  SlidersHorizontal, ListChecks, Menu, X, ChevronDown, PhoneCall
 } from 'lucide-react';
 
 const groups = [
@@ -18,6 +18,7 @@ const groups = [
     ['/admin/invoices', 'Invoices', FileText],
     ['/admin/abandoned-carts', 'Abandoned Carts', ShoppingCart],
     ['/admin/customers', 'Customers', Users],
+    ['/admin/b2b-enquiries', 'B2B Enquiries', PhoneCall],
   ] },
   { label: 'PRODUCT CATALOG', items: [
     ['/admin/products', 'All Products', Package],
