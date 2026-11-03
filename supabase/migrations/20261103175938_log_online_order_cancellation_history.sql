@@ -31,5 +31,4 @@ begin
 
  return jsonb_build_object('ok',true,'cancelled',true,'order_id',v_order.id);
 end;
-$function$
-
+$function$;
