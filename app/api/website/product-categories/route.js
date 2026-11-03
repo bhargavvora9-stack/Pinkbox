@@ -25,22 +25,13 @@ export async function POST(request) {
   if (!product) return jsonError('Product not found.', 404);
   if ((categories || []).length !== ids.length) return jsonError('One or more categories were not found for this company.', 400);
 
-  const currentIds = new Set((before || []).map(row => row.category_id));
-  const desiredIds = new Set(ids);
-  const additions = ids.filter(id => !currentIds.has(id));
-  if (additions.length) {
-    const { error: insertError } = await supabase.from('website_product_categories').insert(
-      additions.map(category_id => ({ company_id: companyId, product_id: body.product_id, category_id }))
-    );
-    if (insertError) return jsonError(insertError.message, 500);
-  }
-
-  const removals = [...currentIds].filter(id => !desiredIds.has(id));
-  for (const categoryId of removals) {
-    const { error: removeError } = await supabase.from('website_product_categories')
-      .delete().eq('company_id', companyId).eq('product_id', body.product_id).eq('category_id', categoryId);
-    if (removeError) return jsonError('New categories were saved, but an old category could not be removed. Please retry.', 500);
-  }
+  const { error: replaceError } = await supabase.rpc('replace_website_product_links', {
+    p_company_id: companyId,
+    p_product_id: body.product_id,
+    p_relation: 'categories',
+    p_related_ids: ids,
+  });
+  if (replaceError) return jsonError(replaceError.message, replaceError.code === '42501' ? 403 : 400);
 
   await audit(supabase, {
     companyId,
