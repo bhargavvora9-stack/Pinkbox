@@ -242,7 +242,7 @@ export default async function HomePage(){
     '@type': 'WebSite',
     name,
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app',
-    description: s?.meta_description || undefined,
+    description: data?.categories?.length ? `Explore ${data.categories.map((category) => category.name).join(', ')} currently available at ${name}.` : undefined,
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
