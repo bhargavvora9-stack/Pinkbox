@@ -84,6 +84,41 @@ export async function POST(request){
     await runWebsiteAutomations({companyId:c,trigger:'order_created',order:createdOrder||{id:data.order_id,order_status:'pending',customer_email:address.email,customer_phone:address.phone,order_number:data.order_number}});
     data.tracking_token=createdOrder?.tracking_token||null;
    }catch(e){console.error('Order-created automation failed:',e)}
+   try{
+    const {data:moves,error:movesError}=await db.from('website_inventory_transactions')
+      .select('product_id,variant_id,quantity_after')
+      .eq('company_id',c).eq('reference_type','website_order').eq('reference_id',data.order_id);
+    if(movesError)throw movesError;
+    const productIds=[...new Set((moves||[]).map(x=>x.product_id).filter(Boolean))];
+    const variantIds=[...new Set((moves||[]).map(x=>x.variant_id).filter(Boolean))];
+    const [products,variants]=await Promise.all([
+      productIds.length?db.from('website_products').select('id,title,sku,low_stock_threshold').eq('company_id',c).in('id',productIds):Promise.resolve({data:[],error:null}),
+      variantIds.length?db.from('website_product_variants').select('id,product_id,title,sku,low_stock_threshold').eq('company_id',c).in('id',variantIds):Promise.resolve({data:[],error:null}),
+    ]);
+    if(products.error||variants.error)throw (products.error||variants.error);
+    const productMap=new Map((products.data||[]).map(x=>[x.id,x]));
+    const variantMap=new Map((variants.data||[]).map(x=>[x.id,x]));
+    const notified=new Set();
+    for(const move of moves||[]){
+      const key=move.variant_id||move.product_id;
+      if(notified.has(key))continue;
+      notified.add(key);
+      const product=productMap.get(move.product_id);
+      const variant=move.variant_id?variantMap.get(move.variant_id):null;
+      const threshold=Number(variant?.low_stock_threshold??product?.low_stock_threshold??5);
+      if(product&&Number(move.quantity_after)<=threshold){
+        await runWebsiteAutomations({
+          companyId:c,trigger:'low_stock',
+          order:{
+            product_title:variant?product.title+' · '+variant.title:product.title,
+            product_sku:variant?.sku||product.sku||'',
+            stock_quantity:Number(move.quantity_after),
+            low_stock_threshold:threshold,
+          },
+        });
+      }
+    }
+   }catch(e){console.error('Order low-stock automation failed:',e)}
   }
   return Response.json(data,{status:201});
  }catch(error){console.error('Storefront POST failed:',error);return Response.json({error:error instanceof Error?error.message:'Storefront request failed.'},{status:500})}
