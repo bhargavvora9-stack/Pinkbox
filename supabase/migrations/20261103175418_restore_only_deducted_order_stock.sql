@@ -87,5 +87,4 @@ begin
   end loop;
   return new;
 end;
-$function$
-
+$function$;
