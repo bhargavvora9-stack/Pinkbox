@@ -1,5 +1,6 @@
 import { getWebsiteAdminContext, cleanString, audit, jsonError } from '@/lib/website-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
 const ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
@@ -75,10 +76,22 @@ export async function PATCH(request) {
     p.provider='razorpay';p.config={...previous,...incoming};
     for(const key of ['key_secret','webhook_secret','razorpay_key_secret','razorpay_webhook_secret']) if(!String(incoming[key]??'').trim()) p.config[key]=previous[key];
   }
+  let statusUpdate=null;
+  if(b.resource==='orders'&&b.order_status&&b.order_status!==oldData.order_status){
+    const {data:statusResult,error:statusError}=await supabase.rpc('update_website_order_status',{
+      p_company_id:companyId,p_order_id:b.id,p_status:cleanString(b.order_status,40).toLowerCase(),
+      p_note:cleanString(b.status_note,1000)||null
+    });
+    if(statusError)return jsonError(statusError.message,statusError.code==='42501'?403:statusError.code==='P0002'?404:400);
+    statusUpdate=statusResult?.data||null;
+    delete p.order_status;
+  }
   const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
   if(error)return jsonError(error.message,500);
-  await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:data.id,oldData,newData:data});
-  return Response.json({data:b.resource==='payments'?sanitizePayment(data):data});
+  const finalData=data||statusUpdate;
+  await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:b.id,oldData,newData:finalData});
+  if(statusUpdate){try{await runWebsiteAutomations({companyId,trigger:statusUpdate.order_status,order:statusUpdate})}catch(e){console.error('Order automation failed:',e)}}
+  return Response.json({data:b.resource==='payments'?sanitizePayment(finalData):finalData});
 }
 
 export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData});return Response.json({ok:true}); }
