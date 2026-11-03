@@ -16,17 +16,13 @@ async function write(request,partial){const{supabase,companyId,user,error}=await
   if(productError||collectionError||beforeError)return jsonError(productError?.message||collectionError?.message||beforeError?.message||'Unable to validate collection mapping.',500);
   if(!product)return jsonError('Product not found.',404);
   if((collections||[]).length!==ids.length)return jsonError('One or more collections were not found for this company.',400);
-  const currentIds=new Set((before||[]).map(row=>row.collection_id)),desiredIds=new Set(ids);
-  const additions=ids.filter(id=>!currentIds.has(id));
-  if(additions.length){
-    const {error:insertError}=await supabase.from(table).insert(additions.map(collection_id=>({company_id:companyId,product_id:body.product_id,collection_id})));
-    if(insertError)return jsonError(insertError.message,500);
-  }
-  const removals=[...currentIds].filter(id=>!desiredIds.has(id));
-  for(const collectionId of removals){
-    const {error:removeError}=await supabase.from(table).delete().eq('company_id',companyId).eq('product_id',body.product_id).eq('collection_id',collectionId);
-    if(removeError)return jsonError('New collections were saved, but an old collection could not be removed. Please retry.',500);
-  }
+  const {error:replaceError}=await supabase.rpc('replace_website_product_links',{
+    p_company_id:companyId,
+    p_product_id:body.product_id,
+    p_relation:'collections',
+    p_related_ids:ids
+  });
+  if(replaceError)return jsonError(replaceError.message,replaceError.code==='42501'?403:400);
   await audit(supabase,{companyId,userId:user.id,action:'product.collections.replace',entityType:table,entityId:body.product_id,oldData:before||[],newData:ids.map(collection_id=>({collection_id}))});
   return Response.json({ok:true});
 }if(resource==='brands'||resource==='collections'||resource==='variants'||resource==='reviews'){if(body.option_values&&typeof body.option_values==='string')body.option_values=JSON.parse(body.option_values||'{}')}const payload={...body,company_id:companyId};delete payload.resource;delete payload.id;delete payload.created_at;let result;if(partial){result=await supabase.from(table).update(payload).eq('company_id',companyId).eq('id',body.id).select().single()}else{result=await supabase.from(table).insert(payload).select().single()}if(result.error)return jsonError(result.error.message,500);await audit(supabase,{companyId,userId:user.id,action:`${resource}.${partial?'update':'create'}`,entityType:table,entityId:result.data.id,newData:result.data});return Response.json({data:result.data},{status:partial?200:201})}
