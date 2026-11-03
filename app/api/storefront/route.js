@@ -92,8 +92,8 @@ export async function POST(request){
     const productIds=[...new Set((moves||[]).map(x=>x.product_id).filter(Boolean))];
     const variantIds=[...new Set((moves||[]).map(x=>x.variant_id).filter(Boolean))];
     const [products,variants]=await Promise.all([
-      productIds.length?db.from('website_products').select('id,title,sku,low_stock_threshold').eq('company_id',c).in('id',productIds):Promise.resolve({data:[],error:null}),
-      variantIds.length?db.from('website_product_variants').select('id,product_id,title,sku,low_stock_threshold').eq('company_id',c).in('id',variantIds):Promise.resolve({data:[],error:null}),
+      productIds.length?db.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id',c).in('id',productIds):Promise.resolve({data:[],error:null}),
+      variantIds.length?db.from('website_product_variants').select('id,product_id,title,sku,stock_quantity,low_stock_threshold').eq('company_id',c).in('id',variantIds):Promise.resolve({data:[],error:null}),
     ]);
     if(products.error||variants.error)throw (products.error||variants.error);
     const productMap=new Map((products.data||[]).map(x=>[x.id,x]));
@@ -108,13 +108,14 @@ export async function POST(request){
       const product=productMap.get(move.product_id);
       const variant=move.variant_id?variantMap.get(move.variant_id):null;
       const threshold=Number(variant?.low_stock_threshold??product?.low_stock_threshold??5);
-      if(product&&Number(move.quantity_after)<=threshold){
+      const currentStock=Number(variant?.stock_quantity??product?.stock_quantity??move.quantity_after);
+      if(product&&currentStock<=threshold){
         await runWebsiteAutomations({
           companyId:c,trigger:'low_stock',
           order:{
             product_title:variant?product.title+' · '+variant.title:product.title,
             product_sku:variant?.sku||product.sku||'',
-            stock_quantity:Number(move.quantity_after),
+            stock_quantity:currentStock,
             low_stock_threshold:threshold,
           },
         });
