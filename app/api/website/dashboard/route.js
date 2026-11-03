@@ -15,7 +15,7 @@ export async function GET() {
   const { supabase, companyId } = ctx;
   const startOfToday = startOfIndiaDay();
 
-  const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes] = await Promise.all([
+  const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes, b2bRes] = await Promise.all([
     supabase.from('website_orders').select('total_amount,order_status').eq('company_id', companyId),
     supabase.from('website_products').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('is_active', true),
     supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
@@ -23,12 +23,15 @@ export async function GET() {
     supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
     supabase.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
     supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
+    supabase.from('website_bulk_enquiries').select('id,status').eq('company_id', companyId),
   ]);
 
-  const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes].map(x => x.error).filter(Boolean);
+  const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, b2bRes].map(x => x.error).filter(Boolean);
   if (errs.length) return jsonError(errs[0].message, 500);
 
   const allOrders = ordersRes.data || [];
+  const b2bLeads = b2bRes.data || [];
+  const b2bQueue = Object.fromEntries(['new', 'contacted', 'qualified', 'converted', 'lost'].map(status => [status, b2bLeads.filter(lead => String(lead.status || 'new').toLowerCase() === status).length]));
   const eligible = allOrders.filter(o => !TERMINAL_INVALID.has(String(o.order_status || '').toLowerCase()));
   const sales = eligible.reduce((s, o) => s + Number(o.total_amount || 0), 0);
 
@@ -56,6 +59,8 @@ export async function GET() {
       orders: eligible.length,
       products: productsRes.count || 0,
       customers: customersRes.count || 0,
+      b2bLeads: b2bLeads.length,
+      newB2bLeads: b2bQueue.new,
       lowStock: lowStock.length,
       outOfStock: outOfStock.length,
     },
@@ -63,6 +68,7 @@ export async function GET() {
     lowStock,
     outOfStock,
     orderQueue,
+    b2bQueue,
     today,
     websiteName: settingsRes.data?.website_name || 'PinkBox',
     whatsappNumber: settingsRes.data?.whatsapp_number || '',
