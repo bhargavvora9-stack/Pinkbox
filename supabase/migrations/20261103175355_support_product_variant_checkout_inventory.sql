@@ -103,7 +103,7 @@ begin
 
   return round(greatest(0,v_shipping),2);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.place_website_order(p_company_id uuid, p_name text, p_phone text, p_email text, p_address jsonb, p_items jsonb, p_payment_method text DEFAULT 'COD'::text, p_note text DEFAULT NULL::text, p_coupon_code text DEFAULT NULL::text)
@@ -310,5 +310,4 @@ begin
     'total_amount',v_total,'item_count',jsonb_array_length(p_items)
   );
 end;
-$function$
-
+$function$;
