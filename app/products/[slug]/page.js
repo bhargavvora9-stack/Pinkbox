@@ -71,7 +71,8 @@ export default async function ProductPage({ params }) {
   const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I have a question about ${p.title}.`)}` : null;
   const url = absoluteUrl(`/products/${encodeURIComponent(p.slug)}`);
   const imageUrls = p.images.filter(x => x.image_url).map(x => x.image_url);
-  const inStock = Number(p.stock_quantity || 0) > 0 || p.allow_backorder === true;
+  const hasAvailableVariant = (p.variants || []).length ? p.variants.some(v => Number(v.stock_quantity || 0) > 0) : Number(p.stock_quantity || 0) > 0;
+  const inStock = hasAvailableVariant || p.allow_backorder === true;
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
