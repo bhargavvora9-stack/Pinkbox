@@ -1,4 +1,5 @@
 import { getWebsiteAdminContext, jsonError, cleanString, audit } from '@/lib/website-admin';
+import { runWebsiteAutomations } from '@/lib/website-automation';
 
 export async function GET() {
   const ctx = await getWebsiteAdminContext();
@@ -56,6 +57,33 @@ export async function POST(request) {
     oldData: { stock_quantity: Number(txn.quantity_before) },
     newData: { stock_quantity: Number(txn.quantity_after) },
   });
+
+  try {
+    const [productResult, variantResult] = await Promise.all([
+      supabase.from('website_products').select('title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('id', txn.product_id).maybeSingle(),
+      variantId
+        ? supabase.from('website_product_variants').select('title,sku,low_stock_threshold').eq('company_id', companyId).eq('id', variantId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    const product = productResult.data;
+    const variant = variantResult.data;
+    const threshold = Number(variant?.low_stock_threshold ?? product?.low_stock_threshold ?? 5);
+    const currentStock = Number(variant?.stock_quantity ?? product?.stock_quantity ?? txn.quantity_after);
+    if (product && currentStock <= threshold) {
+      await runWebsiteAutomations({
+        companyId,
+        trigger: 'low_stock',
+        order: {
+          product_title: variant ? product.title + ' · ' + variant.title : product.title,
+          product_sku: variant?.sku || product.sku || '',
+          stock_quantity: currentStock,
+          low_stock_threshold: threshold,
+        },
+      });
+    }
+  } catch (automationError) {
+    console.error('Low-stock automation failed:', automationError);
+  }
 
   return Response.json({ data: txn });
 }

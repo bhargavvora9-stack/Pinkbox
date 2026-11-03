@@ -2,6 +2,7 @@ import {getWebsiteAdminContext,jsonError,audit} from '@/lib/website-admin';
 const tableMap={roles:'website_roles',automations:'website_automations'};
 const allowedTriggers=new Set(['order_created','order_confirmed','order_shipped','order_delivered','low_stock','abandoned_cart']);
 const allowedActions=new Set(['create_notification','update_order']);
+const orderTriggers=new Set(['order_created','order_confirmed','order_shipped','order_delivered']);
 const clean=(v,max=5000)=>typeof v==='string'?v.trim().slice(0,max):'';
 const getAnalytics=async(supabase,companyId)=>{
  const{data,error}=await supabase.rpc('get_website_analytics',{p_company_id:companyId});
@@ -38,6 +39,7 @@ export async function POST(request){
  if(r==='automations'){
   const trigger=clean(b.trigger_type,80),action=clean(b.action_type,80);
   if(!allowedTriggers.has(trigger)||!allowedActions.has(action))return jsonError('Invalid automation trigger or action.');
+  if(action==='update_order'&&!orderTriggers.has(trigger))return jsonError('Update order is only available for order-related triggers.');
   if(!clean(b.name,120))return jsonError('Automation name is required.');
  }
  if(r==='roles'){
@@ -64,6 +66,9 @@ export async function PATCH(request){
  const{data:oldData,error:readError}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
  if(readError)return jsonError(readError.message,500);
  if(!oldData)return jsonError('Record not found.',404);
+ const nextTrigger=b.trigger_type!==undefined?clean(b.trigger_type,80):oldData.trigger_type;
+ const nextAction=b.action_type!==undefined?clean(b.action_type,80):oldData.action_type;
+ if(nextAction==='update_order'&&!orderTriggers.has(nextTrigger))return jsonError('Update order is only available for order-related triggers.');
  const p={};
  if(r==='automations'){
   if(b.name!==undefined){const name=clean(b.name,120);if(!name)return jsonError('Automation name is required.');p.name=name;}
