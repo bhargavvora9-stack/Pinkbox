@@ -21,7 +21,7 @@ export async function generateMetadata(){
  return {
   title,
   description,
-  keywords:['PinkBox journal','product guides','shopping guides','product updates','baby diaper size guide','sanitary pad guides'],
+  keywords:['PinkBox journal','product guides','shopping guides','product updates'],
   alternates:{canonical:'/blog'},
   openGraph:{title,description,url:absoluteUrl('/blog'),type:'website',images:s.logo_url?[s.logo_url]:undefined},
   twitter:{card:'summary_large_image',title,description,images:s.logo_url?[s.logo_url]:undefined}
