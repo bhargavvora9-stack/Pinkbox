@@ -4,20 +4,33 @@ import {createAdminClient} from '@/lib/supabase-admin';
 import {notFound} from 'next/navigation';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 import { sanitizeCmsHtml } from '@/lib/sanitize-html';
+import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
 
 async function getStore(){
  const db=createAdminClient();
- const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description').eq('slug','pinkbox').eq('status','active').maybeSingle();
+ const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description,logo_url').eq('slug','pinkbox').eq('status','active').maybeSingle();
  return {db,settings};
+}
+
+async function isPostLive(db, companyId, post){
+ const [categories,products,mappings]=await Promise.all([
+  db.from('website_categories').select('id,name,slug').eq('company_id',companyId).eq('is_active',true),
+  db.from('website_products').select('id,slug,is_active,price').eq('company_id',companyId).eq('is_active',true).gt('price',0),
+  db.from('website_product_categories').select('product_id,category_id').eq('company_id',companyId),
+ ]);
+ if(categories.error||products.error||mappings.error) return false;
+ return isContentLiveForAvailableCategory(post,{
+  categories:categories.data||[],products:products.data||[],mappings:mappings.data||[]
+ },{keepUncategorized:false});
 }
 
 export default async function BlogPage({params}){
  const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return notFound();
  const {data:post}=await db.from('website_blog_posts').select('*').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).lte('published_at',new Date().toISOString()).maybeSingle();
- if(!post)return notFound();
+ if(!post || !(await isPostLive(db,settings.company_id,post)))return notFound();
  const image=post.cover_image_url||post.featured_image_url;
  const articleUrl=absoluteUrl(`/blog/${encodeURIComponent(post.slug)}`);
  const articleSchema={
@@ -37,11 +50,12 @@ export default async function BlogPage({params}){
 
 export async function generateMetadata({params}){
  const {slug}=await params; const {db,settings}=await getStore(); if(!settings)return {};
- const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url,seo_title,seo_description,seo_keywords').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
+ const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url,seo_title,seo_description,seo_keywords,content').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
+ const live=post ? await isPostLive(db,settings.company_id,post) : false;
  const image=post?.cover_image_url||post?.featured_image_url;
  const title=post?.seo_title||post?.title;
  const description=post?.seo_description||post?.excerpt||undefined;
- return post?{
+ return post&&live?{
   title,
   description,
   keywords:post.seo_keywords?post.seo_keywords.split(',').map(keyword=>keyword.trim()).filter(Boolean):undefined,
