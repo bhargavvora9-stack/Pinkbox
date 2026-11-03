@@ -164,8 +164,17 @@ export async function generateMetadata() {
   const data = await getStoreData();
   const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
-  const title = s?.meta_title || `${name} — Soft, Safe & Skin-Friendly Sanitary Pads`;
-  const description = s?.meta_description || 'PinkBox offers ultra-soft, dermatologist-friendly sanitary pads with long-lasting protection. ISO-certified, lab-tested and delivered discreetly across India.';
+  const categoryNames = (data?.categories || []).map((category) => {
+    if (category.slug === 'bags') return 'Personalized Cotton Tote Bags';
+    if (category.slug === 'sanitary-pads') return 'Sanitary Pads';
+    if (category.slug === 'baby-diapers') return 'Baby Diapers';
+    return category.name;
+  }).filter(Boolean);
+  const categoryLabel = categoryNames.join(' & ');
+  const title = categoryLabel ? `${categoryLabel} | ${name}` : `${name} | Online Store`;
+  const description = categoryLabel
+    ? `Explore ${categoryLabel.toLowerCase()} currently available at ${name}. Review the details on each product page before ordering.`
+    : `Explore current products and collections at ${name}.`;
   return {
     title,
     description,
@@ -185,7 +194,7 @@ export default async function HomePage(){
     '@type': 'Organization',
     '@id': absoluteUrl('/#organization'),
     name,
-    description: s?.meta_description || undefined,
+    description: data?.categories?.length ? `Explore ${data.categories.map((category) => category.name).join(', ')} currently available at ${name}.` : undefined,
     logo: s?.logo_url || undefined,
     url: siteUrl,
     hasMerchantReturnPolicy: {
