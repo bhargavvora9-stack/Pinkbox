@@ -86,6 +86,7 @@ export async function PATCH(request) {
     delete p.order_status;
     delete p.status_note;
   }
+  if(b.resource==='orders')delete p.status_note;
   const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
   if(error)return jsonError(error.message,500);
   const finalData=data||statusUpdate;
