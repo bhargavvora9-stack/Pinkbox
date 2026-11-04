@@ -77,7 +77,7 @@ const hrefModules = {
   '/admin/variants':'variants','/admin/inventory':'inventory','/admin/reviews':'reviews',
   '/admin/discounts':'discounts','/admin/campaigns':'campaigns','/admin/notifications':'notifications',
   '/admin/notification-logs':'notifications','/admin/homepage':'homepage','/admin/banners':'banners',
-  '/admin/pages':'pages','/admin/navigation':'navigation','/admin/design':'design','/admin/theme':'theme',
+  '/admin/pages':'pages','/admin/navigation':'navigation','/admin/design':'theme','/admin/theme':'theme',
   '/admin/seo':'seo','/admin/blog':'blog','/admin/footer':'footer','/admin/shipping':'shipping',
   '/admin/payments':'payments','/admin/automations':'automations','/admin/analytics':'analytics',
   '/admin/reports':'reports','/admin/system-health':'system_health','/admin/audit-log':'audit_log',
@@ -89,11 +89,20 @@ function isItemActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function canViewHref(href, permissions) {
+  if (!permissions) return true;
+  if (href === '/admin/roles') return false;
+  const required = {
+    '/admin/homepage': ['homepage','settings','theme','navigation','footer','banners','categories'],
+    '/admin/customers': ['customers','orders'],
+  }[href] || [hrefModules[href]];
+  return required.every(module => permissions[module]?.view === true);
+}
 function NavigationList({ pathname, query, onNavigate, permissions }) {
   const visibleGroups = useMemo(() => groups.map(group => ({
     ...group,
     items: group.items.filter(([href, label]) =>
-      (!permissions || permissions[hrefModules[href]]?.view === true) && (!query || `${group.label} ${label}`.toLowerCase().includes(query.toLowerCase()))
+      canViewHref(href, permissions) && (!query || `${group.label} ${label}`.toLowerCase().includes(query.toLowerCase()))
     ),
   })).filter(group => group.items.length), [query, permissions]);
 
