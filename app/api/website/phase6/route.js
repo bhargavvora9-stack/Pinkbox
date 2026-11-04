@@ -64,7 +64,7 @@ export async function POST(request){
  if(r==='roles'){
   const name=clean(b.name,80);if(!name)return jsonError('Role name is required.');
   const incoming=b.permissions?.modules&&typeof b.permissions.modules==='object'?b.permissions.modules:{};
-  const allowedModules=["dashboard","orders","abandoned_carts","customers","b2b_enquiries","products","import_export","images","categories","brands","collections","variants","inventory","reviews","discounts","campaigns","notifications","homepage","banners","pages","navigation","design","theme","seo","blog","footer","shipping","payments","automations","analytics","reports","system_health","audit_log","settings"];
+  const allowedModules=["dashboard","orders","abandoned_carts","customers","b2b_enquiries","products","import_export","images","categories","brands","collections","variants","inventory","reviews","discounts","campaigns","notifications","homepage","banners","pages","navigation","theme","seo","blog","footer","shipping","payments","automations","analytics","reports","system_health","audit_log","settings"];
   const permissions={modules:Object.fromEntries(allowedModules.map(module=>[module,Object.fromEntries(['view','create','update','delete'].map(action=>[action,incoming[module]?.[action]===true]))]))};
   if(!permissions.modules.dashboard.view)return jsonError('Dashboard view permission is required for admin access.');
   b.name=name;b.description=clean(b.description,500)||null;b.permissions=permissions;
