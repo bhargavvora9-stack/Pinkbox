@@ -46,6 +46,14 @@ export async function POST(request){
  const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];
+ if(r==='role-assignment'){
+  const userId=clean(b.user_id,80),roleId=b.role_id?clean(b.role_id,80):null;
+  if(!userId)return jsonError('Staff user is required.');
+  const {data,error}=await supabase.rpc('assign_website_user_role',{p_company_id:companyId,p_user_id:userId,p_role_id:roleId});
+  if(error)return jsonError(error.message,error.code==='42501'?403:400);
+  await audit(supabase,{companyId,userId:user.id,action:'roles.assign',entityType:'profile',entityId:userId,newData:data});
+  return Response.json({data});
+ }
  if(!t)return jsonError('Unknown Phase 6 resource.',404);
  if(r==='automations'){
   const trigger=clean(b.trigger_type,80),action=clean(b.action_type,80);
