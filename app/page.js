@@ -4,6 +4,7 @@ import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 import { isContentLiveForAvailableCategory } from '@/lib/available-content';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,7 +23,7 @@ async function getStoreData() {
   const companyId = settings.company_id;
   const now = new Date().toISOString();
 
-  const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews] = await Promise.all([
+  const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants] = await Promise.all([
     db.from('website_products')
       .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
@@ -77,9 +78,13 @@ async function getStoreData() {
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30),
+    db.from('website_product_variants')
+      .select('product_id,stock_quantity,is_active')
+      .eq('company_id', companyId)
+      .eq('is_active', true),
   ]);
 
-  const results = { products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews };
+  const results = { products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants };
   const failed = Object.values(results).find((result) => result?.error);
   if (failed) throw new Error(failed.error.message);
 
@@ -107,9 +112,9 @@ async function getStoreData() {
     category_id: catMap[product.id] || null,
   }));
 
-  // Never expose zero-priced products to customers. Keep them editable in Admin
-  // until a real selling price is entered.
-  const saleableProducts = productData.filter((product) => Number(product.price || 0) > 0);
+  // Public listings include only active, priced products that checkout can currently sell.
+  // Stock remains managed separately through the Inventory ledger in Admin.
+  const saleableProducts = filterAvailableProducts(productData, variants.data || []);
 
   const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
   const categoryProductCounts = {};
