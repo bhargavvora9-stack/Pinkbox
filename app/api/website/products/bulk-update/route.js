@@ -32,10 +32,11 @@ function validateValue(field, value){
 }
 
 export async function PATCH(request){
-  const ctx = await getWebsiteAdminContext(request);
+  const body = await request.json().catch(()=>null);
+  const permissionModule = body?.field === 'stock_quantity' ? 'inventory' : 'products';
+  const ctx = await getWebsiteAdminContext(request,{resource:permissionModule,action:'update'});
   if(ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { companyId, user, supabase } = ctx;
-  const body = await request.json().catch(()=>null);
   if(!body?.product_ids || !Array.isArray(body.product_ids)) return jsonError('product_ids array is required.');
   if(body.product_ids.length < 1) return jsonError('Select at least one product.');
   if(body.product_ids.length > MAX_PRODUCTS) return jsonError(`Maximum ${MAX_PRODUCTS} products per bulk update.`);
@@ -48,10 +49,8 @@ export async function PATCH(request){
   const stockMode = field === 'stock_quantity' ? String(body.stock_mode || 'set') : 'set';
   if(field === 'stock_quantity' && !['set','increase','decrease'].includes(stockMode)) return jsonError('Invalid stock mode.');
 
-  // The authenticated admin/company check above remains on the user-scoped client.
-  // The RPC is intentionally restricted to service_role, so invoke it server-side
-  // only after that check. The database function also verifies the supplied user
-  // is an active admin for this company and scopes every product update by company.
+  // The authenticated company/module permission check stays on the user-scoped client.
+  // The RPC is service_role-only; its database guard rechecks the assigned module/action.
   const admin = createAdminClient();
   const { data, error } = await admin.rpc('bulk_update_website_products', {
     p_company_id: companyId,
@@ -66,7 +65,7 @@ export async function PATCH(request){
   await audit(supabase, {
     companyId,
     userId: user.id,
-    action: 'products.bulk_update',
+    action: field === 'stock_quantity' ? 'inventory.bulk_adjust' : 'products.bulk_update',
     entityType: 'website_products',
     entityId: null,
     newData: { count: data?.updated_count ?? data?.count ?? 0, field, stock_mode: stockMode, product_ids: ids },
