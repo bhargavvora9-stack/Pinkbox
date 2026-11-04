@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,10 +18,14 @@ async function getCollection(slug) {
   if (!category) return null;
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
-  const { data: products } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).gt('price',0).order('created_at',{ascending:false}) : {data:[]};
+  const { data: products, error: productsError } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
+  if (productsError) throw new Error(productsError.message);
+  const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
+  if (variantsError) throw new Error(variantsError.message);
+  const availableProducts = filterAvailableProducts(products || [], variants || []);
   const { data: images } = ids.length ? await db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[]};
   const imageMap = {}; (images || []).forEach(x => { if (!imageMap[x.product_id] || x.is_primary) imageMap[x.product_id] = x.image_url; });
-  return {category, products:(products || []).map(p => ({...p,image_url:imageMap[p.id]||null}))};
+  return {category, products:availableProducts.map(p => ({...p,image_url:imageMap[p.id]||null}))};
 }
 
 export async function generateMetadata({params}) {
