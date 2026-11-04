@@ -10,7 +10,7 @@ function startOfIndiaDay() {
 }
 
 export async function GET() {
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
   const startOfToday = startOfIndiaDay();
