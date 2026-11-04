@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -18,7 +19,7 @@ async function getProducts() {
 
   const { data: products, error: productsError } = await db
     .from('website_products')
-    .select('id,sku,title,slug,brand,price,compare_at_price,is_active')
+    .select('id,sku,title,slug,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
     .order('created_at', { ascending: false });
@@ -26,6 +27,16 @@ async function getProducts() {
   if (productsError) throw new Error(productsError.message);
 
   const ids = (products || []).map((product) => product.id);
+  const { data: variants, error: variantsError } = ids.length
+    ? await db.from('website_product_variants')
+        .select('product_id,stock_quantity,is_active')
+        .eq('company_id', settings.company_id)
+        .in('product_id', ids)
+        .eq('is_active', true)
+    : { data: [], error: null };
+
+  if (variantsError) throw new Error(variantsError.message);
+
   const { data: images, error: imagesError } = ids.length
     ? await db.from('website_product_images')
         .select('product_id,image_url,is_primary,sort_order')
@@ -43,7 +54,7 @@ async function getProducts() {
     }
   }
 
-  return (products || []).filter((product) => Number(product.price || 0) > 0).map((product) => ({
+  return filterAvailableProducts(products || [], variants || []).map((product) => ({
     ...product,
     image_url: imageMap[product.id] || null,
   }));
@@ -92,7 +103,7 @@ export default async function ProductsPage() {
 
         {!products.length ? (
           <div className="mt-10 rounded-3xl border border-dashed border-[#eadfd9] bg-white p-12 text-center text-[#846f70]">
-            No active products are available yet.
+            No products are currently available.
           </div>
         ) : (
           <div className="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">
