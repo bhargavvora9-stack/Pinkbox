@@ -32,7 +32,7 @@ function validateValue(field, value){
 }
 
 export async function PATCH(request){
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if(ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { companyId, user, supabase } = ctx;
   const body = await request.json().catch(()=>null);
