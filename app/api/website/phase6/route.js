@@ -1,4 +1,5 @@
 import {getWebsiteAdminContext,jsonError,audit} from '@/lib/website-admin';
+import {createAdminClient} from '@/lib/supabase-admin';
 const tableMap={roles:'website_roles',automations:'website_automations'};
 const allowedTriggers=new Set(['order_created','order_confirmed','order_shipped','order_delivered','low_stock','abandoned_cart']);
 const allowedActions=new Set(['create_notification','update_order']);
@@ -46,6 +47,29 @@ export async function POST(request){
  const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];
+ if(r==='staff-invite'){
+  if(!['admin','super_admin'].includes(ctx.profile?.role))return jsonError('Only company admins can invite staff.',403);
+  const email=clean(b.email,254).toLowerCase();
+  const displayName=clean(b.display_name,120);
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return jsonError('Enter a valid staff email address.');
+  if(!displayName)return jsonError('Staff name is required.');
+  const admin=createAdminClient();
+  const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{
+    data:{company_id:companyId,display_name:displayName,role:'staff'}
+  });
+  if(error)return jsonError(error.message,400);
+  const invitedUser=data?.user;
+  if(!invitedUser?.id)return jsonError('The invitation service did not return a user.',500);
+  const {error:profileError}=await admin.from('profiles').upsert({
+    id:invitedUser.id,company_id:companyId,display_name:displayName,role:'staff',active:true
+  },{onConflict:'id'});
+  if(profileError){
+    await admin.auth.admin.deleteUser(invitedUser.id);
+    return jsonError('Invitation could not be linked to a staff profile: '+profileError.message,500);
+  }
+  await audit(supabase,{companyId,userId:user.id,action:'staff.invite',entityType:'profile',entityId:invitedUser.id,newData:{email,display_name:displayName,role:'staff'}});
+  return Response.json({data:{id:invitedUser.id,email,display_name:displayName},message:'Invitation email sent. Assign a website role below.'},{status:201});
+ }
  if(r==='role-assignment'){
   const userId=clean(b.user_id,80),roleId=b.role_id?clean(b.role_id,80):null;
   if(!userId)return jsonError('Staff user is required.');
