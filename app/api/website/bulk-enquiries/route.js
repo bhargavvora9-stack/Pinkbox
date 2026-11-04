@@ -4,8 +4,8 @@ const SOURCES = new Set(['Website', 'Phone call', 'WhatsApp', 'Instagram', 'Goog
 const STATUSES = new Set(['new', 'contacted', 'qualified', 'converted', 'lost']);
 const clean = (value, max = 2000) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 
-export async function GET() {
-  const ctx = await getWebsiteAdminContext();
+export async function GET(request) {
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { data, error } = await ctx.supabase
     .from('website_bulk_enquiries')
@@ -18,7 +18,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const body = await request.json().catch(() => ({}));
   const name = clean(body.name, 160);
@@ -45,7 +45,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const body = await request.json().catch(() => ({}));
   if (!body.id || !STATUSES.has(body.status)) return jsonError('A valid enquiry ID and status are required.');

@@ -1,4 +1,5 @@
 import {getWebsiteAdminContext,jsonError,audit} from '@/lib/website-admin';
+import {createAdminClient} from '@/lib/supabase-admin';
 const tableMap={roles:'website_roles',automations:'website_automations'};
 const allowedTriggers=new Set(['order_created','order_confirmed','order_shipped','order_delivered','low_stock','abandoned_cart']);
 const allowedActions=new Set(['create_notification','update_order']);
@@ -9,7 +10,7 @@ const getAnalytics=async(supabase,companyId)=>{
  if(error)throw new Error(error.message);return data||{};
 };
 export async function GET(request){
- const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
+ const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId}=ctx;
  if(r==='analytics'){
@@ -29,12 +30,54 @@ export async function GET(request){
  }
  const t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);
  const{data,error}=await supabase.from(t).select('*').eq('company_id',companyId).order('created_at',{ascending:false});
- if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
+ if(error)return jsonError(error.message,500);
+ if(r==='roles'){
+  const [{data:profiles,error:profilesError},{data:assignments,error:assignmentsError}]=await Promise.all([
+   supabase.from('profiles').select('id,display_name,role,active').eq('company_id',companyId).eq('active',true).order('display_name'),
+   supabase.from('website_user_role_assignments').select('user_id,role_id').eq('company_id',companyId)
+  ]);
+  if(profilesError||assignmentsError)return jsonError((profilesError||assignmentsError).message,500);
+  const assigned=new Map((assignments||[]).map(x=>[x.user_id,x.role_id]));
+  const users=(profiles||[]).filter(p=>!['admin','super_admin'].includes(p.role)).map(p=>({...p,website_role_id:assigned.get(p.id)||''}));
+  return Response.json({data:data||[],users});
+ }
+ return Response.json({data:data||[]});
 }
 export async function POST(request){
- const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
+ const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];
+ if(r==='staff-invite'){
+  if(!['admin','super_admin'].includes(ctx.profile?.role))return jsonError('Only company admins can invite staff.',403);
+  const email=clean(b.email,254).toLowerCase();
+  const displayName=clean(b.display_name,120);
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return jsonError('Enter a valid staff email address.');
+  if(!displayName)return jsonError('Staff name is required.');
+  const admin=createAdminClient();
+  const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{
+    data:{company_id:companyId,display_name:displayName,role:'staff'}
+  });
+  if(error)return jsonError(error.message,400);
+  const invitedUser=data?.user;
+  if(!invitedUser?.id)return jsonError('The invitation service did not return a user.',500);
+  const {error:profileError}=await admin.from('profiles').upsert({
+    id:invitedUser.id,company_id:companyId,display_name:displayName,role:'staff',active:true
+  },{onConflict:'id'});
+  if(profileError){
+    await admin.auth.admin.deleteUser(invitedUser.id);
+    return jsonError('Invitation could not be linked to a staff profile: '+profileError.message,500);
+  }
+  await audit(supabase,{companyId,userId:user.id,action:'staff.invite',entityType:'profile',entityId:invitedUser.id,newData:{email,display_name:displayName,role:'staff'}});
+  return Response.json({data:{id:invitedUser.id,email,display_name:displayName},message:'Invitation email sent. Assign a website role below.'},{status:201});
+ }
+ if(r==='role-assignment'){
+  const userId=clean(b.user_id,80),roleId=b.role_id?clean(b.role_id,80):null;
+  if(!userId)return jsonError('Staff user is required.');
+  const {data,error}=await supabase.rpc('assign_website_user_role',{p_company_id:companyId,p_user_id:userId,p_role_id:roleId});
+  if(error)return jsonError(error.message,error.code==='42501'?403:400);
+  await audit(supabase,{companyId,userId:user.id,action:'roles.assign',entityType:'profile',entityId:userId,newData:data});
+  return Response.json({data});
+ }
  if(!t)return jsonError('Unknown Phase 6 resource.',404);
  if(r==='automations'){
   const trigger=clean(b.trigger_type,80),action=clean(b.action_type,80);
@@ -44,7 +87,11 @@ export async function POST(request){
  }
  if(r==='roles'){
   const name=clean(b.name,80);if(!name)return jsonError('Role name is required.');
-  b.name=name;b.description=clean(b.description,500)||null;b.permissions=b.permissions&&typeof b.permissions==='object'?b.permissions:{view:true,create:false,update:false,delete:false};
+  const incoming=b.permissions?.modules&&typeof b.permissions.modules==='object'?b.permissions.modules:{};
+  const allowedModules=["dashboard","orders","abandoned_carts","customers","b2b_enquiries","products","import_export","images","categories","brands","collections","variants","inventory","reviews","discounts","campaigns","notifications","homepage","banners","pages","navigation","theme","seo","blog","footer","shipping","payments","automations","analytics","reports","system_health","audit_log","settings"];
+  const permissions={modules:Object.fromEntries(allowedModules.map(module=>{const view=incoming[module]?.view===true;return [module,{view,create:view&&incoming[module]?.create===true,update:view&&incoming[module]?.update===true,delete:view&&incoming[module]?.delete===true}]}))};
+  if(!permissions.modules.dashboard.view)return jsonError('Dashboard view permission is required for admin access.');
+  b.name=name;b.description=clean(b.description,500)||null;b.permissions=permissions;
  }
  const p={...b,company_id:companyId};delete p.resource;delete p.id;delete p.company_id;
  if(r==='automations'){
@@ -53,11 +100,11 @@ export async function POST(request){
  const{data,error}=await supabase.from(t).insert({...p,company_id:companyId}).select().single();if(error)return jsonError(error.message,500);
  await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.create`,entityType:t,entityId:data.id,newData:data});return Response.json({data},{status:201});
 }
-export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
+export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
 
 export async function PATCH(request){
  const r=new URL(request.url).searchParams.get('resource');
- const ctx=await getWebsiteAdminContext();
+ const ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx;
  const b=await request.json().catch(()=>null);

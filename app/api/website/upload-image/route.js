@@ -15,7 +15,7 @@ const TYPES = new Map([
 ]);
 
 export async function POST(request){
-  const ctx=await getWebsiteAdminContext();
+  const ctx=await getWebsiteAdminContext(request);
   if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
   const {supabase,companyId,user}=ctx;
   const form=await request.formData().catch(()=>null);
@@ -26,7 +26,7 @@ export async function POST(request){
   if(!ext)return jsonError('Unsupported image type. Use JPG, PNG, WEBP, GIF or SVG.');
   if(file.size>MAX_BYTES)return jsonError('Image must be 5 MB or smaller.');
 
-  // The route is protected by getWebsiteAdminContext(), then the trusted
+  // The route is protected by getWebsiteAdminContext(request), then the trusted
   // server-side admin client performs the Storage write. The service key is
   // never exposed to the browser and the path is always company-scoped.
   const admin=createAdminClient();

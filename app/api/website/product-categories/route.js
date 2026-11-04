@@ -1,7 +1,7 @@
 import { getWebsiteAdminContext, jsonError, audit } from '@/lib/website-admin';
 
-export async function GET() {
-  const { supabase, companyId, error } = await getWebsiteAdminContext();
+export async function GET(request) {
+  const { supabase, companyId, error } = await getWebsiteAdminContext(request);
   if (error) return jsonError(error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', error === 'UNAUTHENTICATED' ? 401 : 403);
   const { data, error: dbError } = await supabase.from('website_product_categories').select('*').eq('company_id', companyId);
   if (dbError) return jsonError(dbError.message, 500);
@@ -9,7 +9,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const { supabase, companyId, user, error } = await getWebsiteAdminContext();
+  const { supabase, companyId, user, error } = await getWebsiteAdminContext(request);
   if (error) return jsonError(error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', error === 'UNAUTHENTICATED' ? 401 : 403);
   const body = await request.json().catch(() => null);
   if (!body?.product_id || !Array.isArray(body.category_ids)) return jsonError('Product and category_ids are required.');

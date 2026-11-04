@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
 import AdminExcelTableFilters from '@/components/AdminExcelTableFilters';
+import { getWebsiteRolePermissions } from '@/lib/website-admin';
 import '../website/website-theme.css';
 import '../responsive-layout.css';
 
@@ -21,10 +22,14 @@ export default async function AdminLayout({ children }) {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (profileError || !profile || profile.active === false || !['super_admin', 'admin'].includes(profile.role)) {
-    redirect('/login?error=not_admin');
-  }
+  if (profileError || !profile || profile.active === false) redirect('/login?error=not_admin');
   if (!profile.company_id) redirect('/login?error=no_company');
+  const isAdministrator = ['super_admin', 'admin'].includes(profile.role);
+  const roleAccess = isAdministrator ? null : await getWebsiteRolePermissions(supabase, profile.company_id, user.id);
+  if (!isAdministrator && (!roleAccess || !Object.values(roleAccess.modules || {}).some(permission => permission?.view === true))) {
+    redirect('/login?error=no_admin_role');
+  }
+  const roleModules = roleAccess?.modules || null;
 
   const { data: company, error: companyError } = await supabase
     .from('companies')
@@ -61,7 +66,7 @@ export default async function AdminLayout({ children }) {
               </div>
             </div>
           </div>
-          <WebsiteAdminNav />
+          <WebsiteAdminNav permissions={roleModules} />
           <div className="border-t border-white/10 px-4 py-3">
             <div className="mb-2 truncate text-xs text-gray-300">{profile.display_name || user.email}</div>
             <LogoutButton />
@@ -70,7 +75,7 @@ export default async function AdminLayout({ children }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-white/10 bg-[#111116]/90 px-3 backdrop-blur-xl sm:px-5">
             <div className="flex min-w-0 items-center gap-2.5">
-              <WebsiteAdminNav mobile />
+              <WebsiteAdminNav mobile permissions={roleModules} />
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-[11px] font-bold text-white md:hidden">PB</div>
               <div className="min-w-0"><div className="text-[10px] uppercase tracking-wider text-gray-500">Store Management</div><div className="truncate text-sm font-semibold text-white">PinkBox Admin</div></div>
             </div>

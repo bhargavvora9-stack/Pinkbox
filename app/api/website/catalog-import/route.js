@@ -23,8 +23,8 @@ function normalizeRow(row){
   return out;
 }
 
-export async function GET(){
-  const ctx=await getWebsiteAdminContext();
+export async function GET(request){
+  const ctx=await getWebsiteAdminContext(request);
   if(ctx.error)return jsonError('Access denied.',403);
   const {supabase,companyId}=ctx;
   const {data,error}=await supabase.from('website_products').select(columns.join(',')).eq('company_id',companyId).order('created_at',{ascending:false}).limit(5000);
@@ -35,7 +35,7 @@ export async function GET(){
 }
 
 export async function POST(request){
-  const ctx=await getWebsiteAdminContext();
+  const ctx=await getWebsiteAdminContext(request);
   if(ctx.error)return jsonError('Access denied.',403);
   const {supabase,companyId,user}=ctx;
   const body=await request.json().catch(()=>null);

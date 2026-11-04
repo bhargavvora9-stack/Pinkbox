@@ -9,8 +9,8 @@ function startOfIndiaDay() {
   return new Date(indiaNow.getTime() - INDIA_OFFSET_MS);
 }
 
-export async function GET() {
-  const ctx = await getWebsiteAdminContext();
+export async function GET(request) {
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
   const startOfToday = startOfIndiaDay();

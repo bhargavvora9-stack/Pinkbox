@@ -15,7 +15,7 @@ function streamToBuffer(doc) {
 
 export async function GET(request, { params }) {
   const { id } = await params;
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
 

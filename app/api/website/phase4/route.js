@@ -7,7 +7,7 @@ const truthy = v => v === true || v === 'true';
 
 export async function GET(request) {
   const resource = new URL(request.url).searchParams.get('resource') || 'theme';
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
   const table = TABLES[resource];
@@ -66,7 +66,7 @@ function buildPayload(resource, body, companyId, partial = false) {
 
 export async function POST(request) {
   const resource = new URL(request.url).searchParams.get('resource');
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId, user } = ctx;
   const body = await request.json().catch(() => ({}));
@@ -91,7 +91,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   const resource = new URL(request.url).searchParams.get('resource');
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId, user } = ctx;
   const body = await request.json().catch(() => null);
@@ -110,7 +110,7 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
   const u = new URL(request.url); const resource = u.searchParams.get('resource'); const id = u.searchParams.get('id');
-  const ctx = await getWebsiteAdminContext();
+  const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId, user } = ctx; const table = TABLES[resource];
   if (!table || !id) return jsonError('Resource and id are required.');

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { getWebsiteRolePermissions } from '@/lib/website-admin';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ayphefqdvrbldhwzhybe.supabase.co';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'REPLACE_WITH_ENV_KEY';
@@ -20,6 +21,13 @@ function errorResponse(request, code, message, wantsJson) {
   response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
   response.headers.set('Vary', 'Cookie');
   return response;
+}
+
+async function hasWebsiteAdminAccess(supabase, profile, userId) {
+  if (!profile || profile.active === false || !profile.company_id) return false;
+  if (WEBSITE_ADMIN_ROLES.has(profile.role)) return true;
+  const access = await getWebsiteRolePermissions(supabase, profile.company_id, userId);
+  return Object.values(access?.modules || {}).some((permission) => permission?.view === true);
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -86,7 +94,7 @@ export async function POST(request) {
       } else {
         profile = profileResult?.data || null;
       }
-      if (!hasExplicitNext && profile && profile.active !== false && WEBSITE_ADMIN_ROLES.has(profile.role)) destination = '/admin';
+      if (!hasExplicitNext && profile && await hasWebsiteAdminAccess(supabase, profile, data.user.id)) destination = '/admin';
     }
 
     const isAdminDestination = destination === '/admin' || destination.startsWith('/admin/');
@@ -99,8 +107,9 @@ export async function POST(request) {
         }
         profile = profileResult?.data || null;
       }
-      if (!profile || profile.active === false || !WEBSITE_ADMIN_ROLES.has(profile.role)) return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
+      if (!profile || profile.active === false) return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
       if (!profile.company_id) return errorResponse(request, 'no_company', 'Your admin account is not linked to a company.', wantsJson);
+      if (!(await hasWebsiteAdminAccess(supabase, profile, data.user.id))) return errorResponse(request, 'not_admin', 'You do not have Website Admin access.', wantsJson);
 
       const companyResult = await withRetry(() => supabase.from('companies').select('id, name, subscription_status').eq('id', profile.company_id).maybeSingle());
       if (companyResult?.error) {
