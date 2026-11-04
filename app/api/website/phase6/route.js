@@ -29,7 +29,18 @@ export async function GET(request){
  }
  const t=tableMap[r];if(!t)return jsonError('Unknown Phase 6 resource.',404);
  const{data,error}=await supabase.from(t).select('*').eq('company_id',companyId).order('created_at',{ascending:false});
- if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
+ if(error)return jsonError(error.message,500);
+ if(r==='roles'){
+  const [{data:profiles,error:profilesError},{data:assignments,error:assignmentsError}]=await Promise.all([
+   supabase.from('profiles').select('id,display_name,role,active').eq('company_id',companyId).eq('active',true).order('display_name'),
+   supabase.from('website_user_role_assignments').select('user_id,role_id').eq('company_id',companyId)
+  ]);
+  if(profilesError||assignmentsError)return jsonError((profilesError||assignmentsError).message,500);
+  const assigned=new Map((assignments||[]).map(x=>[x.user_id,x.role_id]));
+  const users=(profiles||[]).filter(p=>!['admin','super_admin'].includes(p.role)).map(p=>({...p,website_role_id:assigned.get(p.id)||''}));
+  return Response.json({data:data||[],users});
+ }
+ return Response.json({data:data||[]});
 }
 export async function POST(request){
  const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
