@@ -29,21 +29,28 @@ export async function GET(request) {
     if (order.error || items.error || history.error) return jsonError(order.error?.message || items.error?.message || history.error?.message || 'Unable to load order details.',500); return Response.json({order:order.data,items:items.data||[],history:history.data||[]});
   }
   const table = tables[resource]; if (!table) return jsonError('Unknown Phase 3 resource.',404);
-  let q = supabase.from(table).select('*').eq('company_id',companyId).limit(500);
-  if (resource === 'orders') { q=q.order('created_at',{ascending:false}); const status=u.searchParams.get('status'); if(status&&status!=='all') q=q.eq('order_status',status); }
-  else q=q.order('created_at',{ascending:false});
-  const {data,error}=await q; if(error)return jsonError(error.message,500); const rows=data||[];
-  if(resource==='orders'){
-    const counts=await Promise.all([
-      ...ORDER_STATUSES.map(status=>supabase.from('website_orders').select('id',{count:'exact',head:true}).eq('company_id',companyId).eq('order_status',status)),
-      supabase.from('website_orders').select('id',{count:'exact',head:true}).eq('company_id',companyId).ilike('payment_method','cod').eq('payment_status','pending')
+  if (resource === 'orders') {
+    const page = Math.max(1, Math.min(10000, Number.parseInt(u.searchParams.get('page') || '1', 10) || 1));
+    const pageSize = Math.max(10, Math.min(100, Number.parseInt(u.searchParams.get('page_size') || '50', 10) || 50));
+    const status = u.searchParams.get('status') || 'all';
+    let q = supabase.from(table).select('*', { count: 'exact' }).eq('company_id', companyId);
+    if (status !== 'all') q = q.eq('order_status', status);
+    const from = (page - 1) * pageSize;
+    const { data, error, count } = await q.order('created_at', { ascending: false }).range(from, from + pageSize - 1);
+    if (error) return jsonError(error.message, 500);
+    const counts = await Promise.all([
+      ...ORDER_STATUSES.map((status) => supabase.from('website_orders').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('order_status', status)),
+      supabase.from('website_orders').select('id', { count: 'exact', head: true }).eq('company_id', companyId).ilike('payment_method', 'cod').eq('payment_status', 'pending')
     ]);
-    const countError=counts.find(result=>result.error);
-    if(countError)return jsonError(countError.error.message,500);
-    const stats=Object.fromEntries(ORDER_STATUSES.map((status,index)=>[status,counts[index].count||0]));
-    stats.cod_pending=counts[ORDER_STATUSES.length].count||0;
-    return Response.json({data:rows,stats});
+    const countError = counts.find((result) => result.error);
+    if (countError) return jsonError(countError.error.message, 500);
+    const stats = Object.fromEntries(ORDER_STATUSES.map((status, index) => [status, counts[index].count || 0]));
+    stats.cod_pending = counts[ORDER_STATUSES.length].count || 0;
+    return Response.json({ data: data || [], total: count || 0, page, pageSize, totalPages: Math.max(1, Math.ceil((count || 0) / pageSize)), stats });
   }
+  const {data,error}=await supabase.from(table).select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(500);
+  if(error)return jsonError(error.message,500);
+  const rows=data||[];
   return Response.json({data:resource==='payments'?rows.map(sanitizePayment):rows});
 }
 
