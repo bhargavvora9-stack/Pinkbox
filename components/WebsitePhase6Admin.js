@@ -15,7 +15,7 @@ const roleModuleGroups=[
  ['Sales & Customers',[['orders','Orders'],['abandoned_carts','Abandoned carts'],['customers','Customers'],['b2b_enquiries','B2B enquiries']]],
  ['Product Catalog',[['products','Products'],['import_export','Import / Export'],['images','Product images'],['categories','Categories & mappings'],['brands','Brands'],['collections','Collections'],['variants','Variants'],['inventory','Inventory'],['reviews','Reviews']]],
  ['Marketing',[['discounts','Discounts'],['campaigns','Campaigns'],['notifications','Notifications']]],
- ['Website Content',[['homepage','Homepage'],['banners','Banners'],['pages','Pages'],['navigation','Navigation'],['design','Design Studio'],['theme','Theme'],['seo','SEO'],['blog','Blog'],['footer','Footer']]],
+ ['Website Content',[['homepage','Homepage'],['banners','Banners'],['pages','Pages'],['navigation','Navigation'],['theme','Theme & Design Studio'],['seo','SEO'],['blog','Blog'],['footer','Footer']]],
  ['Fulfilment & Payments',[['shipping','Shipping'],['payments','Payments'],['automations','Automations']]],
  ['Reports & System',[['analytics','Analytics'],['reports','Reports'],['system_health','System health'],['audit_log','Activity log']]],
  ['Store Settings',[['settings','Store settings']]]
