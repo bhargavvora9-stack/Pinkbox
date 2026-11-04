@@ -68,18 +68,34 @@ const groups = [
   ] },
 ];
 
+const hrefModules = {
+  '/admin/dashboard':'dashboard','/admin/orders':'orders','/admin/invoices':'orders',
+  '/admin/abandoned-carts':'abandoned_carts','/admin/customers':'customers','/admin/b2b-enquiries':'b2b_enquiries',
+  '/admin/products':'products','/admin/products/bulk-edit':'products','/admin/products/import-export':'import_export',
+  '/admin/images':'images','/admin/categories':'categories','/admin/products/categories':'categories',
+  '/admin/brands':'brands','/admin/collections':'collections','/admin/products/collections':'collections',
+  '/admin/variants':'variants','/admin/inventory':'inventory','/admin/reviews':'reviews',
+  '/admin/discounts':'discounts','/admin/campaigns':'campaigns','/admin/notifications':'notifications',
+  '/admin/notification-logs':'notifications','/admin/homepage':'homepage','/admin/banners':'banners',
+  '/admin/pages':'pages','/admin/navigation':'navigation','/admin/design':'design','/admin/theme':'theme',
+  '/admin/seo':'seo','/admin/blog':'blog','/admin/footer':'footer','/admin/shipping':'shipping',
+  '/admin/payments':'payments','/admin/automations':'automations','/admin/analytics':'analytics',
+  '/admin/reports':'reports','/admin/system-health':'system_health','/admin/audit-log':'audit_log',
+  '/admin/roles':'roles','/admin/settings':'settings'
+};
+
 function isItemActive(pathname, href) {
   if (href === '/admin/products') return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavigationList({ pathname, query, onNavigate }) {
+function NavigationList({ pathname, query, onNavigate, permissions }) {
   const visibleGroups = useMemo(() => groups.map(group => ({
     ...group,
-    items: group.items.filter(([, label]) =>
-      !query || `${group.label} ${label}`.toLowerCase().includes(query.toLowerCase())
+    items: group.items.filter(([href, label]) =>
+      (!permissions || permissions[hrefModules[href]]?.view === true) && (!query || `${group.label} ${label}`.toLowerCase().includes(query.toLowerCase()))
     ),
-  })).filter(group => group.items.length), [query]);
+  })).filter(group => group.items.length), [query, permissions]);
 
   const activeGroup = groups.find(group => group.items.some(([href]) => isItemActive(pathname, href)))?.label;
   const [openGroups, setOpenGroups] = useState(() => new Set(activeGroup ? [activeGroup] : ['OVERVIEW', 'SALES & CUSTOMERS', 'PRODUCT CATALOG']));
@@ -135,7 +151,7 @@ function NavigationList({ pathname, query, onNavigate }) {
   );
 }
 
-export default function WebsiteAdminNav({ mobile = false }) {
+export default function WebsiteAdminNav({ mobile = false, permissions = null }) {
   const pathname = usePathname();
   const [query, setQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -164,7 +180,7 @@ export default function WebsiteAdminNav({ mobile = false }) {
               <div className="border-b border-white/10 p-3">
                 <div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a menu..." className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-pink-400/50"/></div>
               </div>
-              <nav className="flex-1 overflow-y-auto px-3 py-3"><NavigationList pathname={pathname} query={query} onNavigate={() => setDrawerOpen(false)}/></nav>
+              <nav className="flex-1 overflow-y-auto px-3 py-3"><NavigationList pathname={pathname} query={query} permissions={permissions} onNavigate={() => setDrawerOpen(false)}/></nav>
             </aside>
           </div>
         )}
@@ -177,7 +193,7 @@ export default function WebsiteAdminNav({ mobile = false }) {
       <div className="border-b border-white/10 p-3">
         <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search admin menu..." className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-xs text-white outline-none placeholder:text-gray-500 focus:border-pink-400/50"/></div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-2 py-3"><NavigationList pathname={pathname} query={query}/></nav>
+      <nav className="flex-1 overflow-y-auto px-2 py-3"><NavigationList pathname={pathname} query={query} permissions={permissions}/></nav>
     </>
   );
 }
