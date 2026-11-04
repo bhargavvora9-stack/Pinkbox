@@ -9,7 +9,7 @@ const getAnalytics=async(supabase,companyId)=>{
  if(error)throw new Error(error.message);return data||{};
 };
 export async function GET(request){
- const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
+ const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId}=ctx;
  if(r==='analytics'){
@@ -32,7 +32,7 @@ export async function GET(request){
  if(error)return jsonError(error.message,500);return Response.json({data:data||[]});
 }
 export async function POST(request){
- const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();
+ const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];
  if(!t)return jsonError('Unknown Phase 6 resource.',404);
@@ -53,11 +53,11 @@ export async function POST(request){
  const{data,error}=await supabase.from(t).insert({...p,company_id:companyId}).select().single();if(error)return jsonError(error.message,500);
  await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.create`,entityType:t,entityId:data.id,newData:data});return Response.json({data},{status:201});
 }
-export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
+export async function DELETE(request){const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx,b=await request.json().catch(()=>({})),t=tableMap[r];if(!t||!b.id)return jsonError('Resource and id required.');const{data:oldData}=await supabase.from(t).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(t).delete().eq('company_id',companyId).eq('id',b.id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase6.${r}.delete`,entityType:t,entityId:b.id,oldData});return Response.json({ok:true})}
 
 export async function PATCH(request){
  const r=new URL(request.url).searchParams.get('resource');
- const ctx=await getWebsiteAdminContext();
+ const ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId,user}=ctx;
  const b=await request.json().catch(()=>null);
