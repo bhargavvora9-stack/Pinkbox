@@ -70,7 +70,7 @@ const groups = [
 
 const hrefModules = {
   '/admin/dashboard':'dashboard','/admin/orders':'orders','/admin/invoices':'orders',
-  '/admin/abandoned-carts':'abandoned_carts','/admin/customers':'customers','/admin/b2b-enquiries':'b2b_enquiries','/admin/b2b-enquiries':'b2b_enquiries',
+  '/admin/abandoned-carts':'abandoned_carts','/admin/customers':'customers','/admin/b2b-enquiries':'b2b_enquiries',
   '/admin/products':'products','/admin/products/bulk-edit':'products','/admin/products/import-export':'import_export',
   '/admin/images':'images','/admin/categories':'categories','/admin/products/categories':'categories',
   '/admin/brands':'brands','/admin/collections':'collections','/admin/products/collections':'collections',
