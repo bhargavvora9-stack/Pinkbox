@@ -3,7 +3,7 @@ import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
 const ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
-const ctxOrError = async () => { const c = await getWebsiteAdminContext(); return c; };
+const ctxOrError = async (request) => { const c = await getWebsiteAdminContext(request); return c; };
 
 const sanitizePayment = (row) => {
   if (!row || row.provider !== 'razorpay') return row;
@@ -16,7 +16,7 @@ const sanitizePayment = (row) => {
 };
 
 export async function GET(request) {
-  const u = new URL(request.url); const resource = u.searchParams.get('resource'); const ctx = await ctxOrError();
+  const u = new URL(request.url); const resource = u.searchParams.get('resource'); const ctx = await ctxOrError(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
   if (resource === 'order') {
@@ -57,7 +57,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const ctx = await ctxOrError(); if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+  const ctx = await ctxOrError(request); if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
   const {supabase,companyId,user}=ctx; const b=await request.json().catch(()=>({}));
   if(b.resource==='order-status'){
     if(!b.id||!b.order_status)return jsonError('Order and status are required.');
@@ -87,7 +87,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const ctx=await ctxOrError();if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+  const ctx=await ctxOrError(request);if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
   const{supabase,companyId,user}=ctx;const b=await request.json().catch(()=>null);
   if(!b?.id||!b.resource)return jsonError('Resource and record id are required.');
   if(b.resource==='orders'&&b.order_status&&!ORDER_STATUSES.includes(cleanString(b.order_status,40).toLowerCase()))return jsonError('Invalid order status.');
@@ -121,4 +121,4 @@ export async function PATCH(request) {
   return Response.json({data:b.resource==='payments'?sanitizePayment(finalData):finalData});
 }
 
-export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError();if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData});return Response.json({ok:true}); }
+export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError(request);if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData});return Response.json({ok:true}); }
