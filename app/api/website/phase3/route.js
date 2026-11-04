@@ -35,6 +35,8 @@ export async function GET(request) {
     const status = u.searchParams.get('status') || 'all';
     let q = supabase.from(table).select('*', { count: 'exact' }).eq('company_id', companyId);
     if (status !== 'all') q = q.eq('order_status', status);
+    const customerId = u.searchParams.get('customer_id');
+    if (customerId) q = q.eq('customer_id', customerId);
     const from = (page - 1) * pageSize;
     const { data, error, count } = await q.order('created_at', { ascending: false }).range(from, from + pageSize - 1);
     if (error) return jsonError(error.message, 500);
