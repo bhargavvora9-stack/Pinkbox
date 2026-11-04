@@ -32,7 +32,19 @@ export async function GET(request) {
   let q = supabase.from(table).select('*').eq('company_id',companyId).limit(500);
   if (resource === 'orders') { q=q.order('created_at',{ascending:false}); const status=u.searchParams.get('status'); if(status&&status!=='all') q=q.eq('order_status',status); }
   else q=q.order('created_at',{ascending:false});
-  const {data,error}=await q; if(error)return jsonError(error.message,500); const rows=data||[]; return Response.json({data:resource==='payments'?rows.map(sanitizePayment):rows});
+  const {data,error}=await q; if(error)return jsonError(error.message,500); const rows=data||[];
+  if(resource==='orders'){
+    const counts=await Promise.all([
+      ...ORDER_STATUSES.map(status=>supabase.from('website_orders').select('id',{count:'exact',head:true}).eq('company_id',companyId).eq('order_status',status)),
+      supabase.from('website_orders').select('id',{count:'exact',head:true}).eq('company_id',companyId).ilike('payment_method','cod').eq('payment_status','pending')
+    ]);
+    const countError=counts.find(result=>result.error);
+    if(countError)return jsonError(countError.error.message,500);
+    const stats=Object.fromEntries(ORDER_STATUSES.map((status,index)=>[status,counts[index].count||0]));
+    stats.cod_pending=counts[ORDER_STATUSES.length].count||0;
+    return Response.json({data:rows,stats});
+  }
+  return Response.json({data:resource==='payments'?rows.map(sanitizePayment):rows});
 }
 
 export async function POST(request) {
