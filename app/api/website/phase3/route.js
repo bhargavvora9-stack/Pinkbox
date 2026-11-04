@@ -3,7 +3,7 @@ import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
 const ORDER_STATUSES = ['pending','confirmed','processing','packed','shipped','delivered','cancelled','returned'];
-const ctxOrError = async (request) => { const c = await getWebsiteAdminContext(request); return c; };
+const ctxOrError = async (request, override) => { const c = await getWebsiteAdminContext(request, override); return c; };
 
 const sanitizePayment = (row) => {
   if (!row || row.provider !== 'razorpay') return row;
@@ -57,8 +57,11 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const ctx = await ctxOrError(request); if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
-  const {supabase,companyId,user}=ctx; const b=await request.json().catch(()=>({}));
+  const b=await request.json().catch(()=>({}));
+  const resourceModule = b.resource === 'order-status' ? 'orders' : b.resource === 'payments' ? 'payments' : ['shipping-methods','shipping-zones','shipping-rules'].includes(b.resource) ? 'shipping' : b.resource === 'orders' ? 'orders' : '__invalid__';
+  const permissionAction = b.resource === 'order-status' ? 'update' : 'create';
+  const ctx = await ctxOrError(request,{resource:resourceModule,action:permissionAction}); if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+  const {supabase,companyId,user}=ctx;
   if(b.resource==='order-status'){
     if(!b.id||!b.order_status)return jsonError('Order and status are required.');
     const nextStatus=cleanString(b.order_status,40).toLowerCase(); if(!ORDER_STATUSES.includes(nextStatus))return jsonError('Invalid order status.');
