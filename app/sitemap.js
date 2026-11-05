@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { isContentLiveForAvailableCategory } from '@/lib/available-content';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,7 +35,7 @@ export default async function sitemap() {
       .order('published_at', { ascending: false }),
     db
       .from('website_products')
-      .select('id,slug,is_active,updated_at,price')
+      .select('id,slug,is_active,updated_at,price,stock_quantity,track_inventory,allow_backorder')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .gt('price', 0),
@@ -54,9 +55,23 @@ export default async function sitemap() {
       .eq('company_id', settings.company_id),
   ]);
 
+  const productIds = (products.data || []).map((product) => product.id);
+  const { data: variants, error: variantsError } = productIds.length
+    ? await db
+        .from('website_product_variants')
+        .select('product_id,stock_quantity,is_active')
+        .eq('company_id', settings.company_id)
+        .in('product_id', productIds)
+        .eq('is_active', true)
+    : { data: [], error: null };
+
+  // If variant inventory cannot be read, do not guess which collections are available.
+  if (variantsError) throw new Error(variantsError.message);
+
+  const availableProducts = filterAvailableProducts(products.data || [], variants || []);
   const contentContext = {
     categories: categories.data || [],
-    products: products.data || [],
+    products: availableProducts,
     mappings: mappings.data || [],
   };
 
@@ -71,6 +86,8 @@ export default async function sitemap() {
     }
   }
 
+  // Keep active product detail URLs in the sitemap. They remain valid pages and
+  // expose their current InStock / OutOfStock offer state in Product structured data.
   for (const p of products.data || []) {
     if (p.slug) {
       urls.push({
@@ -80,13 +97,15 @@ export default async function sitemap() {
     }
   }
 
-  const saleableProductIds = new Set((products.data || []).map((p) => p.id));
+  const availableProductIds = new Set(availableProducts.map((product) => product.id));
   const categoryIdsWithProducts = new Set(
     (mappings.data || [])
-      .filter((m) => saleableProductIds.has(m.product_id))
-      .map((m) => m.category_id)
+      .filter((mapping) => availableProductIds.has(mapping.product_id))
+      .map((mapping) => mapping.category_id)
   );
 
+  // Collection pages return 404 when no purchasable product remains, so only
+  // include categories that currently have at least one purchasable product.
   for (const c of categories.data || []) {
     if (c.slug && categoryIdsWithProducts.has(c.id)) {
       urls.push({
@@ -109,4 +128,3 @@ export default async function sitemap() {
 }
 
 // SEO: sitemap emits lastModified only from real content timestamps.
-// Deployment trigger: keep sitemap freshness behavior active in production.
