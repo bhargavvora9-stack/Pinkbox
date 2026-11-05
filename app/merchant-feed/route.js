@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl } from '@/lib/seo';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,17 +25,31 @@ export async function GET() {
 
   if (!settings) return new Response('Store not configured', { status: 503 });
 
-  const { data: products } = await db
+  const { data: products, error: productsError } = await db
     .from('website_products')
-    .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,is_active')
+    .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
+    .gt('price', 0)
     .order('updated_at', { ascending: false });
 
+  if (productsError) return new Response('Products unavailable', { status: 500 });
+
   const ids = (products || []).map(p => p.id);
-  const { data: images } = ids.length
-    ? await db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id', settings.company_id).in('product_id', ids).order('sort_order')
-    : { data: [] };
+  const [{ data: images }, { data: variants, error: variantsError }] = await Promise.all([
+    ids.length
+      ? db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id', settings.company_id).in('product_id', ids).order('sort_order')
+      : Promise.resolve({ data: [] }),
+    ids.length
+      ? db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id', settings.company_id).in('product_id', ids).eq('is_active', true)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (variantsError) return new Response('Inventory unavailable', { status: 500 });
+
+  const availableProductIds = new Set(
+    filterAvailableProducts(products || [], variants || []).map(product => product.id)
+  );
 
   const imageMap = {};
   for (const image of images || []) {
@@ -42,7 +57,7 @@ export async function GET() {
   }
 
   const items = (products || []).map(p => {
-    const inStock = Number(p.stock_quantity || 0) > 0 || p.allow_backorder === true;
+    const inStock = availableProductIds.has(p.id);
     const description = p.short_description || p.description || `${p.brand || ''} ${p.title}`.trim();
     const id = p.sku || p.id;
     const primaryImage = imageMap[p.id] ? absoluteUrl(`/merchant-image/${encodeURIComponent(id)}`) : '';
