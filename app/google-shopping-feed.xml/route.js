@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase-admin';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,7 +33,7 @@ export async function GET() {
 
   const { data: products, error } = await db
     .from('website_products')
-    .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,allow_backorder,is_active')
+    .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
     .gt('price', 0)
@@ -46,7 +47,7 @@ export async function GET() {
   }
 
   const productIds = (products || []).map((p) => p.id);
-  const [{ data: images }, { data: mappings }, { data: categories }] = await Promise.all([
+  const [{ data: images }, { data: mappings }, { data: categories }, { data: variants, error: variantsError }] = await Promise.all([
     productIds.length
       ? db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id', settings.company_id).in('product_id', productIds).order('sort_order')
       : Promise.resolve({ data: [] }),
@@ -54,7 +55,21 @@ export async function GET() {
       ? db.from('website_product_categories').select('product_id,category_id').eq('company_id', settings.company_id).in('product_id', productIds)
       : Promise.resolve({ data: [] }),
     db.from('website_categories').select('id,name').eq('company_id', settings.company_id).eq('is_active', true),
+    productIds.length
+      ? db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id', settings.company_id).in('product_id', productIds).eq('is_active', true)
+      : Promise.resolve({ data: [], error: null }),
   ]);
+
+  if (variantsError) {
+    return new Response('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>', {
+      status: 500,
+      headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' },
+    });
+  }
+
+  const availableProductIds = new Set(
+    filterAvailableProducts(products || [], variants || []).map((product) => product.id)
+  );
 
   const imageMap = new Map();
   for (const image of images || []) {
@@ -77,7 +92,7 @@ export async function GET() {
     if (!image) return '';
 
     const description = p.short_description || p.description || p.title;
-    const availability = Number(p.stock_quantity || 0) > 0 || p.allow_backorder ? 'in stock' : 'out of stock';
+    const availability = availableProductIds.has(p.id) ? 'in stock' : 'out of stock';
     const link = base + '/products/' + encodeURIComponent(p.slug);
 
     return [
