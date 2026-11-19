@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Flower2, Menu, X, Phone } from 'lucide-react';
-import CartLink from '@/components/CartLink';
+import ZipReferenceCartDrawer from '@/components/ZipReferenceCartDrawer';
 const NAV = [
   { label: 'Home', href: '/#top' },{ label: 'Shop', href: '/shop' },
   { label: 'About', href: '/about' },{ label: 'Blog', href: '/blog' },
@@ -36,7 +36,7 @@ export default function ZipReferenceHeader({ settings = {} }) {
           </nav>
           <div className="flex items-center gap-1">
             <a href={'tel:' + phoneHref} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary lg:inline-flex"><Phone className="h-4 w-4" />{phone}</a>
-            <CartLink className="rounded-full p-2 text-foreground transition-colors hover:bg-secondary" iconSize={19} />
+            <ZipReferenceCartDrawer settings={settings} />
             <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground md:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
