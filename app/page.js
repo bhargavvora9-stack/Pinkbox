@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
@@ -255,72 +254,11 @@ export default async function HomePage(){
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app',
     description: data?.categories?.length ? `Explore ${data.categories.map((category) => category.name).join(', ')} currently available at ${name}.` : undefined,
   };
-  return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }} />
-    <PinkBoxHome initialData={data} />
-    {(() => {
-      const active = new Set(data?.availableCategorySlugs || []);
-      const showSanitary = active.has('sanitary-pads');
-      const showDiapers = active.has('baby-diapers');
-      const showBags = active.has('bags');
-      if (!showSanitary && !showDiapers && !showBags) return null;
-      return <section className="pb-home-seo-footer">
-        <div className="pb-home-seo-footer-inner">
-          {showBags && <section aria-labelledby="bags-seo">
-            <p className="pb-home-seo-eyebrow">PINKBOX BAGS</p>
-            <h2 id="bags-seo">Personalized Cotton Tote Bags</h2>
-            <p>Explore PinkBox tote bags with embroidered butterfly, daisy, evil eye, hummingbird, lotus and wildflower designs. Each listed bag includes a Name for embroidery field on its product page.</p>
-            <nav aria-label="Bag collection links" className="pb-home-seo-links">
-              <Link href="/collections/bags">Shop Bags</Link>
-              <Link href="/blog/personalized-cotton-tote-bags-pinkbox">Tote Bag Design Guide</Link>
-            </nav>
-          </section>}
-          {showSanitary && <section aria-labelledby="sanitary-care-seo">
-            <p className="pb-home-seo-eyebrow">PINKBOX SANITARY CARE</p>
-            <h2 id="sanitary-care-seo">Sanitary Pads &amp; Sanitary Napkins Online</h2>
-            <p>Explore the sanitary pad options currently available at PinkBox and review each product page for its listed features.</p>
-            <nav aria-label="Sanitary care links" className="pb-home-seo-links">
-              <Link href="/pages/sanitary-pads">Sanitary Pads</Link>
-              <Link href="/pages/320mm-sanitary-pads">320mm Sanitary Pads</Link>
-              <Link href="/pages/sanitary-pads-for-heavy-flow">Sanitary Pads for Heavy Flow</Link>
-              <Link href="/pages/anti-bacterial-sanitary-pads">Anti-Bacterial Sanitary Pads</Link>
-              <Link href="/pages/24-care-sanitary-pads">24 Care Sanitary Pads</Link>
-              <Link href="/pages/7-soft-sanitary-pads">7 Soft Sanitary Pads</Link>
-              <Link href="/collections/sanitary-pads">Shop Sanitary Pads</Link>
-              <Link href="/blog">Journal</Link>
-            </nav>
-          </section>}
-          {showDiapers && <section aria-labelledby="baby-diapers-seo" className="pb-home-seo-topic">
-            <p className="pb-home-seo-eyebrow">BABY CARE</p>
-            <h2 id="baby-diapers-seo">Baby Diapers Online</h2>
-            <p>Explore the baby diaper sizes and pack options currently available at PinkBox. Check the exact product page for the pack&apos;s printed size guidance and details.</p>
-            <div className="pb-home-seo-links">
-              <Link href="/collections/baby-diapers">Browse Baby Diapers</Link>
-              <Link href="/pages/baby-diaper-size-guide">Baby Diaper Size Guide</Link>
-            </div>
-          </section>}
-        </div>
-      </section>;
-    })()}
-    <style dangerouslySetInnerHTML={{__html:`
-      .pb-home-hero-art>img,.pb-category-card img,.pb-journal-thumb img,.pb-home-custom img{object-fit:contain!important}
-      .pb-home-hero-art>img,.pb-category-card img,.pb-journal-thumb img{background:#f7f1ee}
-      .pb-home-seo-footer{width:min(1260px,100%);margin:0 auto;padding:10px 28px 54px;color:#6a4b4e}
-      .pb-home-seo-footer-inner{padding:28px 30px;border:1px solid #eadfd9;border-radius:22px;background:#fffaf8}
-      .pb-home-seo-eyebrow{margin:0 0 7px;font-size:10px;font-weight:800;letter-spacing:.12em;color:#c36f83}
-      .pb-home-seo-footer h2{margin:0;font:500 clamp(1.35rem,3vw,2rem)/1.2 Georgia,"Times New Roman",serif}
-      .pb-home-seo-footer p:not(.pb-home-seo-eyebrow){max-width:900px;margin:10px 0 0;color:#846f70;font-size:13px;line-height:1.7}
-      .pb-home-seo-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
-      .pb-home-seo-links a{padding:8px 12px;border:1px solid #ead0d6;border-radius:999px;background:#fff;color:#815d65;font-size:11px;font-weight:700}
-      .pb-home-seo-links a:hover{border-color:#d8899d;color:#c36f83}
-      .pb-home-seo-topic{margin-top:26px;padding-top:24px;border-top:1px solid #eadfd9}
-      .pb-home-seo-topic h3{margin:0;font:500 clamp(1.2rem,2.5vw,1.65rem)/1.2 Georgia,"Times New Roman",serif}
-      .pb-home-seo-topic p:not(.pb-home-seo-eyebrow){max-width:900px;margin:10px 0 0;color:#846f70;font-size:13px;line-height:1.7}
-      .pb-whatsapp-float{position:fixed;right:18px;bottom:18px;z-index:80;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:999px;background:#25D366;color:#fff!important;box-shadow:0 12px 28px rgba(37,211,102,.28);font-size:12px;font-weight:800}
-      .pb-whatsapp-float span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#fff;color:#25D366;font-size:10px;font-weight:900}
-      .pb-whatsapp-float:hover{filter:brightness(.96);transform:translateY(-1px)}
-      @media(max-width:480px){.pb-whatsapp-float{right:12px;bottom:12px;padding:9px 11px}.pb-whatsapp-float b{display:none}}
-    `}} />
-  </>;
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }} />
+      <PinkBoxHome initialData={data} />
+    </>
+  );
 }
