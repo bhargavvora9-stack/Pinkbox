@@ -1,4 +1,3 @@
-import './pinkbox-home.css';
 import Link from 'next/link';
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
