@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import ZipReferenceHeader from '@/components/ZipReferenceHeader';
+import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import Image from 'next/image';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
@@ -135,74 +137,36 @@ export default async function ProductPage({ params }) {
         ]
       : [];
   return (
-    <main className="min-h-screen bg-white text-[#171717]">
+    <div className="min-h-screen bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
-      <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <Link href="/" className="font-black tracking-tight">PinkBox</Link>
-          <div className="flex items-center gap-4 text-sm font-semibold">
-            <Link href="/account">Account</Link>
-            <CartLink className="text-gray-700" />
-            <Link href="/#products" className="text-[#d9295f]">Continue shopping →</Link>
-          </div>
-        </div>
-      </header>
-      <div className="mx-auto max-w-7xl px-5 py-6 text-xs text-gray-500">
-        <Link href="/" className="hover:text-[#d9295f]">Home</Link><span className="mx-2">/</span><span>{p.brand || 'PinkBox'}</span><span className="mx-2">/</span><span className="text-gray-700">{p.title}</span>
-      </div>
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 md:grid-cols-[1.05fr_.95fr]">
-        <section>
-          <div className="mx-auto max-w-sm overflow-hidden rounded-[28px] bg-[#f7f4f5] p-6">
-            {p.images[0]?.image_url ? <div className="relative aspect-square w-full"><Image src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} fill sizes="(max-width:640px) 90vw, 380px" style={{objectFit:'contain'}} priority /></div> : <div className="grid aspect-square place-items-center text-8xl font-black text-[#d9295f]/30">PB</div>}
-          </div>
-          {p.images.length > 1 && <div className="mx-auto mt-4 grid max-w-sm grid-cols-5 gap-3">{p.images.slice(0, 5).map((x, i) => <div key={i} className="relative aspect-square overflow-hidden rounded-2xl border bg-[#f7f4f5] p-1"><Image src={x.image_url} alt={x.alt_text || `${p.title} ${i + 1}`} fill sizes="76px" style={{objectFit:'contain'}} /></div>)}</div>}
-        </section>
-        <section className="flex flex-col justify-center">
-          <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{p.brand || p.sku || 'PinkBox'}</p>
-          <h1 className="mt-4 text-4xl font-black tracking-[-.04em] md:text-5xl">{p.title}</h1>
-          {p.short_description && <p className="mt-5 text-base leading-7 text-gray-600">{p.short_description}</p>}
-          <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null, variants: p.variants }} /></div>
-          <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
-            {Number(p.free_shipping_threshold || 0) > 0 && <span className="rounded-full bg-[#fff3f6] px-3 py-2 text-[#c36f83]">Free shipping above ₹{Number(p.free_shipping_threshold).toLocaleString('en-IN')}</span>}
-            {p.cod_enabled && <span className="rounded-full bg-[#f7f8ff] px-3 py-2 text-[#5b5d85]">COD available</span>}
-            {p.online_payment_enabled && <span className="rounded-full bg-[#f3fbf6] px-3 py-2 text-[#3e7a5a]">UPI / online payment</span>}
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Quality checked</b><p className="mt-1 text-xs text-gray-500">Product information stays transparent.</p></div>
-            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">₹49 shipping below ₹499</b><p className="mt-1 text-xs text-gray-500">Free standard shipping from ₹499.</p></div>
-            <div className="rounded-2xl border bg-[#fff9fb] p-4"><b className="text-sm">Easy support</b><p className="mt-1 text-xs text-gray-500">Questions? Chat with PinkBox on WhatsApp.</p></div>
-          </div>
-          {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-bold text-white">Ask a question on WhatsApp</a>}
-          {p.description && <details open className="mt-8 rounded-2xl border p-5"><summary className="cursor-pointer font-bold">Product details</summary><p className="mt-4 whitespace-pre-line leading-7 text-gray-600">{p.description}</p></details>}
-        </section>
-      </div>
-      {topicLinks.length > 0 && <section className="mx-auto max-w-7xl px-5 pb-12">
-        <div className="rounded-3xl border bg-[#fff9fb] p-6">
-          <p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guides</p>
-          <h2 className="mt-2 text-2xl font-black">{isBabyDiaper ? 'Choose the right diaper size' : 'Choose the right sanitary pads'}</h2>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {topicLinks.map(link => <Link key={link.href} href={link.href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{link.label}</Link>)}
-            {isSanitaryProduct && <Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Guides & Journal</Link>}
-          </div>
-        </div>
-      </section>}
-      <div className="mx-auto max-w-3xl px-5 pb-20">
-        {p.reviews.length > 0 && <>
-          <h2 className="text-2xl font-black">Customer reviews <span className="text-base font-semibold text-gray-500">({p.reviews.length})</span></h2>
-          <div className="mt-6 space-y-4">{p.reviews.map(r => (
-            <div key={r.id} className="rounded-2xl border p-5">
-              <div className="flex gap-0.5 text-[#d9295f]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill={i < r.rating ? "currentColor" : "none"} />)}</div>
-              {r.title && <b className="mt-2 block text-sm">{r.title}</b>}
-              <p className="mt-1 text-sm text-gray-600">{r.review_text}</p>
-              <p className="mt-2 text-xs font-semibold text-gray-400">{r.customer_name}</p>
+      <ZipReferenceHeader settings={{ phone: p.phone, website_name: p.website_name }} />
+      <main className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
+          <section>
+            <div className="aspect-square overflow-hidden rounded-lg bg-muted">
+              {p.images[0]?.image_url ? <Image src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="h-full w-full object-cover" priority /> : <div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
             </div>
-          ))}</div>
-        </>}
-        <div className={p.reviews.length > 0 ? "mt-10" : ""}>
-          <ProductReviewForm productId={p.id} />
+            {p.images.length > 1 && <div className="mt-4 grid grid-cols-5 gap-3">{p.images.slice(0, 5).map((image, index) => <div key={image.id || index} className="relative aspect-square overflow-hidden rounded-md bg-muted"><Image src={image.image_url} alt={image.alt_text || p.title} fill sizes="100px" className="object-cover" /></div>)}</div>}
+          </section>
+          <section className="flex flex-col">
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">{p.brand || p.sku || 'Pink Box'}</p>
+            <h1 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">{p.title}</h1>
+            {p.short_description && <p className="mt-4 leading-relaxed text-muted-foreground">{p.short_description}</p>}
+            <div className="mt-6"><ProductPurchasePanel product={{ ...p, images: p.images, image_url: p.images[0]?.image_url || null, variants: p.variants }} /></div>
+            {p.description && <section className="mt-8"><h2 className="font-display text-xl font-semibold text-foreground">Product details</h2><p className="mt-3 whitespace-pre-line leading-relaxed text-muted-foreground">{p.description}</p></section>}
+            {topicLinks.length > 0 && <section className="mt-8"><h2 className="font-display text-xl font-semibold text-foreground">Related guides</h2><div className="mt-4 flex flex-wrap gap-2">{topicLinks.map((link) => <Link key={link.href} href={link.href} className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:border-primary hover:text-primary">{link.label}</Link>)}</div></section>}
+          </section>
         </div>
-      </div>
-    </main>
+        <section className="mx-auto mt-16 max-w-3xl">
+          {p.reviews.length > 0 && <>
+            <h2 className="font-display text-2xl font-semibold text-foreground">Customer reviews <span className="text-base font-medium text-muted-foreground">({p.reviews.length})</span></h2>
+            <div className="mt-6 space-y-4">{p.reviews.map((review) => <article key={review.id} className="rounded-xl border border-border bg-card p-5"><div className="flex gap-1 text-primary">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={14} fill={index < review.rating ? 'currentColor' : 'none'} />)}</div>{review.title && <h3 className="mt-2 font-semibold text-foreground">{review.title}</h3>}<p className="mt-2 text-sm text-muted-foreground">{review.review_text}</p><p className="mt-2 text-xs font-semibold text-muted-foreground">{review.customer_name}</p></article>)}</div>
+          </>}
+          <div className={p.reviews.length > 0 ? 'mt-10' : ''}><ProductReviewForm productId={p.id} /></div>
+        </section>
+      </main>
+      <ZipReferenceFooter settings={{ phone: p.phone, email: p.email, address: p.address, website_name: p.website_name }} />
+    </div>
   );
 }
