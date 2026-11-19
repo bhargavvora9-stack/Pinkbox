@@ -1,19 +1,20 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
+import { getWebsiteRolePermissions } from '@/lib/website-admin';
 import LogoutButton from '@/components/LogoutButton';
 
 const NAV = [
-  { href: '/admin/dashboard', label: 'Dashboard' },
-  { href: '/admin/orders', label: 'Orders' },
-  { href: '/admin/banners', label: 'Banners' },
-  { href: '/admin/blog', label: 'Blog' },
-  { href: '/admin/coupons', label: 'Coupons' },
-  { href: '/admin/b2b-enquiries', label: 'Leads' },
-  { href: '/admin/subscribers', label: 'Subscribers' },
-  { href: '/admin/notifications', label: 'WhatsApp' },
-  { href: '/admin/reviews', label: 'Reviews' },
-  { href: '/admin/settings', label: 'Site settings' },
+  { href: '/admin/dashboard', label: 'Dashboard', module: 'dashboard' },
+  { href: '/admin/orders', label: 'Orders', module: 'orders' },
+  { href: '/admin/banners', label: 'Banners', module: 'banners' },
+  { href: '/admin/blog', label: 'Blog', module: 'blog' },
+  { href: '/admin/discounts', label: 'Coupons', module: 'discounts' },
+  { href: '/admin/b2b-enquiries', label: 'Leads', module: 'b2b_enquiries' },
+  { href: '/admin/subscribers', label: 'Subscribers', module: 'notifications' },
+  { href: '/admin/notifications', label: 'WhatsApp', module: 'notifications' },
+  { href: '/admin/reviews', label: 'Reviews', module: 'reviews' },
+  { href: '/admin/settings', label: 'Site settings', module: 'settings' },
 ];
 
 export const metadata = { title: 'Admin — Pink Box', robots: { index: false, follow: false, nocache: true } };
@@ -33,8 +34,13 @@ export default async function AdminLayout({ children }) {
 
   if (profileError || !profile || profile.active === false) redirect('/login?error=not_admin');
   if (!profile.company_id) redirect('/login?error=no_company');
+
   const isAdministrator = ['super_admin', 'admin'].includes(profile.role);
-  if (!isAdministrator) redirect('/login?error=no_admin_role');
+  const roleAccess = isAdministrator ? null : await getWebsiteRolePermissions(supabase, profile.company_id, user.id);
+  const permissions = roleAccess?.modules || null;
+  if (!isAdministrator && (!permissions || !Object.values(permissions).some((item) => item?.view === true))) {
+    redirect('/login?error=no_admin_role');
+  }
 
   const { data: company, error: companyError } = await supabase
     .from('companies')
@@ -46,6 +52,8 @@ export default async function AdminLayout({ children }) {
     redirect('/login?error=company_access');
   }
 
+  const visibleNav = isAdministrator ? NAV : NAV.filter((item) => permissions[item.module]?.view === true);
+
   return (
     <div className="min-h-screen bg-secondary/20">
       <header className="border-b border-border bg-background">
@@ -56,7 +64,7 @@ export default async function AdminLayout({ children }) {
       </header>
       <div className="container mx-auto flex flex-col gap-8 px-4 py-8 md:flex-row">
         <nav className="flex flex-wrap gap-1 md:w-52 md:flex-col">
-          {NAV.map((item) => (
+          {visibleNav.map((item) => (
             <Link key={item.href} href={item.href} className="rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">
               {item.label}
             </Link>
