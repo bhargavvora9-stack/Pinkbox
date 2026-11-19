@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 async function getStore(){
  const db=createAdminClient();
@@ -28,7 +29,7 @@ export async function GET(request){
   const {db,settings,onlinePaymentReady}=await getStore();
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const c=settings.company_id,now=new Date().toISOString();
-  const [products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews]=await Promise.all([
+  const [products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews,variants]=await Promise.all([
    db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label').eq('company_id',c).eq('is_active',true).like('sku','MDH-%').gt('price',0).order('created_at',{ascending:false}),
    db.from('website_categories').select('id,name,slug,parent_id,image_url,sort_order').eq('company_id',c).eq('is_active',true).order('sort_order'),
    db.from('website_banners').select('id,title,subtitle,image_url,mobile_image_url,button_text,button_url,sort_order,starts_at,ends_at').eq('company_id',c).eq('is_active',true).order('sort_order'),
@@ -40,19 +41,21 @@ export async function GET(request){
    db.from('website_blog_posts').select('id,title,slug,excerpt,content,cover_image_url,published_at').eq('company_id',c).eq('is_published',true).lte('published_at',now).order('published_at',{ascending:false}).limit(20),
    db.from('website_product_images').select('id,product_id,image_url,alt_text,sort_order,is_primary').eq('company_id',c).order('sort_order'),
    db.from('website_product_categories').select('product_id,category_id').eq('company_id',c),
-   db.from('website_product_reviews').select('id,product_id,customer_name,rating,title,review_text,is_featured,created_at').eq('company_id',c).eq('is_approved',true).order('is_featured',{ascending:false}).order('created_at',{ascending:false}).limit(30)
+   db.from('website_product_reviews').select('id,product_id,customer_name,rating,title,review_text,is_featured,created_at').eq('company_id',c).eq('is_approved',true).order('is_featured',{ascending:false}).order('created_at',{ascending:false}).limit(30),
+   db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id',c).eq('is_active',true)
   ]);
-  const qErr=[products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews].find(x=>x.error)?.error;
+  const qErr=[products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews,variants].find(x=>x.error)?.error;
   if(qErr)return Response.json({error:qErr.message},{status:500});
   const activeBanners=(banners.data||[]).filter(x=>(!x.starts_at||x.starts_at<=now)&&(!x.ends_at||x.ends_at>=now));
   const imageMap={}; const imageListMap={};
   (images.data||[]).forEach(x=>{if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];imageListMap[x.product_id].push(x);if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;});
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
   const productData=(products.data||[]).map(p=>{const fallback=p.sku?.startsWith('MDH-')?`/catalog-products/${p.sku.toLowerCase()}.webp`:null;const productImages=imageListMap[p.id]?.length?imageListMap[p.id]:(fallback?[{image_url:fallback,alt_text:p.title,is_primary:true,sort_order:0}]:[]);return {...p,image_url:imageMap[p.id]||fallback,images:productImages,category_id:catMap[p.id]||null};});
+  const saleableProducts=filterAvailableProducts(productData,variants.data||[]);
   const url=new URL(request.url),slug=url.searchParams.get('product');
-  const selectedProduct=slug?productData.find(p=>p.slug===slug)||null:null;
+  const selectedProduct=slug?saleableProducts.find(p=>p.slug===slug)||null:null;
   const productReviews=slug&&selectedProduct?(reviews.data||[]).filter(r=>r.product_id===selectedProduct.id):null;
-  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:onlinePaymentReady,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description,ga4_measurement_id:settings.ga4_measurement_id,meta_pixel_id:settings.meta_pixel_id},products:productData,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],reviews:reviews.data||[],selectedProduct,productReviews});
+  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:onlinePaymentReady,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description,ga4_measurement_id:settings.ga4_measurement_id,meta_pixel_id:settings.meta_pixel_id},products:saleableProducts,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],reviews:reviews.data||[],selectedProduct,productReviews});
  }catch(error){console.error('Storefront GET failed:',error);return Response.json({error:error instanceof Error?error.message:'Storefront is temporarily unavailable.'},{status:500})}
 }
 
