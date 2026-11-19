@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { Flower2 } from 'lucide-react';
 
 const ERROR_MESSAGES = {
   missing_credentials: 'Email and password are required.',
@@ -33,18 +34,23 @@ export default async function LoginPage({ searchParams }) {
     : '';
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-950 px-4">
-      <form action="/api/auth/login" method="post" className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-7 text-white shadow-2xl">
-        <h1 className="text-2xl font-bold">PinkBox</h1>
-        <p className="mb-6 mt-1 text-sm text-gray-400">Sign in to continue</p>
-        {error && <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
-        <label className="mb-1 block text-sm" htmlFor="login-email">Email</label>
-        <input id="login-email" name="email" required type="email" autoComplete="email" className="mb-4 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 outline-none focus:border-pink-400" />
-        <label className="mb-1 block text-sm" htmlFor="login-password">Password</label>
-        <input id="login-password" name="password" required type="password" autoComplete="current-password" className="mb-5 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 outline-none focus:border-pink-400" />
-        {next && <input type="hidden" name="next" value={next} />}
-        <button type="submit" className="w-full rounded-xl bg-white px-4 py-2.5 font-semibold text-gray-900 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400">Sign in</button>
-        <Link href="/" className="mt-4 block text-center text-xs text-gray-500 hover:text-gray-300">Back to website</Link>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-soft px-4">
+      <form action="/api/auth/login" method="post" className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 text-card-foreground shadow-soft">
+        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-primary">← Pink Box</Link>
+        <div className="mt-6 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-brand text-primary-foreground"><Flower2 className="h-5 w-5"/></span>
+          <div><h1 className="font-display text-2xl font-semibold text-foreground">Admin sign in</h1><p className="mt-1 text-sm text-muted-foreground">Sign in to manage the Pink Box store content.</p></div>
+        </div>
+        {error && <div role="alert" aria-live="polite" className="mt-5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        <div className="mt-6">
+          <label className="mb-1.5 block text-sm font-medium text-foreground" htmlFor="login-email">Email</label>
+          <input id="login-email" name="email" required type="email" autoComplete="email" className="mb-4 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20" />
+          <label className="mb-1.5 block text-sm font-medium text-foreground" htmlFor="login-password">Password</label>
+          <input id="login-password" name="password" required type="password" autoComplete="current-password" className="mb-5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20" />
+          {next && <input type="hidden" name="next" value={next} />}
+          <button type="submit" className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring">Sign in</button>
+        </div>
+        <Link href="/" className="mt-4 block text-center text-xs text-muted-foreground transition-colors hover:text-primary">Back to website</Link>
       </form>
     </main>
   );
