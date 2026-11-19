@@ -22,7 +22,7 @@ async function getStoreData() {
   const companyId = settings.company_id;
   const now = new Date().toISOString();
 
-  const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants] = await Promise.all([
+  const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants, discounts] = await Promise.all([
     db.from('website_products')
       .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
@@ -83,9 +83,13 @@ async function getStoreData() {
       .select('product_id,stock_quantity,is_active')
       .eq('company_id', companyId)
       .eq('is_active', true),
+    db.from('website_discounts')
+      .select('id,name,code,discount_type,value,minimum_order_amount,starts_at,ends_at,is_active')
+      .eq('company_id', companyId)
+      .eq('is_active', true),
   ]);
 
-  const results = { products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants };
+  const results = { products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants, discounts };
   const failed = Object.values(results).find((result) => result?.error);
   if (failed) throw new Error(failed.error.message);
 
@@ -152,6 +156,7 @@ async function getStoreData() {
     footer: footer.data || null,
     blog: liveBlogPosts,
     reviews: reviews.data || [],
+    coupons: (discounts.data || []).filter((coupon) => (!coupon.starts_at || coupon.starts_at <= now) && (!coupon.ends_at || coupon.ends_at >= now)).map((coupon) => ({ id: coupon.id, code: coupon.code, description: coupon.name || null, discount_type: coupon.discount_type, discount_value: coupon.value, min_order_amount: coupon.minimum_order_amount || 0 })),
   };
 }
 
