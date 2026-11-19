@@ -28,6 +28,8 @@ async function getStoreData() {
       .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
       .eq('is_active', true)
+      .like('sku', 'MDH-%')
+      .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_categories')
       .select('id,name,slug,parent_id,image_url,sort_order')
@@ -107,7 +109,7 @@ async function getStoreData() {
 
   const productData = (products.data || []).map((product) => ({
     ...product,
-    image_url: imageMap[product.id] || null,
+    image_url: imageMap[product.id] || (product.sku?.startsWith('MDH-') ? `/catalog-products/${product.sku.toLowerCase()}.webp` : null),
     images: imageListMap[product.id] || [],
     category_id: catMap[product.id] || null,
   }));
