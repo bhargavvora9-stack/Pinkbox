@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { ZipHeader, ZipFooter, ZipProductGrid } from '@/components/ZipReferenceHome';
 
 export default function PinkBoxShopListing({ settings = {}, products = [] }) {
@@ -27,11 +26,12 @@ export default function PinkBoxShopListing({ settings = {}, products = [] }) {
         <p className="text-xs font-semibold tracking-widest text-primary uppercase">Shop</p>
         <h1 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-5xl">All products</h1>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Input
+          <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search pads…"
-            className="sm:max-w-xs"
+            aria-label="Search products"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-xs"
           />
           <select
             value={sort}
