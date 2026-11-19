@@ -8,14 +8,16 @@ import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 export default function ProductPurchasePanel({ product }) {
-  const variants = Array.isArray(product.variants) ? product.variants.filter(v => v?.is_active !== false) : [];
-  const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || null);
-  const selectedVariant = useMemo(() => variants.find(v => v.id === selectedVariantId) || variants[0] || null, [variants, selectedVariantId]);
+  const variants = Array.isArray(product.variants) ? product.variants.filter((variant) => variant?.is_active !== false) : [];
+  const canSellVariant = (variant) => product.track_inventory === false || product.allow_backorder === true || Number(variant?.stock_quantity || 0) > 0;
+  const preferredVariant = variants.find(canSellVariant) || variants[0] || null;
+  const [selectedVariantId, setSelectedVariantId] = useState(preferredVariant?.id || null);
+  const selectedVariant = useMemo(() => variants.find((variant) => variant.id === selectedVariantId) || preferredVariant, [variants, selectedVariantId, preferredVariant]);
   const effectivePrice = Number(selectedVariant && Number(selectedVariant.price) > 0 ? selectedVariant.price : product.price ?? 0);
   const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
   const tracksInventory = product.track_inventory !== false;
   const max = tracksInventory ? Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0) : 0;
-  const canBuy = !tracksInventory || max > 0 || product.allow_backorder;
+  const canBuy = !tracksInventory || max > 0 || product.allow_backorder === true;
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
   const [status, setStatus] = useState('');
@@ -116,16 +118,22 @@ export default function ProductPurchasePanel({ product }) {
         <div>
           <div className="mb-2 text-sm font-semibold">Color</div>
           <div className="flex flex-wrap gap-2">
-            {variants.map((variant) => (
-              <button
-                key={variant.id}
-                type="button"
-                onClick={() => { setSelectedVariantId(variant.id); setQty(1); setStatus(''); setAdded(false); }}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-primary bg-secondary text-primary' : 'border-border'}`}
-              >
-                {variant.title || variant.option_values?.Color || variant.sku}
-              </button>
-            ))}
+            {variants.map((variant) => {
+              const available = canSellVariant(variant);
+              return (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => { setSelectedVariantId(variant.id); setQty(1); setStatus(''); setAdded(false); }}
+                  disabled={!available}
+                  title={available ? variant.title || variant.sku : 'Out of stock'}
+                  aria-label={`${variant.title || variant.sku}${available ? '' : ' - out of stock'}`}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-primary bg-secondary text-primary' : 'border-border'} disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  {variant.title || variant.option_values?.Color || variant.sku}{!available ? ' · Out of stock' : ''}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -137,7 +145,7 @@ export default function ProductPurchasePanel({ product }) {
           {product.requires_personalization && (
             <div className="rounded-2xl border border-border bg-secondary p-4">
               <label className="block text-sm font-bold text-foreground" htmlFor="personalization-input">{product.personalization_label || 'Name for embroidery'}</label>
-              <input id="personalization-input" value={personalization} onChange={(e) => { setPersonalization(e.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-semibold outline-none focus:border-primary" />
+              <input id="personalization-input" value={personalization} onChange={(event) => { setPersonalization(event.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-semibold outline-none focus:border-primary" />
               <p className="mt-1.5 text-xs text-muted-foreground">Max 20 characters. This name will be embroidered on your bag and cannot be changed after the order is placed.</p>
               {personalizationError && <p className="mt-1.5 text-xs font-semibold text-red-600">{personalizationError}</p>}
             </div>
@@ -145,9 +153,9 @@ export default function ProductPurchasePanel({ product }) {
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">Quantity</span>
             <div className="flex items-center rounded-full border">
-              <button type="button" aria-label="Decrease quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((v) => Math.max(1, v - 1))}><Minus size={15}/></button>
+              <button type="button" aria-label="Decrease quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((value) => Math.max(1, value - 1))}><Minus size={15}/></button>
               <span className="min-w-8 text-center text-sm font-bold">{qty}</span>
-              <button type="button" aria-label="Increase quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((v) => (tracksInventory && max > 0 && !product.allow_backorder ? Math.min(max, v + 1) : v + 1))}><Plus size={15}/></button>
+              <button type="button" aria-label="Increase quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((value) => (tracksInventory && max > 0 && !product.allow_backorder ? Math.min(max, value + 1) : value + 1))}><Plus size={15}/></button>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
