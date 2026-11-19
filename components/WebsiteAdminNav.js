@@ -8,7 +8,7 @@ import {
   Truck, CreditCard, BarChart3, Bell, Settings, FileText, Image, Navigation,
   Palette, Search, ClipboardList, Layers, GitBranch, Star, Upload, BookOpen,
   Send, Shield, Workflow, HeartPulse, FileBarChart, WandSparkles,
-  SlidersHorizontal, ListChecks, Menu, X, ChevronDown, PhoneCall
+  SlidersHorizontal, ListChecks, Menu, X, ChevronDown, PhoneCall, Mail
 } from 'lucide-react';
 
 const groups = [
@@ -39,6 +39,7 @@ const groups = [
     ['/admin/campaigns', 'Campaigns', BarChart3],
     ['/admin/notifications', 'Notifications', Bell],
     ['/admin/notification-logs', 'Notification History', Send],
+    ['/admin/subscribers', 'Newsletter Subscribers', Mail],
   ] },
   { label: 'WEBSITE CONTENT', items: [
     ['/admin/homepage', 'Homepage Builder', SlidersHorizontal],
@@ -76,7 +77,7 @@ const hrefModules = {
   '/admin/brands':'brands','/admin/collections':'collections','/admin/products/collections':'collections',
   '/admin/variants':'variants','/admin/inventory':'inventory','/admin/reviews':'reviews',
   '/admin/discounts':'discounts','/admin/campaigns':'campaigns','/admin/notifications':'notifications',
-  '/admin/notification-logs':'notifications','/admin/homepage':'homepage','/admin/banners':'banners',
+  '/admin/notification-logs':'notifications','/admin/subscribers':'notifications','/admin/homepage':'homepage','/admin/banners':'banners',
   '/admin/pages':'pages','/admin/navigation':'navigation','/admin/design':'theme','/admin/theme':'theme',
   '/admin/seo':'seo','/admin/blog':'blog','/admin/footer':'footer','/admin/shipping':'shipping',
   '/admin/payments':'payments','/admin/automations':'automations','/admin/analytics':'analytics',
