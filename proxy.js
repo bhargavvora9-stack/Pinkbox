@@ -7,6 +7,20 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export async function proxy(request) {
   const path = request.nextUrl.pathname;
 
+  // Preview deployments are read-only so QA cannot mutate the live PinkBox database.
+  // Keep the login endpoint available so the owner can inspect authenticated Admin screens.
+  if (
+    process.env.VERCEL_ENV === 'preview' &&
+    path.startsWith('/api/') &&
+    path !== '/api/auth/login' &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())
+  ) {
+    return NextResponse.json(
+      { error: 'This preview is read-only. Changes are disabled until the approved production release.' },
+      { status: 403, headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } }
+    );
+  }
+
   if (path === '/Admin' || path.startsWith('/Admin/')) {
     const url = request.nextUrl.clone();
     url.pathname = path.replace(/^\/Admin/, '/admin');
