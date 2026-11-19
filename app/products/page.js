@@ -22,6 +22,8 @@ async function getProducts() {
     .select('id,sku,title,slug,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
+    .like('sku', 'MDH-%')
+    .gt('price', 0)
     .order('created_at', { ascending: false });
 
   if (productsError) throw new Error(productsError.message);
@@ -56,7 +58,7 @@ async function getProducts() {
 
   return filterAvailableProducts(products || [], variants || []).map((product) => ({
     ...product,
-    image_url: imageMap[product.id] || null,
+    image_url: imageMap[product.id] || `/catalog-products/${product.sku.toLowerCase()}.webp`,
   }));
 }
 
