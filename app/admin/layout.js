@@ -66,7 +66,7 @@ export default async function AdminLayout({ children }) {
       </header>
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 py-6 md:flex-row md:gap-8 md:px-6 md:py-8">
-        <nav className="pb-admin-navigation flex min-w-0 flex-wrap gap-1 md:w-52 md:shrink-0 md:flex-col">
+        <nav className="pb-admin-navigation hidden min-w-0 flex-wrap gap-1 md:flex md:w-52 md:shrink-0 md:flex-col">
           <div className="hidden px-3 pb-2 pt-1 md:block">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Store management</p>
           </div>
