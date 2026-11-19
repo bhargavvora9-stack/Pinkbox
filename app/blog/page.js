@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import ZipReferenceHeader from '@/components/ZipReferenceHeader';
+import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import Image from 'next/image';
 import {createAdminClient} from '@/lib/supabase-admin';
 import {absoluteUrl, safeJsonLd} from '@/lib/seo';
@@ -59,7 +61,7 @@ export default async function BlogIndex(){
    {'@type':'ListItem',position:2,name:'Journal',item:absoluteUrl('/blog')}
   ]
  };
- return <main className="min-h-screen bg-[#fbf3ef] text-[#2b1620]">
+ return <div className="min-h-screen bg-background text-foreground"><ZipReferenceHeader settings={s}/><main className="min-h-screen bg-background text-foreground">
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(blogSchema)}}/>
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(crumbs)}}/>
   <header className="mx-auto max-w-6xl px-5 py-10">
@@ -68,5 +70,5 @@ export default async function BlogIndex(){
    <h1 className="mt-3 text-4xl font-bold md:text-5xl">Ideas, guides &amp; updates</h1>
   </header>
   <section className="mx-auto grid max-w-6xl gap-6 px-5 pb-16 md:grid-cols-3">{(posts||[]).map(p=><Link key={p.id} href={`/blog/${p.slug}`} className="overflow-hidden rounded-3xl bg-white shadow-sm"><div className="h-52 bg-[#f4dbe4] relative">{p.cover_image_url&&<Image src={p.cover_image_url} alt={p.title} fill sizes="(max-width:768px) 100vw, 33vw" style={{objectFit:'cover'}}/>}</div><div className="p-6"><span className="text-xs font-semibold uppercase tracking-widest text-[#d9295f]">{p.published_at?new Date(p.published_at).toLocaleDateString('en-IN'):''}</span><h2 className="mt-2 text-xl font-bold">{p.title}</h2><p className="mt-2 text-sm text-gray-600">{p.excerpt||''}</p></div></Link>)}</section>
- </main>
+ </main><ZipReferenceFooter settings={s}/></div>
 }
