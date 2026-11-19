@@ -240,3 +240,41 @@ main.min-h-screen input,main.min-h-screen textarea,main.min-h-screen select{font
   .pb-shop-card-body{padding:13px!important}
   .website-admin main{padding:12px!important}
 }
+
+
+/* ZIP reference page flow: product finder follows products, contact precedes newsletter. */
+.pb-home{display:flex!important;flex-direction:column!important}
+.pb-home-announcement{order:0!important}
+.pb-home-header{order:1!important}
+.pb-home-hero{order:2!important}
+.pb-offer-strip{order:3!important}
+.pb-home-marquee{order:4!important}
+.pb-home-categories{order:5!important}
+.pb-home-products{order:6!important}
+.pb-home-product-finder{order:7!important}
+.pb-home-editorial{order:8!important}
+.pb-home-custom{order:9!important}
+.pb-home-section#why-us{order:10!important}
+.pb-home-section#reviews{order:11!important}
+.pb-home-journal{order:12!important}
+.pb-home-section:has(.pb-home-bulk){order:13!important}
+.pb-home-cta{order:14!important}
+.pb-home-footer{order:15!important}
+.pb-home-bottom{order:16!important}
+.pb-whatsapp-float{order:17!important}
+.pb-home-product-finder{padding-top:24px!important;padding-bottom:42px!important}
+.pb-product-finder-panel{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,420px) auto;
+  align-items:center;gap:22px;padding:26px 28px;border:1px solid var(--pinkbox-border);
+  border-radius:26px;background:linear-gradient(135deg,#fff 0%,#FBEAF1 56%,#FDF4E7 100%);
+  box-shadow:0 16px 36px rgba(81,45,61,.055)
+}
+.pb-product-finder-copy>span{font:800 10px/1.3 "Manrope",sans-serif;letter-spacing:.15em;color:var(--pinkbox-primary)}
+.pb-product-finder-copy h2{margin:8px 0 5px;font:600 clamp(20px,2.3vw,28px)/1.15 "Fraunces",Georgia,serif;color:var(--pinkbox-foreground)}
+.pb-product-finder-copy p{margin:0;color:var(--pinkbox-muted-foreground);font-size:12px;line-height:1.6}
+.pb-product-finder-search{height:48px;display:flex;align-items:center;gap:10px;padding:0 15px;border:1px solid var(--pinkbox-border);border-radius:999px;background:#fff;color:var(--pinkbox-primary)}
+.pb-product-finder-search input{width:100%;min-width:0;outline:none;border:0;background:transparent;color:var(--pinkbox-foreground);font:500 13px "Manrope",sans-serif}
+.pb-product-finder-search input::placeholder{color:#A38B95}
+.pb-product-finder-panel .pb-home-primary{min-height:46px;padding:12px 19px;white-space:nowrap;font-size:12px}
+@media(max-width:900px){.pb-product-finder-panel{grid-template-columns:1fr 1fr}.pb-product-finder-copy{grid-column:1/-1}.pb-product-finder-panel .pb-home-primary{justify-self:start}}
+@media(max-width:600px){.pb-product-finder-panel{grid-template-columns:1fr;padding:22px 18px;gap:15px}.pb-product-finder-copy{grid-column:auto}.pb-product-finder-panel .pb-home-primary{width:100%}}
