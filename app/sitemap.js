@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { isContentLiveForAvailableCategory } from '@/lib/available-content';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -7,24 +8,22 @@ export const revalidate = 0;
 export default async function sitemap() {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app').replace(/\/$/, '');
   const db = createAdminClient();
-  const { data: settings } = await db
+  const { data: settings, error: settingsError } = await db
     .from('website_settings')
     .select('company_id')
     .eq('slug', 'pinkbox')
     .eq('status', 'active')
     .maybeSingle();
 
-  // Only emit lastModified when it comes from a real content timestamp.
-  // Do not use the current time as a synthetic freshness signal.
+  // Keep core URLs available even if the store database is temporarily unavailable.
   const urls = [
     { url: base },
     { url: `${base}/products` },
     { url: `${base}/blog` },
   ];
+  if (settingsError || !settings) return urls;
 
-  if (!settings) return urls;
-
-  const [posts, products, categories, pages, mappings] = await Promise.all([
+  const [posts, productsResult, categories, pages, mappings] = await Promise.all([
     db
       .from('website_blog_posts')
       .select('slug,title,excerpt,content,seo_keywords,updated_at,published_at')
@@ -34,7 +33,7 @@ export default async function sitemap() {
       .order('published_at', { ascending: false }),
     db
       .from('website_products')
-      .select('id,slug,is_active,updated_at,price')
+      .select('id,slug,is_active,updated_at,price,track_inventory,allow_backorder,stock_quantity')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .gt('price', 0),
@@ -54,59 +53,66 @@ export default async function sitemap() {
       .eq('company_id', settings.company_id),
   ]);
 
+  if (productsResult.error || categories.error || mappings.error) return urls;
+  const productIds = (productsResult.data || []).map((product) => product.id);
+  const { data: variants, error: variantsError } = productIds.length
+    ? await db.from('website_product_variants')
+      .select('product_id,stock_quantity,is_active')
+      .eq('company_id', settings.company_id)
+      .in('product_id', productIds)
+      .eq('is_active', true)
+    : { data: [], error: null };
+  if (variantsError) return urls;
+
+  const saleableProducts = filterAvailableProducts(productsResult.data || [], variants || []);
   const contentContext = {
     categories: categories.data || [],
-    products: products.data || [],
+    products: saleableProducts,
     mappings: mappings.data || [],
   };
 
-  for (const p of posts.data || []) {
-    if (p.slug && isContentLiveForAvailableCategory(p, contentContext, { keepUncategorized: false })) {
+  for (const post of posts.data || []) {
+    if (post.slug && isContentLiveForAvailableCategory(post, contentContext, { keepUncategorized: false })) {
       urls.push({
-        url: `${base}/blog/${encodeURIComponent(p.slug)}`,
-        ...(p.updated_at || p.published_at
-          ? { lastModified: p.updated_at || p.published_at }
-          : {}),
+        url: `${base}/blog/${encodeURIComponent(post.slug)}`,
+        ...(post.updated_at || post.published_at ? { lastModified: post.updated_at || post.published_at } : {}),
       });
     }
   }
 
-  for (const p of products.data || []) {
-    if (p.slug) {
+  for (const product of saleableProducts) {
+    if (product.slug) {
       urls.push({
-        url: `${base}/products/${encodeURIComponent(p.slug)}`,
-        ...(p.updated_at ? { lastModified: p.updated_at } : {}),
+        url: `${base}/products/${encodeURIComponent(product.slug)}`,
+        ...(product.updated_at ? { lastModified: product.updated_at } : {}),
       });
     }
   }
 
-  const saleableProductIds = new Set((products.data || []).map((p) => p.id));
+  const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
   const categoryIdsWithProducts = new Set(
     (mappings.data || [])
-      .filter((m) => saleableProductIds.has(m.product_id))
-      .map((m) => m.category_id)
+      .filter((mapping) => saleableProductIds.has(mapping.product_id))
+      .map((mapping) => mapping.category_id)
   );
 
-  for (const c of categories.data || []) {
-    if (c.slug && categoryIdsWithProducts.has(c.id)) {
+  for (const category of categories.data || []) {
+    if (category.slug && categoryIdsWithProducts.has(category.id)) {
       urls.push({
-        url: `${base}/collections/${encodeURIComponent(c.slug)}`,
-        ...(c.updated_at ? { lastModified: c.updated_at } : {}),
+        url: `${base}/collections/${encodeURIComponent(category.slug)}`,
+        ...(category.updated_at ? { lastModified: category.updated_at } : {}),
       });
     }
   }
 
-  for (const p of pages.data || []) {
-    if (p.slug && isContentLiveForAvailableCategory(p, contentContext, { keepUncategorized: true })) {
+  for (const page of pages.data || []) {
+    if (page.slug && isContentLiveForAvailableCategory(page, contentContext, { keepUncategorized: true })) {
       urls.push({
-        url: `${base}/pages/${encodeURIComponent(p.slug)}`,
-        ...(p.updated_at ? { lastModified: p.updated_at } : {}),
+        url: `${base}/pages/${encodeURIComponent(page.slug)}`,
+        ...(page.updated_at ? { lastModified: page.updated_at } : {}),
       });
     }
   }
 
   return urls;
 }
-
-// SEO: sitemap emits lastModified only from real content timestamps.
-// Deployment trigger: keep sitemap freshness behavior active in production.
