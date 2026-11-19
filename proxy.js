@@ -21,6 +21,12 @@ export async function proxy(request) {
     );
   }
 
+  // Do not add proxy overhead to existing production public APIs.
+  if (path === '/api/auth/login') return NextResponse.next({ request });
+  if (process.env.VERCEL_ENV !== 'preview' && path.startsWith('/api/') && !path.startsWith('/api/website/')) {
+    return NextResponse.next({ request });
+  }
+
   if (path === '/Admin' || path.startsWith('/Admin/')) {
     const url = request.nextUrl.clone();
     url.pathname = path.replace(/^\/Admin/, '/admin');
