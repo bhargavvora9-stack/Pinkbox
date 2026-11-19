@@ -1,7 +1,7 @@
 import { getWebsiteAdminContext, cleanString, slugify, audit, jsonError } from '@/lib/website-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
-const TABLES = { settings:'website_settings', categories:'website_categories', products:'website_products', images:'website_product_images', orders:'website_orders', pages:'website_pages', banners:'website_banners', 'homepage-sections':'website_homepage_sections', navigation:'website_menus', discounts:'website_discounts', subscribers:'website_newsletter_subscribers' };
+const TABLES = { settings:'website_settings', categories:'website_categories', products:'website_products', images:'website_product_images', orders:'website_orders', pages:'website_pages', banners:'website_banners', 'homepage-sections':'website_homepage_sections', navigation:'website_menus', discounts:'website_discounts', subscribers:'website_newsletter_subscribers', 'bulk-enquiries':'website_bulk_enquiries' };
 const SAFE_LIMIT = 200;
 const DEFAULT_STORE_NAME = 'PinkBox';
 const DEFAULT_STORE_SLUG = 'pinkbox';
@@ -103,6 +103,7 @@ function sanitizePayload(resource,b,companyId,partial=false){const payload={comp
   if(resource==='navigation'){text('location',60);text('name',120);payload.items=Array.isArray(b.items)?b.items:[]}
   if(resource==='discounts'){text('name',180);text('code',60);text('discount_type',40);num('value');num('minimum_order_amount');num('maximum_discount_amount');num('usage_limit');if(!partial||b.starts_at!==undefined)payload.starts_at=b.starts_at||null;if(!partial||b.ends_at!==undefined)payload.ends_at=b.ends_at||null;bool('is_active',true)}
   if(resource==='subscribers'){text('email',160);text('coupon_code',60);bool('is_active',true)}
+  if(resource==='bulk-enquiries'){text('name',180);text('company_name',180);text('phone',40);text('email',160);text('organisation_type',80);text('quantity',80);text('message',3000);if(!partial||b.status!==undefined)payload.status=cleanString(b.status,40)||'new';if(!partial||b.source!==undefined)payload.source=cleanString(b.source,60)||'Website'}
   if(resource==='orders'){text('order_number',80);text('customer_id',100);text('customer_name',180);text('customer_phone',40);text('customer_email',160);payload.shipping_address=b.shipping_address&&typeof b.shipping_address==='object'?b.shipping_address:{};payload.billing_address=b.billing_address&&typeof b.billing_address==='object'?b.billing_address:{};num('subtotal');num('discount_amount');num('shipping_amount');num('tax_amount');num('total_amount');text('payment_method',50);text('payment_status',40);text('order_status',40);text('notes',3000)}
   return payload;
 }
