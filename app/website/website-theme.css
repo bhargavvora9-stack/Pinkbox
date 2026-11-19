@@ -1,89 +1,74 @@
-/* PinkBox Admin — light blush/cream design language from the supplied ZIP. */
+/* Pink Box admin styling: source typography, blush surfaces and light navigation. */
 .website-admin {
-  --admin-bg: var(--color-background);
-  --admin-surface: var(--color-card);
-  --admin-border: var(--color-border);
   --admin-ink: var(--color-foreground);
   --admin-muted: var(--color-muted-foreground);
-  --admin-pink: var(--color-primary);
-  background: linear-gradient(145deg, oklch(0.995 0.006 60), oklch(0.98 0.018 350)) !important;
-  color: var(--admin-ink) !important;
-  font-family: var(--font-sans) !important;
-  font-size: 14px;
+  --admin-border: var(--color-border);
+  min-height: 100vh;
+  color: var(--admin-ink);
+  font-family: var(--font-sans);
   line-height: 1.5;
 }
-.website-admin .glass-sidebar {
-  width: 15.5rem;
-  background: rgba(255,255,255,.94) !important;
-  color: var(--admin-ink) !important;
-  border-color: var(--admin-border) !important;
-  box-shadow: 8px 0 28px oklch(0.35 0.04 350 / .035);
+.website-admin h1,
+.website-admin h2,
+.website-admin h3,
+.website-admin h4,
+.website-admin h5,
+.website-admin h6 {
+  color: var(--admin-ink);
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
 }
-.website-admin header {
-  background: rgba(255,255,255,.94) !important;
-  border-color: var(--admin-border) !important;
-  color: var(--admin-ink) !important;
-  box-shadow: 0 3px 18px oklch(0.35 0.04 350 / .045);
+.website-admin .pb-admin-header {
+  box-shadow: 0 2px 14px oklch(0.35 0.04 350 / .035);
 }
-.website-admin main { background: transparent !important; color: var(--admin-ink) !important; }
-.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6 {
-  color: var(--admin-ink) !important;
-  font-family: var(--font-display) !important;
-  letter-spacing: -.015em;
+.website-admin .pb-admin-navigation {
+  background: oklch(1 0 0 / .94);
 }
-.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li { color: inherit; }
-.website-admin .text-white { color: var(--admin-ink) !important; }
-.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600,.website-admin .text-black { color: var(--admin-ink) !important; }
-.website-admin .text-gray-500,.website-admin .text-gray-400,.website-admin .text-gray-300 { color: var(--admin-muted) !important; }
-.website-admin .text-pink-300,.website-admin .text-pink-400,.website-admin .text-pink-500 { color: var(--color-primary) !important; }
-.website-admin .text-red-700,.website-admin .text-red-600 { color: #b63d59 !important; }
-.website-admin .text-green-700,.website-admin .text-green-600 { color: #397c58 !important; }
-.website-admin .text-amber-600,.website-admin .text-orange-600 { color: #a56820 !important; }
-.website-admin .glass-sidebar .text-white,.website-admin header .text-white { color: var(--admin-ink) !important; }
-.website-admin .glass-sidebar .text-gray-300,.website-admin .glass-sidebar .text-gray-400,.website-admin .glass-sidebar .text-gray-500 { color: var(--admin-muted) !important; }
-.website-admin .glass-sidebar button:hover,.website-admin .glass-sidebar nav a:hover { color: var(--color-primary) !important; background: var(--color-secondary) !important; }
-.website-admin .glass-sidebar nav a[aria-current="page"],.website-admin nav a[aria-current="page"] {
-  color: var(--color-secondary-foreground) !important;
-  background: var(--color-secondary) !important;
-  box-shadow: inset 3px 0 0 var(--color-primary) !important;
+.website-admin .pb-admin-navigation > div:first-child {
+  border-color: var(--admin-border);
 }
-.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100 { background-color: #fff !important; color: var(--admin-ink) !important; }
-.website-admin [class~="bg-[#111116]"],.website-admin [class~="bg-black/20"],.website-admin [class~="bg-black/30"],.website-admin [class~="bg-white/5"] { background: #fff !important; color: var(--admin-ink) !important; }
-.website-admin .border-white\/10,.website-admin [class*="border-gray"],.website-admin [class*="border-white"] { border-color: var(--admin-border) !important; }
-.website-admin input,.website-admin textarea,.website-admin select {
-  background: var(--color-card) !important;
-  color: var(--admin-ink) !important;
-  border: 1px solid var(--admin-border) !important;
-  border-radius: 11px;
+.website-admin input,
+.website-admin textarea,
+.website-admin select {
+  border-color: var(--admin-border);
+  border-radius: .75rem;
 }
-.website-admin input::placeholder,.website-admin textarea::placeholder { color: #a48e94 !important; }
-.website-admin select option { background: #fff !important; color: var(--admin-ink) !important; }
-.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 16%, transparent) !important; outline: none; }
-.website-admin table { width: 100%; color: var(--admin-ink) !important; font-size: 13px !important; }
-.website-admin thead { background: var(--color-secondary) !important; color: var(--color-secondary-foreground) !important; }
-.website-admin thead th { color: var(--color-secondary-foreground) !important; font-size: 12px !important; font-weight: 700 !important; padding: 11px 12px !important; line-height: 1.3 !important; }
-.website-admin tbody { background: #fff !important; }
-.website-admin tbody tr { border-color: var(--admin-border) !important; }
-.website-admin tbody tr:hover { background: color-mix(in oklch, var(--color-secondary) 45%, white) !important; }
-.website-admin tbody td { color: var(--admin-ink) !important; font-size: 13px !important; padding: 11px 12px !important; line-height: 1.4 !important; }
-.website-admin button,.website-admin input,.website-admin textarea,.website-admin select { font-family: var(--font-sans) !important; font-size: 13px !important; line-height: 1.4; }
-.website-admin label { font-size: 13px !important; line-height: 1.45 !important; }
-.website-admin main p { font-size: 13px; line-height: 1.55; }
-.website-admin main h1 { font-size: clamp(1.5rem,2.4vw,2rem) !important; line-height: 1.2 !important; }
-.website-admin main h2 { font-size: clamp(1.25rem,2vw,1.6rem) !important; line-height: 1.25 !important; }
-.website-admin main h3 { font-size: clamp(1.05rem,1.6vw,1.3rem) !important; line-height: 1.3 !important; }
-.website-admin .glass-sidebar nav a { font-size: 13px !important; line-height: 1.35 !important; }
-.website-admin .fixed.inset-0 { background: rgba(67,42,49,.34) !important; backdrop-filter: blur(6px); }
-.website-admin [role="dialog"] { background: #fff !important; border: 1px solid var(--admin-border) !important; box-shadow: 0 24px 80px oklch(0.35 0.04 350 / .18) !important; color: var(--admin-ink) !important; }
+.website-admin input:focus,
+.website-admin textarea:focus,
+.website-admin select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 15%, transparent);
+  outline: none;
+}
+.website-admin table {
+  width: 100%;
+  color: var(--admin-ink);
+}
+.website-admin thead {
+  background: color-mix(in oklch, var(--color-secondary) 72%, white);
+}
+.website-admin tbody {
+  background: white;
+}
+.website-admin tbody tr {
+  border-color: var(--admin-border);
+}
+.website-admin tbody tr:hover {
+  background: color-mix(in oklch, var(--color-secondary) 42%, white);
+}
+.website-admin [role="dialog"] {
+  border: 1px solid var(--admin-border);
+  border-radius: 1rem;
+  background: white;
+  color: var(--admin-ink);
+  box-shadow: 0 24px 80px oklch(0.35 0.04 350 / .18);
+}
 .website-admin ::-webkit-scrollbar { width: 7px; height: 7px; }
 .website-admin ::-webkit-scrollbar-track { background: transparent; }
 .website-admin ::-webkit-scrollbar-thumb { background: oklch(0.65 0.07 355 / .28); border-radius: 99px; }
 .website-admin ::-webkit-scrollbar-thumb:hover { background: oklch(0.65 0.07 355 / .5); }
-@media (max-width: 1023px) { .website-admin .glass-sidebar { width: 14rem; } }
 @media (max-width: 767px) {
-  .website-admin { font-size: 13px; }
-  .website-admin main { padding: 1rem !important; }
-  .website-admin table { font-size: 12px !important; }
-  .website-admin thead th,.website-admin tbody td { padding: 10px 11px !important; }
-  .website-admin [class~="bg-[#111116]"] { width: min(86vw,330px); }
+  .website-admin { font-size: 14px; }
+  .website-admin .pb-admin-navigation { padding: .5rem; }
+  .website-admin table { display: block; overflow-x: auto; }
 }

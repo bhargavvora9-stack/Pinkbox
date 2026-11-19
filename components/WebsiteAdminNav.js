@@ -128,7 +128,7 @@ function NavigationList({ pathname, query, onNavigate, permissions }) {
                 next.has(group.label) ? next.delete(group.label) : next.add(group.label);
                 return next;
               })}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[10px] font-bold tracking-[0.14em] transition ${hasActive ? 'text-pink-300' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[10px] font-bold tracking-[0.14em] transition ${hasActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
               aria-expanded={expanded}
             >
               <span>{group.label}</span>
@@ -144,7 +144,7 @@ function NavigationList({ pathname, query, onNavigate, permissions }) {
                       href={href}
                       onClick={onNavigate}
                       aria-current={active ? 'page' : undefined}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${active ? 'bg-pink-500/15 text-white ring-1 ring-pink-400/25' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${active ? 'bg-primary/10 text-primary ring-1 ring-primary/15' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
                     >
                       <Icon size={16} strokeWidth={1.8} />
                       <span className="min-w-0 truncate">{label}</span>
@@ -175,20 +175,20 @@ export default function WebsiteAdminNav({ mobile = false, permissions = null }) 
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Open admin menu"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-100 md:hidden"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
         >
           <Menu size={18} />
         </button>
         {drawerOpen && (
           <div className="fixed inset-0 z-[100] md:hidden">
-            <button type="button" aria-label="Close admin menu" onClick={() => setDrawerOpen(false)} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <aside className="absolute inset-y-0 left-0 flex w-[min(86vw,330px)] flex-col border-r border-white/10 bg-[#111116] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-                <div><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-pink-300">PinkBox</div><div className="mt-0.5 text-sm font-semibold text-white">Admin Menu</div></div>
-                <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close menu" className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white"><X size={18}/></button>
+            <button type="button" aria-label="Close admin menu" onClick={() => setDrawerOpen(false)} className="absolute inset-0 bg-foreground/25 backdrop-blur-sm" />
+            <aside className="absolute inset-y-0 left-0 flex w-[min(86vw,330px)] flex-col border-r border-border bg-card shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border px-4 py-4">
+                <div><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">PinkBox</div><div className="mt-0.5 text-sm font-semibold text-foreground">Admin Menu</div></div>
+                <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close menu" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><X size={18}/></button>
               </div>
-              <div className="border-b border-white/10 p-3">
-                <div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a menu..." className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-pink-400/50"/></div>
+              <div className="border-b border-border p-3">
+                <div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Find a menu..." className="w-full rounded-xl border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"/></div>
               </div>
               <nav className="flex-1 overflow-y-auto px-3 py-3"><NavigationList pathname={pathname} query={query} permissions={permissions} onNavigate={() => setDrawerOpen(false)}/></nav>
             </aside>
@@ -200,8 +200,8 @@ export default function WebsiteAdminNav({ mobile = false, permissions = null }) 
 
   return (
     <>
-      <div className="border-b border-white/10 p-3">
-        <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search admin menu..." className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-xs text-white outline-none placeholder:text-gray-500 focus:border-pink-400/50"/></div>
+      <div className="border-b border-border p-3">
+        <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search admin menu..." className="w-full rounded-xl border border-input bg-background py-2 pl-9 pr-3 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"/></div>
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-3"><NavigationList pathname={pathname} query={query} permissions={permissions}/></nav>
     </>

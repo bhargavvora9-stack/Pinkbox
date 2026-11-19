@@ -32,32 +32,30 @@ export default async function WebsiteAdminLayout({ children }) {
   if (!company) redirect('/login');
 
   return (
-    <div className="website-admin glass-shell flex min-h-screen">
-      <aside className="hidden md:flex w-64 shrink-0 glass-sidebar flex-col">
-        <div className="border-b border-white/10 p-4">
+    <div className="website-admin min-h-screen bg-secondary/20">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+        <div className="container mx-auto flex min-h-[68px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            {company.logo_url ? <img src={company.logo_url} alt="logo" className="h-9 w-9 rounded-lg bg-white object-contain" /> : <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-sm font-bold text-white">PB</div>}
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-gray-500">Website Admin</div>
-              <div className="truncate font-semibold text-white">{company.name || 'PinkBox'}</div>
-            </div>
+            {company.logo_url
+              ? <img src={company.logo_url} alt="PinkBox logo" className="h-10 w-10 rounded-xl border border-border bg-white object-contain p-1" />
+              : <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">PB</div>}
+            <div><div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Website management</div><div className="font-display text-lg font-semibold text-foreground">{company.name || 'PinkBox'} <span className="font-sans text-xs font-medium text-muted-foreground">Website</span></div></div>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="/" target="_blank" rel="noreferrer" className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:border-primary hover:text-primary">View Storefront ↗</a>
+            <LogoutButton />
           </div>
         </div>
-        <WebsiteAdminNav />
-        <div className="border-t border-white/10 p-4">
-          <div className="mb-2 truncate text-sm text-gray-300">{profile.display_name}</div>
-          <LogoutButton />
-        </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-black/20 px-4 backdrop-blur-xl sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-fuchsia-500 text-xs font-bold text-white md:hidden">PB</div>
-            <div><div className="text-xs text-gray-500">Online Store</div><div className="text-sm font-semibold text-white">PinkBox Admin</div></div>
+      </header>
+      <div className="container mx-auto flex flex-col gap-6 px-4 py-6 md:flex-row md:gap-8 md:py-8">
+        <aside className="pb-admin-navigation min-w-0 rounded-2xl border border-border bg-card p-2 shadow-sm md:sticky md:top-[92px] md:max-h-[calc(100vh-116px)] md:w-56 md:shrink-0 md:overflow-y-auto">
+          <WebsiteAdminNav />
+          <div className="mt-3 border-t border-border px-3 pt-3">
+            <div className="mb-2 truncate text-xs text-muted-foreground">{profile.display_name || user.email}</div>
+            <LogoutButton />
           </div>
-          <a href="/" target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-gray-200 transition hover:bg-white/10 hover:text-white">View Website ↗</a>
-        </header>
-        <main className="min-w-0 flex-1 p-4 pb-8 sm:p-6 lg:p-8">{children}</main>
+        </aside>
+        <main className="min-w-0 flex-1 pb-8">{children}</main>
       </div>
     </div>
   );

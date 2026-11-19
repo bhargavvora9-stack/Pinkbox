@@ -10,7 +10,7 @@ import {
   Award, ArrowRight, Boxes, Check, ChevronLeft,
   ChevronRight, Copy, FlaskConical, Flower2, Heart, HeartHandshake, Mail,
   Menu, PackageCheck, Phone, Search, ShieldCheck, Sparkles, Star, Tag,
-  Truck, X, Droplets, Feather, Leaf, Wind, MessageSquareHeart
+  Truck, X, Droplets, Feather, Leaf, Wind, MessageSquareHeart, ShoppingBag
 } from 'lucide-react';
 
 const money = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -50,6 +50,7 @@ export default function PinkBoxHome({ initialData }) {
   const [wish, setWish] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cartFeedback, setCartFeedback] = useState({ productId: null, message: '' });
 
   useEffect(() => {
     try { setWish(JSON.parse(localStorage.getItem('pinkbox_wishlist') || '[]')); }
@@ -90,6 +91,52 @@ export default function PinkBoxHome({ initialData }) {
     if (clean.length < 2) return;
     setQuery(clean);
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function addToCart(product) {
+    try {
+      const variants = Array.isArray(product.variants)
+        ? product.variants.filter((variant) => variant?.is_active !== false)
+        : [];
+      const variant = variants[0] || null;
+      const cartId = variant ? `${product.id}:${variant.id}` : product.id;
+      const current = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
+      const existing = current.find((item) => item.id === cartId);
+      const nextQuantity = Number(existing?.quantity || 0) + 1;
+      const stock = Number(variant?.stock_quantity ?? product.stock_quantity ?? 0);
+      if (product.track_inventory !== false && stock > 0 && nextQuantity > stock && !product.allow_backorder) {
+        setCartFeedback({ productId: product.id, message: `Only ${stock} available` });
+        return;
+      }
+      const price = Number(variant?.price) > 0 ? Number(variant.price) : Number(product.price || 0);
+      const cartItem = {
+        ...product,
+        id: cartId,
+        product_id: product.id,
+        variant_id: variant?.id || null,
+        variant_title: variant?.title || null,
+        title: variant ? `${product.title} - ${variant.title}` : product.title,
+        price,
+        image_url: variant?.image_url || product.image_url || product.images?.[0]?.image_url || null,
+        sku: variant?.sku || product.sku,
+        quantity: 1,
+      };
+      const next = existing
+        ? current.map((item) => item.id === cartId ? { ...item, quantity: nextQuantity } : item)
+        : [...current, cartItem];
+      localStorage.setItem('pinkbox_cart', JSON.stringify(next));
+      window.dispatchEvent(new Event('pinkbox-cart-updated'));
+      setCartFeedback({ productId: product.id, message: 'Added to cart' });
+      window.setTimeout(() => {
+        setCartFeedback((currentFeedback) =>
+          currentFeedback.productId === product.id
+            ? { productId: null, message: '' }
+            : currentFeedback
+        );
+      }, 1800);
+    } catch {
+      setCartFeedback({ productId: product.id, message: 'Unable to add to cart' });
+    }
   }
 
   async function copyCoupon() {
@@ -152,7 +199,7 @@ export default function PinkBoxHome({ initialData }) {
               <span className="flex items-center gap-2"><Star className="h-4 w-4 fill-primary text-primary" /> Ultra-soft cotton top sheet</span>
               <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Dermatologist tested</span>
             </div>
-            {banners.length > 1 && <div className="mt-8 flex items-center gap-2"><button type="button" aria-label="Previous banner" onClick={() => setSlide((index) => (index - 1 + banners.length) % banners.length)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground hover:border-primary hover:text-primary"><ChevronLeft className="h-4 w-4" /></button><span className="text-xs text-muted-foreground">{slide + 1} / {banners.length}</span><button type="button" aria-label="Next banner" onClick={() => setSlide((index) => (index + 1) % banners.length)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground hover:border-primary hover:text-primary"><ChevronRight className="h-4 w-4" /></button></div>}
+            {banners.length > 1 && <><div className="mt-8 flex items-center gap-2"><button type="button" aria-label="Previous banner" onClick={() => setSlide((index) => (index - 1 + banners.length) % banners.length)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground hover:border-primary hover:text-primary"><ChevronLeft className="h-4 w-4" /></button><span className="text-xs text-muted-foreground">{slide + 1} / {banners.length}</span><button type="button" aria-label="Next banner" onClick={() => setSlide((index) => (index + 1) % banners.length)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground hover:border-primary hover:text-primary"><ChevronRight className="h-4 w-4" /></button></div><div className="mt-8 flex gap-2">{banners.map((banner, index) => <button key={banner.id} type="button" aria-label={`Go to slide ${index + 1}`} onClick={() => setSlide(index)} className={`h-1.5 rounded-full transition-all ${index === slide ? "w-8 bg-primary" : "w-3 bg-border"}`} />)}</div></>}
           </div>
           <div className="relative">
             <div className="absolute -top-8 -right-6 h-40 w-40 rounded-full bg-accent/50 blur-3xl" aria-hidden />
@@ -185,14 +232,14 @@ export default function PinkBoxHome({ initialData }) {
 
       {/* Original ZIP product listing, backed by the current PinkBox catalog */}
       <section id="products" className="container mx-auto px-4 py-16 md:py-24 scroll-mt-24">
-        <div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">Our range</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Pads for every day and every flow</h2><p className="mt-3 text-muted-foreground">Explore the products currently available at PinkBox.</p></div>
+        <div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">Our range</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Pads for every day and every flow</h2></div>
         <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {displayedProducts.map((product) => <article key={product.id} className="group overflow-hidden rounded-3xl border border-border bg-card transition-shadow hover:shadow-soft">
+          {displayedProducts.map((product) => <article key={product.id} className="group overflow-hidden rounded-xl border border-border bg-card shadow transition-shadow hover:shadow-md">
             <Link href={`/products/${product.slug}`} className="block">
-              <div className="relative aspect-square overflow-hidden bg-muted">{product.image_url ? <Image src={product.image_url} alt={product.title || 'PinkBox product'} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-contain p-5 transition-transform group-hover:scale-[1.025]" /> : <div className="grid h-full place-items-center font-display text-5xl text-primary/40">Pink Box</div>}{Number(product.compare_at_price) > Number(product.price) && <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground">Sale</span>}</div>
-              <div className="p-4"><p className="text-xs font-semibold uppercase tracking-widest text-primary">{product.brand || 'Pink Box'}</p><h3 className="mt-2 line-clamp-2 min-h-12 text-lg font-semibold text-card-foreground">{product.title}</h3><p className="mt-2 text-sm text-muted-foreground line-clamp-2">{product.short_description || product.description || ''}</p><div className="mt-4 flex items-center gap-2"><strong className="text-lg text-foreground">{money(product.price)}</strong>{Number(product.compare_at_price) > Number(product.price) && <del className="text-sm text-muted-foreground">{money(product.compare_at_price)}</del>}<span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary">View <ArrowRight className="h-3.5 w-3.5" /></span></div></div>
+              <div className="relative aspect-square overflow-hidden bg-muted">{product.image_url ? <Image src={product.image_url} alt={product.title || 'PinkBox product'} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover transition-transform group-hover:scale-105" /> : <div className="grid h-full place-items-center font-display text-5xl text-primary/40">Pink Box</div>}{Number(product.compare_at_price) > Number(product.price) && <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground">Sale</span>}</div>
+              <div className="p-4"><h3 className="line-clamp-1 text-lg font-semibold leading-none tracking-tight text-card-foreground">{product.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description || product.description || ''}</p><div className="mt-2 flex items-center gap-2"><strong className="text-lg font-bold text-foreground">{money(product.price)}</strong>{Number(product.compare_at_price) > Number(product.price) && <del className="text-sm text-muted-foreground">{money(product.compare_at_price)}</del>}</div></div>
             </Link>
-            <div className="flex items-center justify-between border-t border-border px-4 py-3"><button type="button" onClick={() => toggleWishlist(product.id)} className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary"><Heart className="h-4 w-4" fill={wish.includes(product.id) ? 'currentColor' : 'none'} />{wish.includes(product.id) ? 'Saved' : 'Save to wishlist'}</button><Link href={`/products/${product.slug}`} className="text-xs font-semibold text-primary">Product details</Link></div>
+            <div className="flex flex-col gap-3 border-t border-border p-4 pt-0"><div className="flex items-center justify-between gap-2"><button type="button" onClick={() => toggleWishlist(product.id)} className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary"><Heart className="h-4 w-4" fill={wish.includes(product.id) ? 'currentColor' : 'none'} />{wish.includes(product.id) ? 'Saved' : 'Save to wishlist'}</button><Link href={`/products/${product.slug}`} className="text-xs font-semibold text-primary">Product details</Link></div><button type="button" onClick={() => addToCart(product)} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"><ShoppingBag className="h-4 w-4" />{cartFeedback.productId === product.id ? cartFeedback.message : 'Add to Cart'}</button></div>
           </article>)}
         </div>
         {!displayedProducts.length && <div className="mt-8 rounded-2xl border border-dashed border-border bg-secondary/30 p-10 text-center"><p className="font-display text-xl font-semibold">No products found</p><p className="mt-2 text-sm text-muted-foreground">Try a different search term or browse the full shop.</p><Link href="/shop" className="mt-4 inline-flex rounded-full bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground">Browse Shop</Link></div>}
