@@ -115,3 +115,23 @@
   .website-admin table { font-size: 12px !important; }
   .website-admin thead th, .website-admin tbody td { padding: 10px 11px !important; white-space: nowrap; }
 }
+
+/* Keep admin text legible on the ZIP's light surfaces. */
+.website-admin .text-gray-900,
+.website-admin .text-gray-800,
+.website-admin .text-gray-700,
+.website-admin .text-gray-600 { color: var(--foreground) !important; }
+.website-admin .text-gray-500,
+.website-admin .text-gray-400,
+.website-admin .text-gray-300 { color: var(--muted-foreground) !important; }
+.website-admin .text-pink-300,
+.website-admin .text-pink-400,
+.website-admin .text-pink-500 { color: var(--primary) !important; }
+.website-admin .bg-pink-500,
+.website-admin .bg-pink-600 { background: var(--primary) !important; color: var(--primary-foreground) !important; }
+.website-admin .bg-pink-500\\/15,
+.website-admin .bg-pink-500\\/10 { background: color-mix(in oklch, var(--primary) 11%, var(--background)) !important; }
+.website-admin .ring-pink-400\\/25 { --tw-ring-color: color-mix(in oklch, var(--primary) 18%, transparent) !important; }
+.website-admin button.border-white\\/10 { border-color: var(--border) !important; }
+.website-admin button.bg-white\\/5 { background: var(--secondary) !important; color: var(--foreground) !important; }
+.website-admin button.bg-white\\/5:hover { background: color-mix(in oklch, var(--secondary) 72%, var(--background)) !important; }
