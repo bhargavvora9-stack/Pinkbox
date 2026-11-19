@@ -3,7 +3,7 @@ import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
 const LINKS = [
  {title:'Shop',items:[{label:'All Products',href:'/shop'},{label:'Your Cart',href:'/cart'},{label:'Track Order',href:'/track-order'},{label:'Bulk Orders',href:'/#contact'}]},
  {title:'Company',items:[{label:'About Us',href:'/about'},{label:'Blog',href:'/blog'},{label:'FAQ',href:'/faq'},{label:'Contact',href:'/#contact'}]},
- {title:'Support',items:[{label:'Shipping Policy',href:'/pages/shipping-policy'},{label:'Returns & Refunds',href:'/pages/refund-policy'},{label:'Privacy Policy',href:'/pages/privacy-policy'},{label:'Terms of Service',href:'/pages/terms-conditions'},{label:'Dealer Enquiry',href:'/#contact'}]},
+ {title:'Support',items:[{label:'Shipping Policy',href:'/policies/shipping'},{label:'Returns & Refunds',href:'/policies/returns'},{label:'Privacy Policy',href:'/policies/privacy'},{label:'Terms of Service',href:'/policies/terms'},{label:'Dealer Enquiry',href:'/#contact'}]},
 ];
 export default function ZipReferenceFooter({settings={}}){
  const phone=settings.phone||'+91 73592 52000';
