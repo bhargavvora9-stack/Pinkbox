@@ -1,4 +1,52 @@
 @import "tailwindcss";
 
-/* PinkBox global image rule: preserve complete images and prevent any crop/zoom clipping. */
-img{object-fit:contain!important;object-position:center!important;transform:none!important;}
+@theme inline {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --color-background: #FFFDF9;
+  --color-foreground: #341A27;
+  --color-primary: #B54075;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #FFE7F1;
+  --color-secondary-foreground: #70485B;
+  --color-muted: #FAF2EC;
+  --color-muted-foreground: #77626B;
+  --color-accent: #97E4C2;
+  --color-accent-foreground: #234839;
+  --color-border: #EAD6DF;
+  --color-input: #EAD6DF;
+  --color-ring: #B54075;
+}
+
+:root {
+  color-scheme: light;
+  --radius: 1rem;
+  --pinkbox-background: #FFFDF9;
+  --pinkbox-foreground: #341A27;
+  --pinkbox-primary: #B54075;
+  --pinkbox-primary-glow: #E480A7;
+  --pinkbox-secondary: #FFE7F1;
+  --pinkbox-muted: #FAF2EC;
+  --pinkbox-muted-foreground: #77626B;
+  --pinkbox-cream: #FDF4E7;
+  --pinkbox-mint: #97E4C2;
+  --pinkbox-border: #EAD6DF;
+}
+
+body {
+  background: var(--pinkbox-background);
+  color: var(--pinkbox-foreground);
+  font-family: \"Manrope\", ui-sans-serif, system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: \"Fraunces\", Georgia, serif;
+}
+
+/* Product pack photos remain fully visible; editorial and hero images can use cover crops. */
+.pb-product-image img,
+.pb-shop-product-image img,
+[data-product-image] img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
