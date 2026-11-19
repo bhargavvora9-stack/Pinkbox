@@ -1,19 +1,19 @@
 /* Pink Box ZIP reference design system: Fraunces + Manrope, rose, cream and mint. */
 :root{
-  --pinkbox-background:#FFFDF9;
-  --pinkbox-foreground:#341A27;
-  --pinkbox-primary:#B54075;
-  --pinkbox-primary-glow:#E480A7;
-  --pinkbox-secondary:#FFE7F1;
-  --pinkbox-secondary-foreground:#70485B;
-  --pinkbox-muted:#FAF2EC;
-  --pinkbox-muted-foreground:#77626B;
-  --pinkbox-cream:#FDF4E7;
-  --pinkbox-mint:#97E4C2;
-  --pinkbox-border:#EAD6DF;
-  --pinkbox-radius:1rem;
-  --pinkbox-gradient:linear-gradient(135deg,#B54075 0%,#E480A7 100%);
-  --pinkbox-gradient-soft:linear-gradient(160deg,#FBEAF1 0%,#FDF4E7 100%);
+  --pinkbox-background:var(--background);
+  --pinkbox-foreground:var(--foreground);
+  --pinkbox-primary:var(--primary);
+  --pinkbox-primary-glow:var(--primary-glow);
+  --pinkbox-secondary:var(--secondary);
+  --pinkbox-secondary-foreground:var(--secondary-foreground);
+  --pinkbox-muted:var(--muted);
+  --pinkbox-muted-foreground:var(--muted-foreground);
+  --pinkbox-cream:var(--cream);
+  --pinkbox-mint:var(--accent);
+  --pinkbox-border:var(--border);
+  --pinkbox-radius:var(--radius);
+  --pinkbox-gradient:var(--gradient-brand);
+  --pinkbox-gradient-soft:var(--gradient-soft);
 }
 html,body{font-family:"Manrope",ui-sans-serif,system-ui,sans-serif!important;color:var(--pinkbox-foreground)}
 body{background:var(--pinkbox-background)}
