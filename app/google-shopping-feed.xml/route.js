@@ -35,6 +35,7 @@ export async function GET() {
     .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
+    .like('sku', 'MDH-%')
     .gt('price', 0)
     .order('created_at', { ascending: false });
 
@@ -73,7 +74,7 @@ export async function GET() {
   }
 
   const items = (products || []).map((p) => {
-    const image = imageMap.get(p.id)?.image_url;
+    const image = imageMap.get(p.id)?.image_url || (p.sku?.startsWith('MDH-') ? `${base}/catalog-products/${p.sku.toLowerCase()}.webp` : '');
     if (!image) return '';
 
     const description = p.short_description || p.description || p.title;
