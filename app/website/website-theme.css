@@ -1,90 +1,89 @@
-/* PinkBox Admin theme — soft blush surfaces, warm typography and responsive navigation. */
-.website-admin{
-  --pb-bg:#fff9f7;
-  --pb-sidebar:#fff;
-  --pb-surface:#fff;
-  --pb-surface-2:#fff5f4;
-  --pb-border:#f0e1e1;
-  --pb-text:#654b50;
-  --pb-muted:#967f83;
-  --pb-pink:#cb7188;
-  background:radial-gradient(circle at 88% 0%,rgba(220,151,167,.12),transparent 32%),var(--pb-bg)!important;
-  color:var(--pb-text)!important;
-  font-size:14px;
-  line-height:1.5;
+/* PinkBox Admin — light blush/cream design language from the supplied ZIP. */
+.website-admin {
+  --admin-bg: var(--color-background);
+  --admin-surface: var(--color-card);
+  --admin-border: var(--color-border);
+  --admin-ink: var(--color-foreground);
+  --admin-muted: var(--color-muted-foreground);
+  --admin-pink: var(--color-primary);
+  background: linear-gradient(145deg, oklch(0.995 0.006 60), oklch(0.98 0.018 350)) !important;
+  color: var(--admin-ink) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 14px;
+  line-height: 1.5;
 }
-.website-admin .glass-sidebar{
-  background:#fff!important;
-  color:var(--pb-text)!important;
-  border-color:var(--pb-border)!important;
-  box-shadow:8px 0 28px rgba(102,71,77,.035);
+.website-admin .glass-sidebar {
+  width: 15.5rem;
+  background: rgba(255,255,255,.94) !important;
+  color: var(--admin-ink) !important;
+  border-color: var(--admin-border) !important;
+  box-shadow: 8px 0 28px oklch(0.35 0.04 350 / .035);
 }
-.website-admin header{
-  background:rgba(255,255,255,.94)!important;
-  border-color:var(--pb-border)!important;
-  color:var(--pb-text)!important;
-  box-shadow:0 3px 18px rgba(102,71,77,.04);
+.website-admin header {
+  background: rgba(255,255,255,.94) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-ink) !important;
+  box-shadow: 0 3px 18px oklch(0.35 0.04 350 / .045);
 }
-.website-admin main{background:transparent!important;color:var(--pb-text)!important}
-.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6{color:#684b52!important}
-.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li{color:inherit}
-.website-admin .text-white{color:#fff!important}
-.website-admin .text-black,.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600{color:#624b50!important}
-.website-admin .text-gray-500{color:#967f83!important}
-.website-admin .text-gray-400{color:#a88f94!important}
-.website-admin .text-gray-300{color:#8e777c!important}
-.website-admin .text-red-700{color:#b63d59!important}
-.website-admin .text-green-700{color:#397c58!important}
-.website-admin .text-amber-600{color:#a56820!important}
-.website-admin .glass-sidebar .text-white,.website-admin header .text-white{color:#684b52!important}
-.website-admin .glass-sidebar .text-gray-300,.website-admin .glass-sidebar .text-gray-400{color:#927b80!important}
-.website-admin .glass-sidebar .text-gray-500{color:#a88f94!important}
-.website-admin .glass-sidebar button:hover,.website-admin .glass-sidebar nav a:hover{color:#a64f68!important;background:#fff1f3!important}
-.website-admin .glass-sidebar nav a[aria-current="page"]{color:#a64f68!important;background:#fdebf0!important;box-shadow:inset 3px 0 0 #d4869b!important}
-.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100{background-color:#fff!important;color:#624b50!important}
-.website-admin [class*="bg-white"]{color:#624b50}
-.website-admin [class~="bg-[#111116]"]{background:#fff!important;color:#624b50!important}
-.website-admin input,.website-admin textarea,.website-admin select{
-  background:#fff!important;color:#624b50!important;
-  border:1px solid #e9d9da!important;border-radius:11px;
+.website-admin main { background: transparent !important; color: var(--admin-ink) !important; }
+.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6 {
+  color: var(--admin-ink) !important;
+  font-family: var(--font-display) !important;
+  letter-spacing: -.015em;
 }
-.website-admin input::placeholder,.website-admin textarea::placeholder{color:#b39da1!important}
-.website-admin select option{background:#fff!important;color:#624b50!important}
-.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus{border-color:#d58a9c!important;box-shadow:0 0 0 3px rgba(213,138,156,.15)!important}
-.website-admin table{width:100%;color:#624b50!important}
-.website-admin thead{background:#fff4f4!important;color:#876c73!important}
-.website-admin thead th{color:#876c73!important}
-.website-admin tbody{background:#fff!important}
-.website-admin tbody tr{border-color:#f0e3e2!important}
-.website-admin tbody tr:hover{background:#fff9f8!important}
-.website-admin td{color:#624b50!important}
-.website-admin .border,.website-admin .border-gray-200,.website-admin .border-gray-300,.website-admin .border-gray-100{border-color:#eddddd!important}
-.website-admin [class*="border-gray"]{border-color:#eddddd!important}
-.website-admin .fixed.inset-0{background:rgba(67,42,49,.34)!important;backdrop-filter:blur(6px)}
-.website-admin .fixed.inset-0>div,.website-admin [role=dialog]{background:#fff!important;border:1px solid #eddcde!important;box-shadow:0 24px 80px rgba(87,57,66,.18)!important;color:#624b50!important}
-.website-admin nav a[aria-current="page"]{background:#fdebf0!important;color:#a64f68!important}
-.website-admin ::-webkit-scrollbar{width:7px;height:7px}
-.website-admin ::-webkit-scrollbar-track{background:transparent}
-.website-admin ::-webkit-scrollbar-thumb{background:rgba(185,126,141,.28);border-radius:99px}
-.website-admin ::-webkit-scrollbar-thumb:hover{background:rgba(185,126,141,.5)}
-.website-admin .text-xs{font-size:12px!important;line-height:1.45!important}
-.website-admin .text-sm{font-size:13px!important;line-height:1.5!important}
-.website-admin .text-base{font-size:14px!important}
-.website-admin label{font-size:13px!important;line-height:1.45!important}
-.website-admin button,.website-admin input,.website-admin textarea,.website-admin select{font-size:13px!important;line-height:1.4}
-.website-admin main p{font-size:13px;line-height:1.55}
-.website-admin main h1{font-size:clamp(1.5rem,2.4vw,2rem)!important;line-height:1.2!important}
-.website-admin main h2{font-size:clamp(1.25rem,2vw,1.6rem)!important;line-height:1.25!important}
-.website-admin main h3{font-size:clamp(1.05rem,1.6vw,1.3rem)!important;line-height:1.3!important}
-.website-admin table{font-size:13px!important}
-.website-admin thead th{font-size:12px!important;font-weight:700!important;padding:11px 12px!important;line-height:1.3!important}
-.website-admin tbody td{font-size:13px!important;padding:11px 12px!important;line-height:1.4!important}
-.website-admin .glass-sidebar nav a{font-size:13px!important;line-height:1.35!important}
-.website-admin header{font-size:13px}
-@media(max-width:767px){
-  .website-admin{font-size:13px;background:#fff9f7!important}
-  .website-admin main{padding:1rem!important}
-  .website-admin table{font-size:12px!important}
-  .website-admin thead th,.website-admin tbody td{padding:10px 11px!important}
-  .website-admin [class~="bg-[#111116]"]{width:min(86vw,330px)}
+.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li { color: inherit; }
+.website-admin .text-white { color: var(--admin-ink) !important; }
+.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600,.website-admin .text-black { color: var(--admin-ink) !important; }
+.website-admin .text-gray-500,.website-admin .text-gray-400,.website-admin .text-gray-300 { color: var(--admin-muted) !important; }
+.website-admin .text-pink-300,.website-admin .text-pink-400,.website-admin .text-pink-500 { color: var(--color-primary) !important; }
+.website-admin .text-red-700,.website-admin .text-red-600 { color: #b63d59 !important; }
+.website-admin .text-green-700,.website-admin .text-green-600 { color: #397c58 !important; }
+.website-admin .text-amber-600,.website-admin .text-orange-600 { color: #a56820 !important; }
+.website-admin .glass-sidebar .text-white,.website-admin header .text-white { color: var(--admin-ink) !important; }
+.website-admin .glass-sidebar .text-gray-300,.website-admin .glass-sidebar .text-gray-400,.website-admin .glass-sidebar .text-gray-500 { color: var(--admin-muted) !important; }
+.website-admin .glass-sidebar button:hover,.website-admin .glass-sidebar nav a:hover { color: var(--color-primary) !important; background: var(--color-secondary) !important; }
+.website-admin .glass-sidebar nav a[aria-current="page"],.website-admin nav a[aria-current="page"] {
+  color: var(--color-secondary-foreground) !important;
+  background: var(--color-secondary) !important;
+  box-shadow: inset 3px 0 0 var(--color-primary) !important;
+}
+.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100 { background-color: #fff !important; color: var(--admin-ink) !important; }
+.website-admin [class~="bg-[#111116]"],.website-admin [class~="bg-black/20"],.website-admin [class~="bg-black/30"],.website-admin [class~="bg-white/5"] { background: #fff !important; color: var(--admin-ink) !important; }
+.website-admin .border-white\/10,.website-admin [class*="border-gray"],.website-admin [class*="border-white"] { border-color: var(--admin-border) !important; }
+.website-admin input,.website-admin textarea,.website-admin select {
+  background: var(--color-card) !important;
+  color: var(--admin-ink) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 11px;
+}
+.website-admin input::placeholder,.website-admin textarea::placeholder { color: #a48e94 !important; }
+.website-admin select option { background: #fff !important; color: var(--admin-ink) !important; }
+.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 16%, transparent) !important; outline: none; }
+.website-admin table { width: 100%; color: var(--admin-ink) !important; font-size: 13px !important; }
+.website-admin thead { background: var(--color-secondary) !important; color: var(--color-secondary-foreground) !important; }
+.website-admin thead th { color: var(--color-secondary-foreground) !important; font-size: 12px !important; font-weight: 700 !important; padding: 11px 12px !important; line-height: 1.3 !important; }
+.website-admin tbody { background: #fff !important; }
+.website-admin tbody tr { border-color: var(--admin-border) !important; }
+.website-admin tbody tr:hover { background: color-mix(in oklch, var(--color-secondary) 45%, white) !important; }
+.website-admin tbody td { color: var(--admin-ink) !important; font-size: 13px !important; padding: 11px 12px !important; line-height: 1.4 !important; }
+.website-admin button,.website-admin input,.website-admin textarea,.website-admin select { font-family: var(--font-sans) !important; font-size: 13px !important; line-height: 1.4; }
+.website-admin label { font-size: 13px !important; line-height: 1.45 !important; }
+.website-admin main p { font-size: 13px; line-height: 1.55; }
+.website-admin main h1 { font-size: clamp(1.5rem,2.4vw,2rem) !important; line-height: 1.2 !important; }
+.website-admin main h2 { font-size: clamp(1.25rem,2vw,1.6rem) !important; line-height: 1.25 !important; }
+.website-admin main h3 { font-size: clamp(1.05rem,1.6vw,1.3rem) !important; line-height: 1.3 !important; }
+.website-admin .glass-sidebar nav a { font-size: 13px !important; line-height: 1.35 !important; }
+.website-admin .fixed.inset-0 { background: rgba(67,42,49,.34) !important; backdrop-filter: blur(6px); }
+.website-admin [role="dialog"] { background: #fff !important; border: 1px solid var(--admin-border) !important; box-shadow: 0 24px 80px oklch(0.35 0.04 350 / .18) !important; color: var(--admin-ink) !important; }
+.website-admin ::-webkit-scrollbar { width: 7px; height: 7px; }
+.website-admin ::-webkit-scrollbar-track { background: transparent; }
+.website-admin ::-webkit-scrollbar-thumb { background: oklch(0.65 0.07 355 / .28); border-radius: 99px; }
+.website-admin ::-webkit-scrollbar-thumb:hover { background: oklch(0.65 0.07 355 / .5); }
+@media (max-width: 1023px) { .website-admin .glass-sidebar { width: 14rem; } }
+@media (max-width: 767px) {
+  .website-admin { font-size: 13px; }
+  .website-admin main { padding: 1rem !important; }
+  .website-admin table { font-size: 12px !important; }
+  .website-admin thead th,.website-admin tbody td { padding: 10px 11px !important; }
+  .website-admin [class~="bg-[#111116]"] { width: min(86vw,330px); }
 }
