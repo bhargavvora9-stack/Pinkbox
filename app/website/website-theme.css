@@ -1,69 +1,90 @@
-/* PinkBox Website Admin Theme */
-.website-admin{--pb-bg:#070b16;--pb-sidebar:#0a1020;--pb-surface:#11182b;--pb-surface-2:#151e34;--pb-surface-3:#1b2742;--pb-border:rgba(255,255,255,.10);--pb-border-strong:rgba(255,255,255,.18);--pb-text:#f4f6ff;--pb-muted:#9aa7c6;--pb-pink:#ec3f9d;--pb-pink-2:#ff5bb2;--pb-pink-soft:rgba(236,63,157,.14);background:radial-gradient(circle at 80% 0%,rgba(236,63,157,.08),transparent 32%),var(--pb-bg)!important;color:var(--pb-text)!important}
-.website-admin .glass-sidebar{background:linear-gradient(180deg,#0b1224 0%,#080d19 100%)!important;border-color:var(--pb-border)!important}
-.website-admin header{background:rgba(7,11,22,.96)!important;border-color:var(--pb-border)!important}
+/* PinkBox Admin theme — soft blush surfaces, warm typography and responsive navigation. */
+.website-admin{
+  --pb-bg:#fff9f7;
+  --pb-sidebar:#fff;
+  --pb-surface:#fff;
+  --pb-surface-2:#fff5f4;
+  --pb-border:#f0e1e1;
+  --pb-text:#654b50;
+  --pb-muted:#967f83;
+  --pb-pink:#cb7188;
+  background:radial-gradient(circle at 88% 0%,rgba(220,151,167,.12),transparent 32%),var(--pb-bg)!important;
+  color:var(--pb-text)!important;
+  font-size:14px;
+  line-height:1.5;
+}
+.website-admin .glass-sidebar{
+  background:#fff!important;
+  color:var(--pb-text)!important;
+  border-color:var(--pb-border)!important;
+  box-shadow:8px 0 28px rgba(102,71,77,.035);
+}
+.website-admin header{
+  background:rgba(255,255,255,.94)!important;
+  border-color:var(--pb-border)!important;
+  color:var(--pb-text)!important;
+  box-shadow:0 3px 18px rgba(102,71,77,.04);
+}
 .website-admin main{background:transparent!important;color:var(--pb-text)!important}
-.website-admin main>*{color:inherit}
-.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6{color:#f8f9ff!important}
-.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li{color:#e5e9f5!important}
+.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6{color:#684b52!important}
+.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li{color:inherit}
 .website-admin .text-white{color:#fff!important}
-.website-admin .text-black,.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600{color:#e5e9f5!important}
-.website-admin .text-gray-500{color:#9aa7c6!important}
-.website-admin .text-gray-400{color:#b0bad0!important}
-.website-admin .text-gray-300{color:#c7d0e4!important}
-.website-admin .text-red-700{color:#ff9aa7!important}
-.website-admin .text-green-700{color:#7ee2a8!important}
-.website-admin .text-amber-600{color:#f6c76f!important}
-.website-admin a{color:#dfe5f4}
-.website-admin button.text-gray-700,.website-admin button.text-gray-800,.website-admin button.text-gray-900{color:#f1f4fb!important}
-.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100{background-color:var(--pb-surface)!important;color:var(--pb-text)!important}
-.website-admin [class*="bg-white"]{color:var(--pb-text)}
-.website-admin input,.website-admin textarea,.website-admin select{background:#151d30!important;color:var(--pb-text)!important;border:1px solid var(--pb-border-strong)!important}
-.website-admin input::placeholder,.website-admin textarea::placeholder{color:#8f9bb7!important}
-.website-admin select option{background:#11182b!important;color:#f4f6ff!important}
-.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus{border-color:rgba(236,63,157,.75)!important;box-shadow:0 0 0 3px rgba(236,63,157,.13)!important}
-.website-admin table{width:100%;color:var(--pb-text)!important}
-.website-admin thead{background:#151e34!important;color:#cdd6e8!important}
-.website-admin thead th{color:#cdd6e8!important}
-.website-admin tbody{background:var(--pb-surface)!important}
-.website-admin tbody tr{border-color:var(--pb-border)!important}
-.website-admin tbody tr:hover{background:rgba(236,63,157,.045)!important}
-.website-admin td{color:#e5e9f5!important}
-.website-admin .border,.website-admin .border-gray-200,.website-admin .border-gray-300,.website-admin .border-gray-100{border-color:var(--pb-border-strong)!important}
-.website-admin [class*="border-gray"]{border-color:var(--pb-border-strong)!important}
-.website-admin .fixed.inset-0{background:rgba(2,5,12,.78)!important;backdrop-filter:blur(7px)}
-.website-admin .fixed.inset-0>div,.website-admin [role=dialog]{background:linear-gradient(180deg,#11192d 0%,#0e1628 100%)!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 24px 80px rgba(0,0,0,.55)!important;color:var(--pb-text)!important}
-.website-admin nav a.bg-white\/10{background:linear-gradient(90deg,rgba(236,63,157,.20),rgba(236,63,157,.07))!important;color:#fff!important;box-shadow:inset 3px 0 0 var(--pb-pink),0 6px 18px rgba(0,0,0,.12)!important}
-.website-admin nav a:hover{color:#fff!important}
+.website-admin .text-black,.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600{color:#624b50!important}
+.website-admin .text-gray-500{color:#967f83!important}
+.website-admin .text-gray-400{color:#a88f94!important}
+.website-admin .text-gray-300{color:#8e777c!important}
+.website-admin .text-red-700{color:#b63d59!important}
+.website-admin .text-green-700{color:#397c58!important}
+.website-admin .text-amber-600{color:#a56820!important}
+.website-admin .glass-sidebar .text-white,.website-admin header .text-white{color:#684b52!important}
+.website-admin .glass-sidebar .text-gray-300,.website-admin .glass-sidebar .text-gray-400{color:#927b80!important}
+.website-admin .glass-sidebar .text-gray-500{color:#a88f94!important}
+.website-admin .glass-sidebar button:hover,.website-admin .glass-sidebar nav a:hover{color:#a64f68!important;background:#fff1f3!important}
+.website-admin .glass-sidebar nav a[aria-current="page"]{color:#a64f68!important;background:#fdebf0!important;box-shadow:inset 3px 0 0 #d4869b!important}
+.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100{background-color:#fff!important;color:#624b50!important}
+.website-admin [class*="bg-white"]{color:#624b50}
+.website-admin [class~="bg-[#111116]"]{background:#fff!important;color:#624b50!important}
+.website-admin input,.website-admin textarea,.website-admin select{
+  background:#fff!important;color:#624b50!important;
+  border:1px solid #e9d9da!important;border-radius:11px;
+}
+.website-admin input::placeholder,.website-admin textarea::placeholder{color:#b39da1!important}
+.website-admin select option{background:#fff!important;color:#624b50!important}
+.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus{border-color:#d58a9c!important;box-shadow:0 0 0 3px rgba(213,138,156,.15)!important}
+.website-admin table{width:100%;color:#624b50!important}
+.website-admin thead{background:#fff4f4!important;color:#876c73!important}
+.website-admin thead th{color:#876c73!important}
+.website-admin tbody{background:#fff!important}
+.website-admin tbody tr{border-color:#f0e3e2!important}
+.website-admin tbody tr:hover{background:#fff9f8!important}
+.website-admin td{color:#624b50!important}
+.website-admin .border,.website-admin .border-gray-200,.website-admin .border-gray-300,.website-admin .border-gray-100{border-color:#eddddd!important}
+.website-admin [class*="border-gray"]{border-color:#eddddd!important}
+.website-admin .fixed.inset-0{background:rgba(67,42,49,.34)!important;backdrop-filter:blur(6px)}
+.website-admin .fixed.inset-0>div,.website-admin [role=dialog]{background:#fff!important;border:1px solid #eddcde!important;box-shadow:0 24px 80px rgba(87,57,66,.18)!important;color:#624b50!important}
+.website-admin nav a[aria-current="page"]{background:#fdebf0!important;color:#a64f68!important}
 .website-admin ::-webkit-scrollbar{width:7px;height:7px}
 .website-admin ::-webkit-scrollbar-track{background:transparent}
-.website-admin ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:99px}
-.website-admin ::-webkit-scrollbar-thumb:hover{background:rgba(236,63,157,.45)}
-@media(max-width:767px){.website-admin{background:var(--pb-bg)!important}.website-admin main{padding:1rem!important}}
-
-
-/* ================= ADMIN READABILITY ================= */
-.website-admin{font-size:14px;line-height:1.5}
-.website-admin .text-xs{font-size:13px!important;line-height:1.45!important}
-.website-admin .text-sm{font-size:14px!important;line-height:1.5!important}
-.website-admin .text-base{font-size:15px!important}
+.website-admin ::-webkit-scrollbar-thumb{background:rgba(185,126,141,.28);border-radius:99px}
+.website-admin ::-webkit-scrollbar-thumb:hover{background:rgba(185,126,141,.5)}
+.website-admin .text-xs{font-size:12px!important;line-height:1.45!important}
+.website-admin .text-sm{font-size:13px!important;line-height:1.5!important}
+.website-admin .text-base{font-size:14px!important}
 .website-admin label{font-size:13px!important;line-height:1.45!important}
-.website-admin button,
-.website-admin input,
-.website-admin textarea,
-.website-admin select{font-size:13px!important;line-height:1.4}
-.website-admin main p{font-size:13.5px;line-height:1.55}
+.website-admin button,.website-admin input,.website-admin textarea,.website-admin select{font-size:13px!important;line-height:1.4}
+.website-admin main p{font-size:13px;line-height:1.55}
 .website-admin main h1{font-size:clamp(1.5rem,2.4vw,2rem)!important;line-height:1.2!important}
 .website-admin main h2{font-size:clamp(1.25rem,2vw,1.6rem)!important;line-height:1.25!important}
 .website-admin main h3{font-size:clamp(1.05rem,1.6vw,1.3rem)!important;line-height:1.3!important}
-.website-admin table{font-size:13.5px!important}
-.website-admin thead th{font-size:12.5px!important;font-weight:700!important;padding:11px 12px!important;line-height:1.3!important}
-.website-admin tbody td{font-size:13.5px!important;padding:11px 12px!important;line-height:1.4!important}
-.website-admin .glass-sidebar nav a{font-size:13.5px!important;line-height:1.35!important}
+.website-admin table{font-size:13px!important}
+.website-admin thead th{font-size:12px!important;font-weight:700!important;padding:11px 12px!important;line-height:1.3!important}
+.website-admin tbody td{font-size:13px!important;padding:11px 12px!important;line-height:1.4!important}
+.website-admin .glass-sidebar nav a{font-size:13px!important;line-height:1.35!important}
 .website-admin header{font-size:13px}
 @media(max-width:767px){
-  .website-admin{font-size:13.5px}
-  .website-admin table{font-size:13px!important}
-  .website-admin thead th{padding:10px 11px!important}
-  .website-admin tbody td{padding:10px 11px!important}
+  .website-admin{font-size:13px;background:#fff9f7!important}
+  .website-admin main{padding:1rem!important}
+  .website-admin table{font-size:12px!important}
+  .website-admin thead th,.website-admin tbody td{padding:10px 11px!important}
+  .website-admin [class~="bg-[#111116]"]{width:min(86vw,330px)}
 }
