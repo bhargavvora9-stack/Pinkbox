@@ -1,90 +1,117 @@
-/* PinkBox Admin theme — soft blush surfaces, warm typography and responsive navigation. */
-.website-admin{
-  --pb-bg:#FFFDF9;
-  --pb-sidebar:#fff;
-  --pb-surface:#fff;
-  --pb-surface-2:#FFE7F1;
-  --pb-border:#EAD6DF;
-  --pb-text:#341A27;
-  --pb-muted:#77626B;
-  --pb-pink:#B54075;
-  background:radial-gradient(circle at 88% 0%,rgba(228,128,167,.12),transparent 32%),var(--pb-bg)!important;
-  color:var(--pb-text)!important;
-  font-size:14px;
-  line-height:1.5;
+/* Admin surfaces follow the light source ZIP theme and its exact semantic tokens. */
+.website-admin {
+  min-height: 100vh;
+  color: var(--foreground);
+  background: color-mix(in oklch, var(--background) 78%, var(--secondary)) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 14px;
+  line-height: 1.5;
 }
-.website-admin .glass-sidebar{
-  background:#fff!important;
-  color:var(--pb-text)!important;
-  border-color:var(--pb-border)!important;
-  box-shadow:8px 0 28px rgba(52,26,39,.035);
+.website-admin header {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 1px 0 var(--border), 0 8px 22px oklch(0.26 0.045 350 / .035);
 }
-.website-admin header{
-  background:rgba(255,255,255,.94)!important;
-  border-color:var(--pb-border)!important;
-  color:var(--pb-text)!important;
-  box-shadow:0 3px 18px rgba(102,71,77,.04);
+.website-admin .pb-admin-brand-mark {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--gradient-brand);
+  color: var(--primary-foreground) !important;
 }
-.website-admin main{background:transparent!important;color:var(--pb-text)!important}
-.website-admin h1,.website-admin h2,.website-admin h3,.website-admin h4,.website-admin h5,.website-admin h6{color:#341A27!important}
-.website-admin p,.website-admin label,.website-admin span,.website-admin th,.website-admin td,.website-admin li{color:inherit}
-.website-admin .text-white{color:#fff!important}
-.website-admin .text-black,.website-admin .text-gray-900,.website-admin .text-gray-800,.website-admin .text-gray-700,.website-admin .text-gray-600{color:#5A3547!important}
-.website-admin .text-gray-500{color:#77626B!important}
-.website-admin .text-gray-400{color:#987F8B!important}
-.website-admin .text-gray-300{color:#8F6F7D!important}
-.website-admin .text-red-700{color:#b63d59!important}
-.website-admin .text-green-700{color:#397c58!important}
-.website-admin .text-amber-600{color:#a56820!important}
-.website-admin .glass-sidebar .text-white,.website-admin header .text-white{color:#341A27!important}
-.website-admin .glass-sidebar .text-gray-300,.website-admin .glass-sidebar .text-gray-400{color:#806474!important}
-.website-admin .glass-sidebar .text-gray-500{color:#987F8B!important}
-.website-admin .glass-sidebar button:hover,.website-admin .glass-sidebar nav a:hover{color:#B54075!important;background:#FFE7F1!important}
-.website-admin .glass-sidebar nav a[aria-current="page"]{color:#B54075!important;background:#FBEAF1!important;box-shadow:inset 3px 0 0 #B54075!important}
-.website-admin .bg-white,.website-admin .bg-gray-50,.website-admin .bg-gray-100,.website-admin .bg-slate-50,.website-admin .bg-slate-100{background-color:#fff!important;color:#5A3547!important}
-.website-admin [class*="bg-white"]{color:#5A3547}
-.website-admin [class~="bg-[#111116]"]{background:#fff!important;color:#5A3547!important}
-.website-admin input,.website-admin textarea,.website-admin select{
-  background:#fff!important;color:#5A3547!important;
-  border:1px solid #EAD6DF!important;border-radius:11px;
+.website-admin main {
+  min-width: 0;
+  color: var(--foreground) !important;
+  background: transparent !important;
 }
-.website-admin input::placeholder,.website-admin textarea::placeholder{color:#B5A0AA!important}
-.website-admin select option{background:#fff!important;color:#5A3547!important}
-.website-admin input:focus,.website-admin textarea:focus,.website-admin select:focus{border-color:#E480A7!important;box-shadow:0 0 0 3px rgba(213,138,156,.15)!important}
-.website-admin table{width:100%;color:#5A3547!important}
-.website-admin thead{background:#FBEAF1!important;color:#765B69!important}
-.website-admin thead th{color:#765B69!important}
-.website-admin tbody{background:#fff!important}
-.website-admin tbody tr{border-color:#EAD6DF!important}
-.website-admin tbody tr:hover{background:#FFFAFC!important}
-.website-admin td{color:#5A3547!important}
-.website-admin .border,.website-admin .border-gray-200,.website-admin .border-gray-300,.website-admin .border-gray-100{border-color:#EAD6DF!important}
-.website-admin [class*="border-gray"]{border-color:#EAD6DF!important}
-.website-admin .fixed.inset-0{background:rgba(52,26,39,.34)!important;backdrop-filter:blur(6px)}
-.website-admin .fixed.inset-0>div,.website-admin [role=dialog]{background:#fff!important;border:1px solid #EAD6DF!important;box-shadow:0 24px 80px rgba(52,26,39,.18)!important;color:#5A3547!important}
-.website-admin nav a[aria-current="page"]{background:#FBEAF1!important;color:#B54075!important}
-.website-admin ::-webkit-scrollbar{width:7px;height:7px}
-.website-admin ::-webkit-scrollbar-track{background:transparent}
-.website-admin ::-webkit-scrollbar-thumb{background:rgba(181,64,117,.25);border-radius:99px}
-.website-admin ::-webkit-scrollbar-thumb:hover{background:rgba(181,64,117,.45)}
-.website-admin .text-xs{font-size:12px!important;line-height:1.45!important}
-.website-admin .text-sm{font-size:13px!important;line-height:1.5!important}
-.website-admin .text-base{font-size:14px!important}
-.website-admin label{font-size:13px!important;line-height:1.45!important}
-.website-admin button,.website-admin input,.website-admin textarea,.website-admin select{font-size:13px!important;line-height:1.4}
-.website-admin main p{font-size:13px;line-height:1.55}
-.website-admin main h1{font-size:clamp(1.5rem,2.4vw,2rem)!important;line-height:1.2!important}
-.website-admin main h2{font-size:clamp(1.25rem,2vw,1.6rem)!important;line-height:1.25!important}
-.website-admin main h3{font-size:clamp(1.05rem,1.6vw,1.3rem)!important;line-height:1.3!important}
-.website-admin table{font-size:13px!important}
-.website-admin thead th{font-size:12px!important;font-weight:700!important;padding:11px 12px!important;line-height:1.3!important}
-.website-admin tbody td{font-size:13px!important;padding:11px 12px!important;line-height:1.4!important}
-.website-admin .glass-sidebar nav a{font-size:13px!important;line-height:1.35!important}
-.website-admin header{font-size:13px}
-@media(max-width:767px){
-  .website-admin{font-size:13px;background:#FFFDF9!important}
-  .website-admin main{padding:1rem!important}
-  .website-admin table{font-size:12px!important}
-  .website-admin thead th,.website-admin tbody td{padding:10px 11px!important}
-  .website-admin [class~="bg-[#111116]"]{width:min(86vw,330px)}
+.website-admin main h1,
+.website-admin main h2,
+.website-admin main h3,
+.website-admin main h4,
+.website-admin main h5,
+.website-admin main h6 {
+  color: var(--foreground) !important;
+  font-family: var(--font-display) !important;
+  letter-spacing: -.025em;
+}
+.website-admin main p { color: var(--muted-foreground); }
+.website-admin nav { color: var(--muted-foreground); }
+.website-admin nav a {
+  color: var(--muted-foreground) !important;
+  border-radius: var(--radius-xl);
+  transition: color .18s ease, background-color .18s ease;
+}
+.website-admin nav a:hover {
+  color: var(--foreground) !important;
+  background: var(--secondary) !important;
+}
+.website-admin nav a[aria-current="page"] {
+  color: var(--primary) !important;
+  background: color-mix(in oklch, var(--primary) 11%, var(--background)) !important;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.website-admin nav button {
+  color: var(--muted-foreground) !important;
+}
+.website-admin nav button:hover {
+  color: var(--primary) !important;
+  background: var(--secondary) !important;
+}
+.website-admin .border-white\/10 { border-color: var(--border) !important; }
+.website-admin .bg-white\/5,
+.website-admin .bg-white\/10 { background: var(--secondary) !important; }
+.website-admin [class~="bg-[#111116]"] {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+}
+.website-admin .text-white { color: var(--primary-foreground); }
+.website-admin input,
+.website-admin textarea,
+.website-admin select {
+  min-width: 0;
+  color: var(--foreground) !important;
+  background: var(--background) !important;
+  border: 1px solid var(--input) !important;
+  border-radius: calc(var(--radius) - 2px);
+  font-family: var(--font-sans) !important;
+}
+.website-admin input::placeholder,
+.website-admin textarea::placeholder { color: var(--muted-foreground) !important; opacity: .75; }
+.website-admin input:focus,
+.website-admin textarea:focus,
+.website-admin select:focus {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 16%, transparent) !important;
+  outline: none;
+}
+.website-admin table { width: 100%; color: var(--foreground); }
+.website-admin thead { background: color-mix(in oklch, var(--secondary) 70%, var(--background)); }
+.website-admin thead th {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.website-admin tbody tr { border-color: var(--border) !important; }
+.website-admin tbody tr:hover { background: color-mix(in oklch, var(--secondary) 45%, var(--background)); }
+.website-admin .rounded-2xl,
+.website-admin .rounded-3xl { border-radius: calc(var(--radius) + 4px); }
+.website-admin .fixed.inset-0 { background: oklch(0.26 0.045 350 / .34) !important; backdrop-filter: blur(6px); }
+.website-admin .fixed.inset-0 > div,
+.website-admin [role="dialog"] {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 24px 80px oklch(0.26 0.045 350 / .18) !important;
+}
+.website-admin button { font-family: var(--font-sans) !important; }
+.website-admin ::-webkit-scrollbar { width: 7px; height: 7px; }
+.website-admin ::-webkit-scrollbar-track { background: transparent; }
+.website-admin ::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--primary) 28%, transparent); border-radius: 99px; }
+@media(max-width:767px) {
+  .website-admin main { padding: 1rem !important; }
+  .website-admin table { font-size: 12px !important; }
+  .website-admin thead th, .website-admin tbody td { padding: 10px 11px !important; white-space: nowrap; }
 }
