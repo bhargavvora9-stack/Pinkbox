@@ -24,7 +24,7 @@ const ABOUT_POINTS=['Made in an ISO-certified, hygienic facility','Lab-tested fo
 const EXAMPLES=['Heavy flow, overnight protection','Sensitive skin, rash-free','Light days, thin and discreet'];
 const money = n => '₹' + Number(n || 0).toLocaleString('en-IN',{maximumFractionDigits:0});
 
-function ZipHeader(){
+export function ZipHeader(){
  const [open,setOpen]=useState(false);
  return <header className="sticky top-0 z-50 w-full">
   <div className="overflow-hidden bg-gradient-brand text-primary-foreground"><div className="flex w-max animate-marquee gap-12 py-2 text-xs font-medium tracking-wide whitespace-nowrap">
@@ -90,7 +90,7 @@ function ZipTrustBadges(){
  </div></section>;
 }
 
-function ZipProductCard({product}){
+export function ZipProductCard({product}){
  const price=Number(product.price||0),mrp=Number(product.compare_at_price||0);
  const image=product.image_url||product.images?.[0]?.image_url;
  const off=mrp>price?Math.round((1-price/mrp)*100):0;
@@ -106,7 +106,7 @@ function ZipProductCard({product}){
  </div>;
 }
 
-function ZipProductGrid({products}){
+export function ZipProductGrid({products}){
  if(!products.length)return <div className="py-20 text-center"><h3 className="text-xl font-semibold text-foreground">No products found</h3><p className="mt-2 text-muted-foreground">Tell me what you want to sell and I&apos;ll add it to your store.</p></div>;
  return <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{products.map(p=><ZipProductCard key={p.id} product={p}/>)}</div>;
 }
@@ -181,7 +181,7 @@ function ZipNewsletter(){
  </div></section>;
 }
 
-function ZipFooter(){
+export function ZipFooter(){
  const links=[
   {title:'Shop',items:[['All Products','/shop'],['Your Cart','/cart'],['Track Order','/track-order'],['Bulk Orders','/#contact']]},
   {title:'Company',items:[['About Us','/about'],['Blog','/blog'],['FAQ','/faq'],['Contact','/#contact']]},
