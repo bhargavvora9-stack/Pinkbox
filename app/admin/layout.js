@@ -6,8 +6,6 @@ import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
 import AdminExcelTableFilters from '@/components/AdminExcelTableFilters';
 import { getWebsiteRolePermissions } from '@/lib/website-admin';
-import '../website/website-theme.css';
-import '../responsive-layout.css';
 
 export const metadata = { title: 'PinkBox Admin', robots: { index: false, follow: false, nocache: true } };
 export const dynamic = 'force-dynamic';
