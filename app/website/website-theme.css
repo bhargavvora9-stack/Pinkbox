@@ -1,14 +1,14 @@
 /* PinkBox Admin theme — soft blush surfaces, warm typography and responsive navigation. */
 .website-admin{
-  --pb-bg:#fff9f7;
+  --pb-bg:#FFFDF9;
   --pb-sidebar:#fff;
   --pb-surface:#fff;
-  --pb-surface-2:#fff5f4;
-  --pb-border:#f0e1e1;
-  --pb-text:#654b50;
-  --pb-muted:#967f83;
-  --pb-pink:#cb7188;
-  background:radial-gradient(circle at 88% 0%,rgba(220,151,167,.12),transparent 32%),var(--pb-bg)!important;
+  --pb-surface-2:#FFE7F1;
+  --pb-border:#EAD6DF;
+  --pb-text:#341A27;
+  --pb-muted:#77626B;
+  --pb-pink:#B54075;
+  background:radial-gradient(circle at 88% 0%,rgba(228,128,167,.12),transparent 32%),var(--pb-bg)!important;
   color:var(--pb-text)!important;
   font-size:14px;
   line-height:1.5;
@@ -17,7 +17,7 @@
   background:#fff!important;
   color:var(--pb-text)!important;
   border-color:var(--pb-border)!important;
-  box-shadow:8px 0 28px rgba(102,71,77,.035);
+  box-shadow:8px 0 28px rgba(52,26,39,.035);
 }
 .website-admin header{
   background:rgba(255,255,255,.94)!important;
@@ -82,7 +82,7 @@
 .website-admin .glass-sidebar nav a{font-size:13px!important;line-height:1.35!important}
 .website-admin header{font-size:13px}
 @media(max-width:767px){
-  .website-admin{font-size:13px;background:#fff9f7!important}
+  .website-admin{font-size:13px;background:#FFFDF9!important}
   .website-admin main{padding:1rem!important}
   .website-admin table{font-size:12px!important}
   .website-admin thead th,.website-admin tbody td{padding:10px 11px!important}
