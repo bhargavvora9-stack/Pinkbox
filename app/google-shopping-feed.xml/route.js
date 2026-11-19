@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase-admin';
+import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,10 +13,16 @@ function esc(value) {
     .replace(/'/g, '&apos;');
 }
 
+function xmlError(status) {
+  return new Response('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>', {
+    status,
+    headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}
+
 export async function GET() {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app').replace(/\/$/, '');
   const db = createAdminClient();
-
   const { data: settings, error: settingsError } = await db
     .from('website_settings')
     .select('company_id')
@@ -23,40 +30,38 @@ export async function GET() {
     .eq('status', 'active')
     .maybeSingle();
 
-  if (settingsError || !settings) {
-    return new Response('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>', {
-      status: 503,
-      headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' },
-    });
-  }
+  if (settingsError || !settings) return xmlError(settingsError ? 500 : 503);
 
-  const { data: products, error } = await db
+  const { data: products, error: productsError } = await db
     .from('website_products')
-    .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,allow_backorder,is_active')
+    .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
     .like('sku', 'MDH-%')
     .gt('price', 0)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    return new Response('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>', {
-      status: 500,
-      headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' },
-    });
-  }
+  if (productsError) return xmlError(500);
 
-  const productIds = (products || []).map((p) => p.id);
-  const [{ data: images }, { data: mappings }, { data: categories }] = await Promise.all([
+  const productIds = (products || []).map((product) => product.id);
+  const [{ data: images, error: imagesError }, { data: mappings, error: mappingsError }, { data: categories, error: categoriesError }, { data: variants, error: variantsError }] = await Promise.all([
     productIds.length
       ? db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id', settings.company_id).in('product_id', productIds).order('sort_order')
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
     productIds.length
       ? db.from('website_product_categories').select('product_id,category_id').eq('company_id', settings.company_id).in('product_id', productIds)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
     db.from('website_categories').select('id,name').eq('company_id', settings.company_id).eq('is_active', true),
+    productIds.length
+      ? db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id', settings.company_id).in('product_id', productIds).eq('is_active', true)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
+  if (imagesError || mappingsError || categoriesError || variantsError) return xmlError(500);
+
+  const availableIds = new Set(
+    filterAvailableProducts(products || [], variants || []).map((product) => product.id)
+  );
   const imageMap = new Map();
   for (const image of images || []) {
     if (!image.image_url) continue;
@@ -66,33 +71,31 @@ export async function GET() {
     }
   }
 
-  const categoryMap = new Map((categories || []).map((c) => [c.id, c.name]));
+  const categoryMap = new Map((categories || []).map((category) => [category.id, category.name]));
   const productCategoryMap = new Map();
   for (const mapping of mappings || []) {
     const name = categoryMap.get(mapping.category_id);
     if (name && !productCategoryMap.has(mapping.product_id)) productCategoryMap.set(mapping.product_id, name);
   }
 
-  const items = (products || []).map((p) => {
-    const image = imageMap.get(p.id)?.image_url || (p.sku?.startsWith('MDH-') ? `${base}/catalog-products/${p.sku.toLowerCase()}.webp` : '');
+  const items = (products || []).map((product) => {
+    const image = imageMap.get(product.id)?.image_url || (product.sku?.startsWith('MDH-') ? `${base}/catalog-products/${product.sku.toLowerCase()}.webp` : '');
     if (!image) return '';
-
-    const description = p.short_description || p.description || p.title;
-    const availability = Number(p.stock_quantity || 0) > 0 || p.allow_backorder ? 'in stock' : 'out of stock';
-    const link = base + '/products/' + encodeURIComponent(p.slug);
-
+    const description = product.short_description || product.description || product.title;
+    const availability = availableIds.has(product.id) ? 'in stock' : 'out of stock';
+    const link = base + '/products/' + encodeURIComponent(product.slug);
     return [
       '<item>',
-      '<g:id>', esc(p.sku || p.id), '</g:id>',
-      '<g:title>', esc(p.title), '</g:title>',
+      '<g:id>', esc(product.sku || product.id), '</g:id>',
+      '<g:title>', esc(product.title), '</g:title>',
       '<g:description>', esc(description), '</g:description>',
       '<g:link>', esc(link), '</g:link>',
       '<g:image_link>', esc(image), '</g:image_link>',
       '<g:availability>', availability, '</g:availability>',
       '<g:condition>new</g:condition>',
-      '<g:price>', esc(Number(p.price).toFixed(2)), ' INR</g:price>',
-      p.brand ? '<g:brand>' + esc(p.brand) + '</g:brand>' : '',
-      productCategoryMap.get(p.id) ? '<g:product_type>' + esc(productCategoryMap.get(p.id)) + '</g:product_type>' : '',
+      '<g:price>', esc(Number(product.price).toFixed(2)), ' INR</g:price>',
+      product.brand ? '<g:brand>' + esc(product.brand) + '</g:brand>' : '',
+      productCategoryMap.get(product.id) ? '<g:product_type>' + esc(productCategoryMap.get(product.id)) + '</g:product_type>' : '',
       '</item>',
     ].join('');
   }).filter(Boolean).join('');
