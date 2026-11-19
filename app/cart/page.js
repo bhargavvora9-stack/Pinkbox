@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import ZipReferenceHeader from '@/components/ZipReferenceHeader';
+import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -319,47 +321,49 @@ export default function CartPage() {
     }
   }
 
-  if (loading) return <main className="min-h-screen bg-[#fffaf7] p-8 text-[#6a4b4e]">Loading your cart…</main>;
+  if (loading) return <main className="min-h-screen bg-background p-8 text-foreground">Loading your cart…</main>;
 
   return (
-    <main className="min-h-screen bg-[#fffaf7] px-5 py-10 text-[#6a4b4e]">
+    <div className="min-h-screen bg-background">
+      <ZipReferenceHeader />
+      <main className="min-h-screen bg-background px-5 py-10 text-foreground">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="font-semibold text-[#c36f83]">← PinkBox</Link>
+          <Link href="/" className="font-semibold text-primary">← PinkBox</Link>
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-[#846f70] sm:inline">Secure checkout</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">Secure checkout</span>
             <Link href="/account" className="text-sm font-semibold">Account</Link>
           </div>
         </div>
 
         <header className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[.22em] text-[#c36f83]">Your selection</p>
+          <p className="text-xs font-bold uppercase tracking-[.22em] text-primary">Your selection</p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">Shopping cart</h1>
-          <p className="mt-2 text-[#846f70]">Review your items, save your delivery details, and complete your PinkBox order.</p>
+          <p className="mt-2 text-muted-foreground">Review your items, save your delivery details, and complete your PinkBox order.</p>
         </header>
 
         {error && <div role="alert" className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
         {!items.length ? (
-          <section className="mt-8 rounded-3xl border border-[#eadfd9] bg-white p-10 text-center">
+          <section className="mt-8 rounded-3xl border border-border bg-card p-10 text-center">
             <h2 className="text-2xl font-semibold">Your cart is empty</h2>
-            <p className="mt-2 text-[#846f70]">Add something beautiful for everyday use.</p>
-            <Link href="/#new-arrivals" className="mt-5 inline-flex rounded-full bg-[#d8899d] px-5 py-3 font-semibold text-white">Continue shopping</Link>
+            <p className="mt-2 text-muted-foreground">Add something beautiful for everyday use.</p>
+            <Link href="/#new-arrivals" className="mt-5 inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-primary-foreground">Continue shopping</Link>
           </section>
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_.85fr]">
             <section className="space-y-4">
               {items.map((item) => (
-                <article key={item.id} className="flex gap-4 rounded-3xl border border-[#eadfd9] bg-white p-4">
-                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#f5eeea]">
-                    {item.image_url ? <img src={item.image_url} alt={item.title || ''} className="h-full w-full object-contain" /> : <div className="grid h-full place-items-center font-serif text-xl text-[#b18489]">PB</div>}
+                <article key={item.id} className="flex gap-4 rounded-3xl border border-border bg-card p-4">
+                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-muted">
+                    {item.image_url ? <img src={item.image_url} alt={item.title || ''} className="h-full w-full object-contain" /> : <div className="grid h-full place-items-center font-serif text-xl text-primary">PB</div>}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/products/${item.slug}`} className="font-semibold hover:text-[#c36f83]">{item.title}</Link>
-                    {item.personalization && <p className="mt-0.5 text-xs font-semibold text-[#9a3358]">Embroidered name: {item.personalization}</p>}
-                    <p className="mt-1 text-sm text-[#846f70]">{money(item.price)}</p>
+                    <Link href={`/products/${item.slug}`} className="font-semibold hover:text-primary">{item.title}</Link>
+                    {item.personalization && <p className="mt-0.5 text-xs font-semibold text-primary">Embroidered name: {item.personalization}</p>}
+                    <p className="mt-1 text-sm text-muted-foreground">{money(item.price)}</p>
                     <div className="mt-3 flex items-center gap-3">
-                      <input aria-label={`Quantity for ${item.title}`} type="number" min="1" value={item.quantity} onChange={(e) => updateQty(item.id, e.target.value)} className="w-20 rounded-xl border border-[#eadfd9] bg-[#fffaf7] px-3 py-2" />
+                      <input aria-label={`Quantity for ${item.title}`} type="number" min="1" value={item.quantity} onChange={(e) => updateQty(item.id, e.target.value)} className="w-20 rounded-xl border border-border bg-background px-3 py-2" />
                       <button type="button" onClick={() => setItems((a) => a.filter((x) => x.id !== item.id))} className="text-sm font-semibold text-[#b05d70]">Remove</button>
                     </div>
                   </div>
@@ -367,52 +371,54 @@ export default function CartPage() {
                 </article>
               ))}
 
-              <div className="rounded-3xl border border-[#eadfd9] bg-[#fff4f7] p-5 text-sm text-[#7d6769]">
-                <div className="flex items-center justify-between gap-3"><b className="text-[#6a4b4e]">Free shipping</b><span className="font-semibold text-[#c36f83]">{shippingMessage}</span></div>
-                {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0d9df]"><div className="h-full rounded-full bg-[#d8899d]" style={{ width: shippingProgress + '%' }} /></div>}
+              <div className="rounded-3xl border border-border bg-secondary/40 p-5 text-sm text-[#7d6769]">
+                <div className="flex items-center justify-between gap-3"><b className="text-foreground">Free shipping</b><span className="font-semibold text-primary">{shippingMessage}</span></div>
+                {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0d9df]"><div className="h-full rounded-full bg-primary" style={{ width: shippingProgress + '%' }} /></div>}
                 <p className="mt-2">{quoteLoading ? 'Updating delivery total…' : quote.shipping ? 'Shipping charge: ' + money(quote.shipping) : 'No shipping charge.'}</p>
               </div>
             </section>
 
-            <form onSubmit={submit} className="rounded-3xl border border-[#eadfd9] bg-white p-6 shadow-sm">
+            <form onSubmit={submit} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-2xl font-semibold">Checkout</h2>
-                <span className="rounded-full bg-[#fff0f5] px-3 py-1 text-xs font-bold text-[#c36f83]">Guest checkout available</span>
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-primary">Guest checkout available</span>
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {['name', 'phone', 'email', 'pincode', 'city', 'state'].map((name) => (
-                  <input key={name} name={name} required={['name', 'phone'].includes(name)} value={form[name]} onChange={onField} placeholder={name[0].toUpperCase() + name.slice(1)} type={name === 'email' ? 'email' : name === 'phone' ? 'tel' : 'text'} className="rounded-xl border border-[#eadfd9] bg-[#fffaf7] p-3" />
+                  <input key={name} name={name} required={['name', 'phone'].includes(name)} value={form[name]} onChange={onField} placeholder={name[0].toUpperCase() + name.slice(1)} type={name === 'email' ? 'email' : name === 'phone' ? 'tel' : 'text'} className="rounded-xl border border-border bg-background p-3" />
                 ))}
-                <textarea name="address" required value={form.address} onChange={onField} placeholder="Full delivery address" rows="3" className="sm:col-span-2 rounded-xl border border-[#eadfd9] bg-[#fffaf7] p-3" />
-                <textarea name="note" value={form.note} onChange={onField} placeholder="Order note (optional)" rows="2" className="sm:col-span-2 rounded-xl border border-[#eadfd9] bg-[#fffaf7] p-3" />
+                <textarea name="address" required value={form.address} onChange={onField} placeholder="Full delivery address" rows="3" className="sm:col-span-2 rounded-xl border border-border bg-background p-3" />
+                <textarea name="note" value={form.note} onChange={onField} placeholder="Order note (optional)" rows="2" className="sm:col-span-2 rounded-xl border border-border bg-background p-3" />
                 <div className="sm:col-span-2">
-                  <input name="coupon_code" value={form.coupon_code} onChange={(e) => setForm({ ...form, coupon_code: e.target.value.toUpperCase() })} placeholder="Coupon code (optional)" className="w-full rounded-xl border border-dashed border-[#d8899d] bg-[#fdeef1] p-3 font-semibold tracking-wide" />
+                  <input name="coupon_code" value={form.coupon_code} onChange={(e) => setForm({ ...form, coupon_code: e.target.value.toUpperCase() })} placeholder="Coupon code (optional)" className="w-full rounded-xl border border-dashed border-primary bg-secondary p-3 font-semibold tracking-wide" />
                   {quote.coupon && <p className={`mt-2 text-sm ${quote.coupon.valid ? 'text-green-700' : 'text-red-600'}`}>{quote.coupon.message}</p>}
                 </div>
               </div>
 
               <div className="mt-5 space-y-3">
-                {codAllowed && <label className="flex gap-3 rounded-2xl border border-[#eadfd9] p-4"><input type="radio" name="payment" checked={payment === 'COD'} onChange={() => setPayment('COD')} /><span><b>Cash on Delivery</b><small className="block text-[#846f70]">Pay when your order arrives.</small></span></label>}
-                {onlineEnabled && <label className="flex gap-3 rounded-2xl border border-[#eadfd9] p-4"><input type="radio" name="payment" checked={payment === 'ONLINE'} onChange={() => setPayment('ONLINE')} /><span><b>Online payment</b><small className="block text-[#846f70]">Secure checkout with Razorpay.</small></span></label>}
+                {codAllowed && <label className="flex gap-3 rounded-2xl border border-border p-4"><input type="radio" name="payment" checked={payment === 'COD'} onChange={() => setPayment('COD')} /><span><b>Cash on Delivery</b><small className="block text-muted-foreground">Pay when your order arrives.</small></span></label>}
+                {onlineEnabled && <label className="flex gap-3 rounded-2xl border border-border p-4"><input type="radio" name="payment" checked={payment === 'ONLINE'} onChange={() => setPayment('ONLINE')} /><span><b>Online payment</b><small className="block text-muted-foreground">Secure checkout with Razorpay.</small></span></label>}
                 {!codAllowed && !onlineEnabled && <p className="text-sm text-red-600">No payment method is available for the items in your cart. Please contact us.</p>}
               </div>
 
-              <div className="mt-6 space-y-3 border-t border-[#eadfd9] pt-5 text-sm">
+              <div className="mt-6 space-y-3 border-t border-border pt-5 text-sm">
                 <div className="flex justify-between"><span>Subtotal</span><b>{money(quote.subtotal || localSubtotal)}</b></div>
                 <div className="flex justify-between"><span>Discount</span><b>{quote.discount ? `- ${money(quote.discount)}` : '—'}</b></div>
                 <div className="flex justify-between"><span>Shipping</span><b>{quoteLoading ? '…' : quote.shipping ? money(quote.shipping) : 'FREE'}</b></div>
-                <div className="flex justify-between border-t border-[#eadfd9] pt-3 text-lg"><span>Total</span><b>{money(total)}</b></div>
+                <div className="flex justify-between border-t border-border pt-3 text-lg"><span>Total</span><b>{money(total)}</b></div>
               </div>
 
-              <button disabled={busy || quoteLoading || (!codAllowed && !onlineEnabled)} className="mt-6 w-full rounded-2xl bg-[#d8899d] px-5 py-3 font-bold text-white disabled:opacity-60">
+              <button disabled={busy || quoteLoading || (!codAllowed && !onlineEnabled)} className="mt-6 w-full rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-60">
                 {busy ? 'Processing…' : quoteLoading ? 'Updating total…' : payment === 'ONLINE' ? 'Place order & pay' : 'Place order'}
               </button>
-              <p className="mt-3 text-center text-xs text-[#8b7778]">Your checkout details are saved on this device until the order is completed.</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">Your checkout details are saved on this device until the order is completed.</p>
             </form>
           </div>
         )}
       </div>
-    </main>
+      </main>
+      <ZipReferenceFooter />
+    </div>
   );
 }
