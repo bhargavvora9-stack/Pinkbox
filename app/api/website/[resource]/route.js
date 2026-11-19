@@ -1,7 +1,7 @@
 import { getWebsiteAdminContext, cleanString, slugify, audit, jsonError } from '@/lib/website-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
-const TABLES = { settings:'website_settings', categories:'website_categories', products:'website_products', images:'website_product_images', orders:'website_orders', pages:'website_pages', banners:'website_banners', 'homepage-sections':'website_homepage_sections', navigation:'website_menus', discounts:'website_discounts' };
+const TABLES = { settings:'website_settings', categories:'website_categories', products:'website_products', images:'website_product_images', orders:'website_orders', pages:'website_pages', banners:'website_banners', 'homepage-sections':'website_homepage_sections', navigation:'website_menus', discounts:'website_discounts', subscribers:'website_newsletter_subscribers' };
 const SAFE_LIMIT = 200;
 const DEFAULT_STORE_NAME = 'PinkBox';
 const DEFAULT_STORE_SLUG = 'pinkbox';
@@ -61,7 +61,7 @@ export async function GET(request,{params}){
   }
   const table=tableFor(resource); if(!table)return jsonError('Unknown website resource.',404);
   let query=supabase.from(table).select('*').eq('company_id',companyId);
-  if(resource==='settings')query=query.maybeSingle(); else if(['products','orders'].includes(resource))query=query.order('created_at',{ascending:false}).limit(SAFE_LIMIT); else if(resource==='images')query=query.order('product_id').order('is_primary',{ascending:false}).order('sort_order').limit(SAFE_LIMIT); else query=query.order('sort_order',{ascending:true}).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
+  if(resource==='settings')query=query.maybeSingle(); else if(['products','orders','subscribers'].includes(resource))query=query.order('created_at',{ascending:false}).limit(SAFE_LIMIT); else if(resource==='images')query=query.order('product_id').order('is_primary',{ascending:false}).order('sort_order').limit(SAFE_LIMIT); else query=query.order('sort_order',{ascending:true}).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
   const {data,error:dbError}=await query; if(dbError)return jsonError(dbError.message,500); return Response.json({data:data||null});
 }
 
@@ -102,6 +102,7 @@ function sanitizePayload(resource,b,companyId,partial=false){const payload={comp
   if(resource==='homepage-sections'){text('section_type',80);text('title',180);payload.settings=b.settings&&typeof b.settings==='object'?b.settings:{};num('sort_order');bool('is_active',true)}
   if(resource==='navigation'){text('location',60);text('name',120);payload.items=Array.isArray(b.items)?b.items:[]}
   if(resource==='discounts'){text('name',180);text('code',60);text('discount_type',40);num('value');num('minimum_order_amount');num('maximum_discount_amount');num('usage_limit');if(!partial||b.starts_at!==undefined)payload.starts_at=b.starts_at||null;if(!partial||b.ends_at!==undefined)payload.ends_at=b.ends_at||null;bool('is_active',true)}
+  if(resource==='subscribers'){text('email',160);text('coupon_code',60);bool('is_active',true)}
   if(resource==='orders'){text('order_number',80);text('customer_id',100);text('customer_name',180);text('customer_phone',40);text('customer_email',160);payload.shipping_address=b.shipping_address&&typeof b.shipping_address==='object'?b.shipping_address:{};payload.billing_address=b.billing_address&&typeof b.billing_address==='object'?b.billing_address:{};num('subtotal');num('discount_amount');num('shipping_amount');num('tax_amount');num('total_amount');text('payment_method',50);text('payment_status',40);text('order_status',40);text('notes',3000)}
   return payload;
 }
