@@ -121,7 +121,7 @@ export default function ProductPurchasePanel({ product }) {
                 key={variant.id}
                 type="button"
                 onClick={() => { setSelectedVariantId(variant.id); setQty(1); setStatus(''); setAdded(false); }}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-[#d9295f] bg-[#fff0f5] text-[#d9295f]' : 'border-gray-200'}`}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-primary bg-secondary text-primary' : 'border-border'}`}
               >
                 {variant.title || variant.option_values?.Color || variant.sku}
               </button>
@@ -129,16 +129,16 @@ export default function ProductPurchasePanel({ product }) {
           </div>
         </div>
       )}
-      <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-[#fff8fa] text-gray-700' : 'bg-gray-50 text-gray-500'}`}>
+      <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-secondary text-foreground' : 'bg-muted text-muted-foreground'}`}>
         {canBuy ? (tracksInventory && max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}
       </div>
       {canBuy && (
         <>
           {product.requires_personalization && (
-            <div className="rounded-2xl border border-[#f1c7d5] bg-[#fff8fa] p-4">
-              <label className="block text-sm font-bold text-[#7a1f40]" htmlFor="personalization-input">{product.personalization_label || 'Name for embroidery'}</label>
-              <input id="personalization-input" value={personalization} onChange={(e) => { setPersonalization(e.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-[#e8bccb] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#d9295f]" />
-              <p className="mt-1.5 text-xs text-gray-500">Max 20 characters. This name will be embroidered on your bag and cannot be changed after the order is placed.</p>
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <label className="block text-sm font-bold text-foreground" htmlFor="personalization-input">{product.personalization_label || 'Name for embroidery'}</label>
+              <input id="personalization-input" value={personalization} onChange={(e) => { setPersonalization(e.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-semibold outline-none focus:border-primary" />
+              <p className="mt-1.5 text-xs text-muted-foreground">Max 20 characters. This name will be embroidered on your bag and cannot be changed after the order is placed.</p>
               {personalizationError && <p className="mt-1.5 text-xs font-semibold text-red-600">{personalizationError}</p>}
             </div>
           )}
@@ -151,16 +151,16 @@ export default function ProductPurchasePanel({ product }) {
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={addToCart} className="inline-flex items-center gap-2 rounded-2xl bg-[#d9295f] px-6 py-3 font-bold text-white"><ShoppingBag size={18}/> Add to cart</button>
-            <button type="button" onClick={toggleWishlist} className={`inline-flex items-center gap-2 rounded-2xl border px-5 py-3 font-bold ${wished ? 'border-[#d9295f] text-[#d9295f]' : ''}`}><Heart size={18} fill={wished ? 'currentColor' : 'none'}/> {wished ? 'Saved' : 'Wishlist'}</button>
+            <button type="button" onClick={addToCart} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground"><ShoppingBag size={18}/> Add to cart</button>
+            <button type="button" onClick={toggleWishlist} className={`inline-flex items-center gap-2 rounded-2xl border px-5 py-3 font-bold ${wished ? 'border-primary text-primary' : ''}`}><Heart size={18} fill={wished ? 'currentColor' : 'none'}/> {wished ? 'Saved' : 'Wishlist'}</button>
             <button type="button" onClick={share} className="inline-flex items-center gap-2 rounded-2xl border px-5 py-3 font-bold">{copied ? <Check size={18}/> : <Copy size={18}/>} Share</button>
           </div>
         </>
       )}
       {status && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white">
+        <div role="status" className="flex items-center justify-between gap-3 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-primary-foreground">
           <span>{status}</span>
-          {added && <Link href="/cart" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-black">View cart <ArrowRight size={13}/></Link>}
+          {added && <Link href="/cart" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background px-3 py-1.5 text-xs font-bold text-foreground">View cart <ArrowRight size={13}/></Link>}
         </div>
       )}
     </div>
