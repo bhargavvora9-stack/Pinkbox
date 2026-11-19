@@ -296,7 +296,7 @@ export default function CartPage() {
               reject(Error('Payment window closed. The unpaid order was cancelled.'));
             },
           },
-          theme: { color: '#d8899d' },
+          theme: { color: 'var(--primary)' },
         });
         checkout.open();
       });
@@ -364,16 +364,16 @@ export default function CartPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{money(item.price)}</p>
                     <div className="mt-3 flex items-center gap-3">
                       <input aria-label={`Quantity for ${item.title}`} type="number" min="1" value={item.quantity} onChange={(e) => updateQty(item.id, e.target.value)} className="w-20 rounded-xl border border-border bg-background px-3 py-2" />
-                      <button type="button" onClick={() => setItems((a) => a.filter((x) => x.id !== item.id))} className="text-sm font-semibold text-[#b05d70]">Remove</button>
+                      <button type="button" onClick={() => setItems((a) => a.filter((x) => x.id !== item.id))} className="text-sm font-semibold text-[var(--primary)]">Remove</button>
                     </div>
                   </div>
                   <strong className="text-sm">{money(Number(item.price || 0) * Number(item.quantity || 0))}</strong>
                 </article>
               ))}
 
-              <div className="rounded-3xl border border-border bg-secondary/40 p-5 text-sm text-[#7d6769]">
+              <div className="rounded-3xl border border-border bg-secondary/40 p-5 text-sm text-[var(--muted-foreground)]">
                 <div className="flex items-center justify-between gap-3"><b className="text-foreground">Free shipping</b><span className="font-semibold text-primary">{shippingMessage}</span></div>
-                {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0d9df]"><div className="h-full rounded-full bg-primary" style={{ width: shippingProgress + '%' }} /></div>}
+                {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--border)]"><div className="h-full rounded-full bg-primary" style={{ width: shippingProgress + '%' }} /></div>}
                 <p className="mt-2">{quoteLoading ? 'Updating delivery total…' : quote.shipping ? 'Shipping charge: ' + money(quote.shipping) : 'No shipping charge.'}</p>
               </div>
             </section>
