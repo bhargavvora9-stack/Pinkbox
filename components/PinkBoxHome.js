@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { zipHeroImage, zipAboutImage } from '@/lib/zip-reference-artwork';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
@@ -36,10 +37,16 @@ const TRUST = [
 function Hero({ banner }) {
   const [index, setIndex] = useState(0);
   const banners = Array.isArray(banner) ? banner : [];
+  const count = banners.length;
+  useEffect(() => {
+    if (count < 2) return undefined;
+    const timer = setInterval(() => setIndex((current) => (current + 1) % count), 6000);
+    return () => clearInterval(timer);
+  }, [count]);
   const active = banners.length ? banners[index % banners.length] : null;
   const title = active?.title || 'Comfort that stays with you, every single day';
   const description = active?.subtitle || 'Ultra-soft cotton sanitary napkins with 12-hour leak protection, anti-bacterial core and a breathable back sheet — designed for Indian skin and Indian weather.';
-  const image = active?.image_url || '/zip-reference/hero-woman.jpg';
+  const image = active?.image_url || zipHeroImage;
   const buttonText = active?.button_text || 'Shop Now';
   const buttonHref = active?.button_url || '#products';
 
@@ -185,7 +192,7 @@ function AboutStrip() {
   return (
     <section className="bg-cream/60">
       <div className="container mx-auto grid items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
-        <img src="/zip-reference/about-strip.jpg" alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width="1200" height="912" loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
+        <img src={zipAboutImage} alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width="1200" height="912" loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
         <div>
           <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our promise</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Hygiene is not a luxury — it's a right</h2>
