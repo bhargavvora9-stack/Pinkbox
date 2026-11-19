@@ -75,6 +75,11 @@ export async function POST(request){
   if(!b.name||!b.phone||!b.address||!Array.isArray(b.items)||!b.items.length)return Response.json({error:'Name, phone, address and at least one product are required.'},{status:400});
   const address={name:String(b.name).trim(),phone:String(b.phone).trim(),email:String(b.email||'').trim()||null,address:String(b.address).trim(),pincode:String(b.pincode||'').trim(),city:String(b.city||'').trim(),state:String(b.state||'').trim()};
   const normalizedItems=b.items.map(x=>({product_id:x.product_id||x.id,variant_id:x.variant_id||null,quantity:Number(x.quantity||1),personalization:typeof x.personalization==='string'?x.personalization.trim().slice(0,60):null}));
+  const requestedProductIds=[...new Set(normalizedItems.map(item=>item.product_id).filter(Boolean))];
+  const {data:catalogProducts,error:catalogError}=await db.from('website_products').select('id,sku,is_active,price').eq('company_id',c).in('id',requestedProductIds);
+  if(catalogError)return Response.json({error:'Unable to validate cart products.'},{status:500});
+  const allowedIds=new Set((catalogProducts||[]).filter(product=>product.is_active===true&&String(product.sku||'').startsWith('MDH-')&&Number(product.price||0)>0).map(product=>product.id));
+  if(!normalizedItems.length||normalizedItems.some(item=>!item.product_id||!allowedIds.has(item.product_id)||!Number.isFinite(item.quantity)||item.quantity<=0))return Response.json({error:'Your cart contains a product that is no longer listed. Please refresh your cart and try again.'},{status:400});
   const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:normalizedItems,p_payment_method:requestedPayment,p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
   if(data?.order_id&&b.session_id)await db.from('website_abandoned_carts').update({status:'recovered',recovered_order_id:data.order_id,updated_at:new Date().toISOString()}).eq('company_id',c).eq('session_id',String(b.session_id));
