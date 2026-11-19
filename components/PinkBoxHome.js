@@ -7,7 +7,7 @@ import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
-  Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2,
+  Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
   Mail, MessageSquareHeart, PackageCheck, Search, Send, ShieldCheck,
   Sparkles, Star, Truck, Wind
 } from 'lucide-react';
@@ -100,7 +100,7 @@ function CouponStrip({ coupons = [] }) {
           <div key={coupon.id} className="flex items-center justify-between gap-4 rounded-2xl border border-dashed border-primary/40 bg-background p-4">
             <div>
               <p className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                <span className="text-primary">◆</span>
+                <Tag className="h-4 w-4 text-primary" />
                 {coupon.discount_type === 'percent' ? coupon.discount_value + '% off' : '₹' + coupon.discount_value + ' off'}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{coupon.description || (Number(coupon.min_order_amount || 0) > 0 ? 'On orders above ₹' + coupon.min_order_amount : 'Sitewide')}</p>
@@ -144,39 +144,94 @@ function ProductsSection({ products = [] }) {
 
 function ProductFinder({ products = [] }) {
   const [query, setQuery] = useState('');
-  const [submitted, setSubmitted] = useState('');
+  const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const results = useMemo(() => {
-    if (!submitted) return [];
-    const terms = submitted.toLowerCase().split(/\s+/).filter((term) => term.length > 2);
-    return products.filter((product) => {
-      const words = [product.title, product.brand, product.short_description, product.description, product.sku].join(' ').toLowerCase();
-      return terms.some((term) => words.includes(term));
-    }).slice(0, 6);
-  }, [products, submitted]);
-  const submit = (value) => {
-    if (value.trim().length < 3) { setError('Please describe what you need in at least 3 characters.'); return; }
+  const [isPending, setIsPending] = useState(false);
+
+  async function submit(value) {
+    const text = String(value || '').trim();
+    if (text.length < 3 || text.length > 500 || isPending) return;
+    setQuery(text);
     setError('');
-    setQuery(value);
-    setSubmitted(value.trim());
-  };
+    setResult(null);
+    setIsPending(true);
+    try {
+      const response = await fetch('/api/storefront/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: text }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Couldn’t get suggestions right now. Please try again.');
+      setResult(data);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Couldn’t get suggestions right now. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
     <section id="finder" className="bg-secondary/40 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold tracking-widest text-primary uppercase">AI-powered product finder</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Tell us what you need</h2>
-          <p className="mt-3 text-muted-foreground">Describe your flow, comfort or skin needs — we'll suggest the right pads.</p>
+          <p className="mt-3 text-muted-foreground">Describe your flow, comfort or skin needs — we’ll suggest the right pads.</p>
         </div>
-        <form className="mx-auto mt-8 max-w-2xl space-y-3" onSubmit={(event) => { event.preventDefault(); submit(query); }}>
-          <textarea value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. I have a heavy flow at night and sensitive skin" maxLength={500} rows={3} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+        <form
+          className="mx-auto mt-8 max-w-2xl space-y-3"
+          onSubmit={(event) => { event.preventDefault(); submit(query); }}
+        >
+          <textarea
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="e.g. I have a heavy flow at night and sensitive skin"
+            maxLength={500}
+            rows={3}
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
           <div className="flex flex-wrap items-center gap-2">
-            {EXAMPLES.map((example) => <button key={example} type="button" onClick={() => submit(example)} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:text-foreground">{example}</button>)}
-            <button type="submit" disabled={query.trim().length < 3} className="ml-auto inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"><Search className="h-4 w-4" />Find my match</button>
+            {EXAMPLES.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => submit(example)}
+                disabled={isPending}
+                className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+              >
+                {example}
+              </button>
+            ))}
+            <button
+              type="submit"
+              className="ml-auto inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              disabled={isPending || query.trim().length < 3}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Find my match
+            </button>
           </div>
         </form>
+
         {error && <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-destructive">{error}</p>}
-        {submitted && <div className="mt-10"><p className="mx-auto max-w-2xl text-center text-foreground">{results.length ? 'These products may match your needs.' : 'No exact match found. Try another description or browse all products.'}</p>{results.length > 0 && <div className="mt-8"><ZipReferenceProductGrid products={results} /></div>}</div>}
+        {result && (
+          <div className="mt-10">
+            <p className="mx-auto max-w-2xl text-center text-foreground">{result.message}</p>
+            {result.products?.length > 0 && (
+              <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {result.products.map((product) => (
+                  <div key={product.id} className="space-y-2">
+                    <ZipReferenceProductGrid products={[product]} />
+                    {result.reasons?.[product.slug] && (
+                      <p className="px-1 text-sm text-muted-foreground">{result.reasons[product.slug]}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
