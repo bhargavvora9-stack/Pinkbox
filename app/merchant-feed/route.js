@@ -29,6 +29,8 @@ export async function GET() {
     .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
+    .like('sku', 'MDH-%')
+    .gt('price', 0)
     .order('updated_at', { ascending: false });
 
   const ids = (products || []).map(p => p.id);
@@ -45,7 +47,7 @@ export async function GET() {
     const inStock = Number(p.stock_quantity || 0) > 0 || p.allow_backorder === true;
     const description = p.short_description || p.description || `${p.brand || ''} ${p.title}`.trim();
     const id = p.sku || p.id;
-    const primaryImage = imageMap[p.id] ? absoluteUrl(`/merchant-image/${encodeURIComponent(id)}`) : '';
+    const primaryImage = imageMap[p.id] ? absoluteUrl(`/merchant-image/${encodeURIComponent(id)}`) : (p.sku?.startsWith('MDH-') ? absoluteUrl(`/catalog-products/${p.sku.toLowerCase()}.webp`) : '');
     return `  <item>\n    <g:id>${xml(id)}</g:id>\n    <g:title>${xml(p.title)}</g:title>\n    <g:description>${xml(description)}</g:description>\n    <g:link>${xml(absoluteUrl(`/products/${p.slug}`))}</g:link>\n    <g:image_link>${xml(primaryImage)}</g:image_link>\n    <g:availability>${inStock ? 'in_stock' : 'out_of_stock'}</g:availability>\n    <g:condition>new</g:condition>\n    <g:price>${xml(Number(p.price || 0).toFixed(2))} INR</g:price>\n    <g:brand>${xml(p.brand || settings.website_name || 'PinkBox')}</g:brand>\n    <g:identifier_exists>no</g:identifier_exists>\n  </item>`;
   }).join('\n');
 
