@@ -495,3 +495,65 @@ main.min-h-screen input,main.min-h-screen textarea,main.min-h-screen select{font
   .pb-home-contact .pb-home-bulk{padding:18px!important}
   .pb-home-cta{width:calc(100% - 24px)!important;margin-bottom:34px!important;padding:28px 20px!important}
 }
+
+
+/* Keep the ZIP homepage's separate CouponStrip and TrustBadges sections. */
+.pb-home-header{order:0!important}
+.pb-home-hero{order:1!important}
+.pb-offer-strip{order:2!important}
+.pb-home-trust-strip{order:3!important}
+.pb-home-products{order:4!important}
+.pb-home-product-finder{order:5!important}
+.pb-home-editorial{order:6!important}
+.pb-home-section#why-us{order:7!important}
+.pb-home-reviews{order:8!important}
+.pb-home-contact{order:9!important}
+.pb-home-cta{order:10!important}
+.pb-home-footer{order:11!important}
+.pb-whatsapp-float{order:12!important}
+.pb-home-bottom{order:13!important}
+.pb-offer-strip{
+  width:min(1260px,100%)!important;
+  margin:0 auto!important;
+  padding:28px 28px 20px!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+  background:var(--background)!important;
+}
+.pb-offer-card{
+  min-height:102px!important;
+  padding:18px 20px!important;
+  border-style:dashed!important;
+  border-color:color-mix(in oklch,var(--primary) 42%,var(--border))!important;
+  border-radius:20px!important;
+  background:var(--background)!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:center!important;gap:5px!important;
+}
+.pb-offer-card b{font:600 22px "Fraunces",Georgia,serif!important;color:var(--primary)!important}
+.pb-offer-card span{color:var(--muted-foreground)!important;font-size:12px!important}
+.pb-offer-card code{margin-top:4px!important;background:var(--secondary)!important;color:var(--primary)!important}
+.pb-home-trust-strip{
+  order:3!important;
+  border-block:1px solid var(--border)!important;
+  background:var(--background)!important;
+  padding:26px 20px!important;
+}
+.pb-home-trust-strip .pb-cert-row{
+  width:min(1260px,100%)!important;margin:0 auto!important;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:center!important;gap:18px!important;
+  padding:0!important;border:0!important;background:transparent!important;
+}
+.pb-home-trust-strip .pb-cert-row span{
+  justify-content:center!important;text-align:center!important;
+  font-size:13px!important;color:var(--foreground)!important;
+}
+.pb-home-trust-strip .pb-cert-row svg{color:var(--primary)!important}
+@media(max-width:768px){
+  .pb-offer-strip{padding:22px 16px 16px!important;grid-template-columns:1fr!important}
+  .pb-home-trust-strip{padding:20px 16px!important}
+  .pb-home-trust-strip .pb-cert-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+  .pb-home-trust-strip .pb-cert-row span{justify-content:flex-start!important;text-align:left!important}
+}
