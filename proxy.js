@@ -94,7 +94,7 @@ export const config = {
     '/admin/:path*',
     '/Admin/:path*',
     '/website/:path*',
-    '/api/website/:path*',
+    '/api/:path*',
     '/login',
     '/Login',
   ],
