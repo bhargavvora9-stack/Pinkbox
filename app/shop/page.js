@@ -1,4 +1,3 @@
-import './shop.css';
 import { createAdminClient } from '@/lib/supabase-admin';
 import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 
