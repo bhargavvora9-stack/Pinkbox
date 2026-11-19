@@ -144,7 +144,7 @@ export default async function ProductPage({ params }) {
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
           <section>
-            <div className="aspect-square overflow-hidden rounded-lg bg-muted">
+            <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
               {p.images[0]?.image_url ? <Image src={p.images[0].image_url} alt={p.images[0].alt_text || p.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="h-full w-full object-cover" priority /> : <div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
             </div>
             {p.images.length > 1 && <div className="mt-4 grid grid-cols-5 gap-3">{p.images.slice(0, 5).map((image, index) => <div key={image.id || index} className="relative aspect-square overflow-hidden rounded-md bg-muted"><Image src={image.image_url} alt={image.alt_text || p.title} fill sizes="100px" className="object-cover" /></div>)}</div>}
