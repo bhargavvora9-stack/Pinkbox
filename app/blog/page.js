@@ -16,7 +16,7 @@ async function getBlogStore() {
   const db = createAdminClient();
   const { data: settings } = await db
     .from('website_settings')
-    .select('company_id,website_name,meta_title,meta_description,logo_url')
+    .select('company_id,website_name,meta_title,meta_description,logo_url,phone,email,address,instagram_url,facebook_url,youtube_url,announcement_text')
     .eq('slug', 'pinkbox')
     .eq('status', 'active')
     .maybeSingle();
@@ -48,7 +48,7 @@ export default async function BlogIndex() {
 
   const [postsResult, categoriesResult, productsResult, mappingsResult] = await Promise.all([
     db.from('website_blog_posts')
-      .select('id,title,slug,excerpt,content,seo_title,seo_description,seo_keywords,cover_image_url,published_at')
+      .select('id,title,slug,excerpt,content,category,seo_title,seo_description,seo_keywords,cover_image_url,published_at')
       .eq('company_id', settings.company_id)
       .eq('is_published', true)
       .order('published_at', { ascending: false })
