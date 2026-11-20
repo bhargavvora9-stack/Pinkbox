@@ -6,8 +6,8 @@ import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import ZipReferenceProductCard from '@/components/ZipReferenceProductCard';
-import {
 import Image from 'next/image';
+import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
   Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
   Mail, MessageSquareHeart, PackageCheck, Search, Send, ShieldCheck,
