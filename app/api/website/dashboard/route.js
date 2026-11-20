@@ -1,4 +1,5 @@
 import { getWebsiteAdminContext, jsonError } from '@/lib/website-admin';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 const TERMINAL_INVALID = new Set(['cancelled', 'returned', 'refunded']);
 const INDIA_OFFSET_MS = 330 * 60 * 1000;
@@ -13,6 +14,10 @@ export async function GET(request) {
   const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
+  // The dashboard endpoint has already required dashboard.view. Use the
+  // server-only admin client for its limited lead preview and subscriber count
+  // so dashboard-only staff do not need access to the full Leads/Subscribers modules.
+  const dashboardDb = createAdminClient();
   const startOfToday = startOfIndiaDay();
 
   const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes, b2bRes, subscribersRes, blogPostsRes, bannersRes, discountsRes] = await Promise.all([
@@ -23,8 +28,8 @@ export async function GET(request) {
     supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
     supabase.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
     supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
-    supabase.from('website_bulk_enquiries').select('id,name,phone,company_name,city,lead_type,organisation_type,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
-    supabase.from('website_newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    dashboardDb.from('website_bulk_enquiries').select('id,name,phone,company_name,city,lead_type,organisation_type,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(5),
+    dashboardDb.from('website_newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
     supabase.from('website_blog_posts').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
     supabase.from('website_banners').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
     supabase.from('website_discounts').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
