@@ -3,28 +3,43 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
-import { Heart, Minus, Plus, ShoppingBag, Copy, Check, ArrowRight } from 'lucide-react';
+import { Loader2, ShoppingBag, Star } from 'lucide-react';
 
-const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
-export default function ProductPurchasePanel({ product }) {
-  const variants = Array.isArray(product.variants) ? product.variants.filter((variant) => variant?.is_active !== false) : [];
-  const canSellVariant = (variant) => product.track_inventory === false || product.allow_backorder === true || Number(variant?.stock_quantity || 0) > 0;
+export default function ProductPurchasePanel({ product, description = '' }) {
+  const variants = Array.isArray(product.variants)
+    ? product.variants.filter((variant) => variant?.is_active !== false)
+    : [];
+  const canSellVariant = (variant) =>
+    product.track_inventory === false ||
+    product.allow_backorder === true ||
+    Number(variant?.stock_quantity || 0) > 0;
   const preferredVariant = variants.find(canSellVariant) || variants[0] || null;
   const [selectedVariantId, setSelectedVariantId] = useState(preferredVariant?.id || null);
-  const selectedVariant = useMemo(() => variants.find((variant) => variant.id === selectedVariantId) || preferredVariant, [variants, selectedVariantId, preferredVariant]);
-  const effectivePrice = Number(selectedVariant && Number(selectedVariant.price) > 0 ? selectedVariant.price : product.price ?? 0);
+  const selectedVariant = useMemo(
+    () => variants.find((variant) => variant.id === selectedVariantId) || preferredVariant,
+    [variants, selectedVariantId, preferredVariant],
+  );
+  const effectivePrice = Number(
+    selectedVariant && Number(selectedVariant.price) > 0
+      ? selectedVariant.price
+      : product.price ?? 0,
+  );
   const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
   const tracksInventory = product.track_inventory !== false;
-  const max = tracksInventory ? Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0) : 0;
+  const max = tracksInventory
+    ? Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0)
+    : 0;
   const canBuy = !tracksInventory || max > 0 || product.allow_backorder === true;
-  const [qty, setQty] = useState(1);
-  const [wished, setWished] = useState(false);
-  const [status, setStatus] = useState('');
-  const [added, setAdded] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [personalization, setPersonalization] = useState('');
   const [personalizationError, setPersonalizationError] = useState('');
+  const [status, setStatus] = useState('');
+  const [added, setAdded] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     trackGa4Event('view_item', {
@@ -34,37 +49,28 @@ export default function ProductPurchasePanel({ product }) {
     });
   }, [product.id, effectivePrice]);
 
-  function toggleWishlist() {
-    try {
-      const current = JSON.parse(localStorage.getItem('pinkbox_wishlist') || '[]');
-      const next = current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id];
-      localStorage.setItem('pinkbox_wishlist', JSON.stringify(next));
-      setWished(next.includes(product.id));
-      setStatus(next.includes(product.id) ? 'Saved to wishlist' : 'Removed from wishlist');
-      setAdded(false);
-    } catch {
-      setStatus('Unable to update wishlist');
-    }
-  }
-
   function addToCart() {
-    if (!canBuy) return;
+    if (!canBuy || busy) return;
     if (product.requires_personalization && !personalization.trim()) {
       setPersonalizationError('Please enter a name for embroidery.');
       return;
     }
+
     setPersonalizationError('');
+    setBusy(true);
+    setStatus('');
     try {
-      const current = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
-      const cartId = selectedVariant ? `${product.id}:${selectedVariant.id}` : product.id;
+      const stored = JSON.parse(localStorage.getItem('pinkbox_cart') || '[]');
+      const current = Array.isArray(stored) ? stored : [];
+      const cartId = selectedVariant ? product.id + ':' + selectedVariant.id : product.id;
       const existing = current.find((item) => item.id === cartId);
-      const nextQty = existing ? existing.quantity + qty : qty;
-      if (max > 0 && nextQty > max && !product.allow_backorder) {
-        setStatus(`Only ${max} available`);
+      const nextQuantity = Number(existing?.quantity || 0) + 1;
+      if (max > 0 && nextQuantity > max && !product.allow_backorder) {
+        setStatus('Only ' + max + ' available');
         setAdded(false);
-        setQty(Math.max(1, max - (existing?.quantity || 0)));
         return;
       }
+
       const cartItem = {
         ...product,
         id: cartId,
@@ -72,103 +78,128 @@ export default function ProductPurchasePanel({ product }) {
         variant_id: selectedVariant?.id || null,
         variant_title: selectedVariant?.title || null,
         sku: selectedVariant?.sku || product.sku,
-        title: selectedVariant ? `${product.title} - ${selectedVariant.title}` : product.title,
+        title: selectedVariant ? product.title + ' - ' + selectedVariant.title : product.title,
         price: effectivePrice,
         image_url: effectiveImage,
-        quantity: qty,
+        quantity: 1,
         personalization: product.requires_personalization ? personalization.trim() : null,
       };
       const next = existing
-        ? current.map((item) => item.id === cartId ? { ...item, quantity: nextQty, personalization: cartItem.personalization } : item)
+        ? current.map((item) =>
+            item.id === cartId
+              ? { ...item, quantity: nextQuantity, personalization: cartItem.personalization }
+              : item,
+          )
         : [...current, cartItem];
+
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
       window.dispatchEvent(new Event('pinkbox-cart-updated'));
-      setStatus(`${qty} item${qty === 1 ? '' : 's'} added to cart`);
+      setStatus('Added to cart');
+      setAdded(true);
       trackGa4Event('add_to_cart', {
         currency: 'INR',
-        value: effectivePrice * qty,
-        items: toAnalyticsItems([{ ...product, ...cartItem, quantity: qty }]),
+        value: effectivePrice,
+        items: toAnalyticsItems([{ ...product, ...cartItem, quantity: 1 }]),
       });
-      setAdded(true);
     } catch {
-      setStatus('Unable to add to cart');
+      setStatus('Unable to add to cart. Please try again.');
       setAdded(false);
-    }
-  }
-
-  async function share() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setStatus('Product link copied');
-      setAdded(false);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setStatus('Copy this page link from your browser');
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-end gap-3">
-        <span className="text-3xl font-black">{money(effectivePrice)}</span>
-        {Number(selectedVariant?.compare_at_price || product.compare_at_price) > effectivePrice && <del className="pb-1 text-sm text-gray-400">{money(selectedVariant?.compare_at_price || product.compare_at_price)}</del>}
-      </div>
-      {variants.length > 0 && (
-        <div>
-          <div className="mb-2 text-sm font-semibold">Color</div>
-          <div className="flex flex-wrap gap-2">
+    <div className="mt-4 flex flex-col">
+      <p className="text-2xl font-semibold text-foreground">{money(effectivePrice)}</p>
+
+      {!canBuy && (
+        <span className="mt-4 w-fit rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          Out of stock
+        </span>
+      )}
+
+      {description && (
+        <p className="mt-6 whitespace-pre-line leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      )}
+
+      {variants.length > 1 && (
+        <div className="mt-6">
+          <p className="mb-2 text-sm font-medium text-foreground">Choose pack</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose pack">
             {variants.map((variant) => {
               const available = canSellVariant(variant);
+              const selected = variant.id === selectedVariant?.id;
               return (
                 <button
                   key={variant.id}
                   type="button"
-                  onClick={() => { setSelectedVariantId(variant.id); setQty(1); setStatus(''); setAdded(false); }}
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => {
+                    setSelectedVariantId(variant.id);
+                    setStatus('');
+                    setAdded(false);
+                  }}
                   disabled={!available}
-                  title={available ? variant.title || variant.sku : 'Out of stock'}
-                  aria-label={`${variant.title || variant.sku}${available ? '' : ' - out of stock'}`}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold ${variant.id === selectedVariant?.id ? 'border-primary bg-secondary text-primary' : 'border-border'} disabled:cursor-not-allowed disabled:opacity-40`}
+                  className={'inline-flex min-h-10 items-center justify-center rounded-md border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ' +
+                    (selected
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background text-foreground hover:border-primary hover:text-primary')}
                 >
-                  {variant.title || variant.option_values?.Color || variant.sku}{!available ? ' · Out of stock' : ''}
+                  {variant.title || variant.option_values?.Color || variant.sku}
                 </button>
               );
             })}
           </div>
         </div>
       )}
-      <div className={`rounded-2xl border p-4 text-sm ${canBuy ? 'bg-secondary text-foreground' : 'bg-muted text-muted-foreground'}`}>
-        {canBuy ? (tracksInventory && max > 0 ? `${max} in stock` : 'Available to order') : 'Currently out of stock'}
-      </div>
-      {canBuy && (
-        <>
-          {product.requires_personalization && (
-            <div className="rounded-2xl border border-border bg-secondary p-4">
-              <label className="block text-sm font-bold text-foreground" htmlFor="personalization-input">{product.personalization_label || 'Name for embroidery'}</label>
-              <input id="personalization-input" value={personalization} onChange={(event) => { setPersonalization(event.target.value.slice(0, 20)); setPersonalizationError(''); }} placeholder="e.g. Priya" maxLength={20} className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-semibold outline-none focus:border-primary" />
-              <p className="mt-1.5 text-xs text-muted-foreground">Max 20 characters. This name will be embroidered on your bag and cannot be changed after the order is placed.</p>
-              {personalizationError && <p className="mt-1.5 text-xs font-semibold text-red-600">{personalizationError}</p>}
-            </div>
+
+      {product.requires_personalization && canBuy && (
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-foreground" htmlFor="personalization-input">
+            {product.personalization_label || 'Name for embroidery'}
+          </label>
+          <input
+            id="personalization-input"
+            value={personalization}
+            onChange={(event) => {
+              setPersonalization(event.target.value.slice(0, 20));
+              setPersonalizationError('');
+            }}
+            placeholder="e.g. Priya"
+            maxLength={20}
+            className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary sm:max-w-sm"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Max 20 characters. This name will be added to your personalized product.
+          </p>
+          {personalizationError && (
+            <p className="mt-1.5 text-xs font-medium text-destructive">{personalizationError}</p>
           )}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold">Quantity</span>
-            <div className="flex items-center rounded-full border">
-              <button type="button" aria-label="Decrease quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((value) => Math.max(1, value - 1))}><Minus size={15}/></button>
-              <span className="min-w-8 text-center text-sm font-bold">{qty}</span>
-              <button type="button" aria-label="Increase quantity" className="grid h-10 w-10 place-items-center" onClick={() => setQty((value) => (tracksInventory && max > 0 && !product.allow_backorder ? Math.min(max, value + 1) : value + 1))}><Plus size={15}/></button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={addToCart} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground"><ShoppingBag size={18}/> Add to cart</button>
-            <button type="button" onClick={toggleWishlist} className={`inline-flex items-center gap-2 rounded-2xl border px-5 py-3 font-bold ${wished ? 'border-primary text-primary' : ''}`}><Heart size={18} fill={wished ? 'currentColor' : 'none'}/> {wished ? 'Saved' : 'Wishlist'}</button>
-            <button type="button" onClick={share} className="inline-flex items-center gap-2 rounded-2xl border px-5 py-3 font-bold">{copied ? <Check size={18}/> : <Copy size={18}/>} Share</button>
-          </div>
-        </>
+        </div>
       )}
+
+      <button
+        type="button"
+        onClick={addToCart}
+        disabled={!canBuy || busy}
+        className="mt-8 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+        {busy ? 'Adding…' : canBuy ? 'Add to Cart' : 'Out of stock'}
+      </button>
+
       {status && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-primary-foreground">
+        <div role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>{status}</span>
-          {added && <Link href="/cart" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background px-3 py-1.5 text-xs font-bold text-foreground">View cart <ArrowRight size={13}/></Link>}
+          {added && (
+            <Link href="/cart" className="font-semibold text-primary underline underline-offset-4">
+              View cart
+            </Link>
+          )}
         </div>
       )}
     </div>
