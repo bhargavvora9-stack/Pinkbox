@@ -251,7 +251,7 @@ function AboutStrip() {
         <img src={zipAboutImage} alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width="1200" height="912" loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
         <div>
           <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our promise</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Hygiene is not a luxury — it's a right</h2>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Hygiene is not a luxury — it&apos;s a right</h2>
           <p className="mt-4 leading-relaxed text-muted-foreground">Pink Box started with one goal: make premium-quality period care affordable for every household in India. From raw cotton to the sealed pack, everything is checked so you never have to think twice.</p>
           <ul className="mt-7 space-y-3">{points.map((point) => <li key={point} className="flex items-start gap-3 text-sm text-foreground"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground"><Check className="h-3 w-3" /></span>{point}</li>)}</ul>
         </div>
@@ -339,7 +339,7 @@ function ContactForm() {
     <section id="contact" className="bg-secondary/40 py-16 md:py-24">
       <div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <div>
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Let's connect</p>
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Let&apos;s connect</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Care for every home, shop and community</h2>
           <p className="mt-4 max-w-lg text-sm leading-7 text-muted-foreground">Send us a general question, become a retail partner, or ask about bulk supply for a school or NGO.</p>
           <div className="mt-7 space-y-3 text-sm text-foreground">
