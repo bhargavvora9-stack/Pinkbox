@@ -32,7 +32,7 @@ export async function POST(request) {
 
     const { data: offerRows } = await db
       .from('website_discounts')
-      .select('code,starts_at,ends_at')
+      .select('code,starts_at,ends_at,minimum_order_amount,usage_limit,usage_count')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .eq('code', 'WELCOME10')
@@ -40,9 +40,14 @@ export async function POST(request) {
     const currentTime = Date.now();
     const couponRow = (offerRows || []).find((offer) =>
       (!offer.starts_at || new Date(offer.starts_at).getTime() <= currentTime) &&
-      (!offer.ends_at || new Date(offer.ends_at).getTime() >= currentTime)
+      (!offer.ends_at || new Date(offer.ends_at).getTime() >= currentTime) &&
+      (offer.usage_limit == null || Number(offer.usage_count || 0) < Number(offer.usage_limit))
     );
     const coupon = couponRow?.code || null;
+    const minimumOrderAmount = Number(couponRow?.minimum_order_amount || 0);
+    const couponInstruction = coupon
+      ? `Use coupon ${coupon} at checkout${minimumOrderAmount > 0 ? ` on orders of ₹${minimumOrderAmount.toLocaleString('en-IN')} or more` : ''} for your welcome offer.`
+      : 'Thanks for joining our list. Watch your inbox for PinkBox offers.';
     const { error } = await db
       .from('website_newsletter_subscribers')
       .upsert({
@@ -71,7 +76,7 @@ export async function POST(request) {
           from,
           to: [email],
           subject: coupon ? `Your PinkBox welcome coupon: ${coupon}` : `Welcome to ${settings.website_name || 'PinkBox'}`,
-          text: `Welcome to ${settings.website_name || 'PinkBox'}!\n\n${coupon ? `Use coupon ${coupon} at checkout for your welcome offer.` : 'Thanks for joining our list. Watch your inbox for PinkBox offers.'}\n\nShop now: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app'}\n\nThank you,\nPinkBox`,
+          text: `Welcome to ${settings.website_name || 'PinkBox'}!\n\n${couponInstruction}\n\nShop now: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://mypinkbox.vercel.app'}\n\nThank you,\nPinkBox`,
         }),
       });
       emailed = response.ok;
@@ -81,8 +86,9 @@ export async function POST(request) {
       ok: true,
       coupon,
       emailed,
+      minimum_order_amount: coupon ? minimumOrderAmount : null,
       message: coupon
-        ? (emailed ? `Welcome! Your ${coupon} coupon has been sent to your email.` : `Welcome! Use ${coupon} at checkout.`)
+        ? (emailed ? `Welcome! Your ${coupon} coupon has been sent to your email.` : `Welcome! ${couponInstruction}`)
         : 'Welcome! You are on the Pink Box list.',
     });
   } catch (error) {
