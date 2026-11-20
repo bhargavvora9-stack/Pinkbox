@@ -92,7 +92,7 @@ export function WebsiteDashboard() {
                   <tr key={lead.id} className="border-t border-gray-100">
                     <td className="px-4 py-3">{lead.name || lead.company_name || '—'}</td>
                     <td className="px-4 py-3">{lead.phone || '—'}</td>
-                    <td className="px-4 py-3">{lead.organisation_type || 'Website enquiry'}</td>
+                    <td className="px-4 py-3">{lead.lead_type || lead.organisation_type || 'Website enquiry'}</td>
                     <td className="px-4 py-3 capitalize">{String(lead.status || 'new').replaceAll('_', ' ')}</td>
                   </tr>
                 ))}
