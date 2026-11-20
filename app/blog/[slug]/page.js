@@ -13,7 +13,7 @@ export const revalidate=0;
 
 async function getStore(){
  const db=createAdminClient();
- const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description,logo_url').eq('slug','pinkbox').eq('status','active').maybeSingle();
+ const {data:settings}=await db.from('website_settings').select('company_id,website_name,meta_title,meta_description,logo_url,phone,email,address,instagram_url,facebook_url,youtube_url,announcement_text').eq('slug','pinkbox').eq('status','active').maybeSingle();
  return {db,settings};
 }
 
