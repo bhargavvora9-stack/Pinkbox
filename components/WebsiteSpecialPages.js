@@ -4,16 +4,106 @@ import Link from 'next/link';
 import {RefreshCw,Save,PackageCheck,AlertTriangle,ShoppingBag,Users,IndianRupee,Boxes,Search,MessageCircle} from 'lucide-react';
 const money=n=>`₹${Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
 function Card({icon:Icon,label,value}){return <div className="rounded-2xl border bg-white p-5"><div className="flex items-center gap-3 text-gray-500"><Icon size={18}/><span className="text-sm">{label}</span></div><div className="mt-3 text-2xl font-semibold text-gray-900">{value}</div></div>}
-export function WebsiteDashboard(){const[d,setD]=useState(null),[err,setErr]=useState('');const load=async()=>{try{const r=await fetch('/api/website/dashboard',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error);setD(j)}catch(e){setErr(e.message)}};useEffect(()=>{load()},[]);if(err)return <div className="rounded-xl bg-red-50 p-4 text-red-700">{err}</div>;if(!d)return <div className="p-12 text-center text-gray-500">Loading dashboard…</div>;
- const waNumber=String(d.whatsappNumber||'').replace(/[^0-9]/g,'');
- const summaryText=`📊 ${d.websiteName} — Today's Summary (${new Date().toLocaleDateString('en-IN')})\n\nOrders: ${d.today.orders} (COD: ${d.today.cod}, Online: ${d.today.online})\nSales: ${money(d.today.sales)}\n\nOverall — Total orders: ${d.stats.orders}, Total sales: ${money(d.stats.sales)}`;
- const lowStockText=d.lowStock.length?`⚠️ ${d.websiteName} — Low Stock Alert\n\n${d.lowStock.map(p=>`• ${p.title} (${p.sku||'—'}): ${p.stock_quantity||0} left`).join('\n')}`:'';
- const waHref=t=>waNumber?`https://wa.me/${waNumber}?text=${encodeURIComponent(t)}`:null;
- return <div className="space-y-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold">Website Dashboard</h1><p className="mt-1 text-sm text-gray-500">PinkBox online store overview.</p></div><button onClick={load} className="rounded-xl border bg-white p-2.5"><RefreshCw size={17}/></button></div>
- <div className="rounded-2xl border bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-sm text-gray-500">Today · {new Date().toLocaleDateString('en-IN')}</div><div className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1"><span className="text-2xl font-semibold">{money(d.today.sales)}</span><span className="text-sm text-gray-500">{d.today.orders} orders · {d.today.cod} COD · {d.today.online} Online</span></div></div>{waHref(summaryText)&&<a href={waHref(summaryText)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white"><MessageCircle size={16}/> Share summary</a>}</div></div>
- <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Card icon={IndianRupee} label="Valid sales" value={money(d.stats.sales)}/><Card icon={ShoppingBag} label="Valid orders" value={d.stats.orders}/><Card icon={PackageCheck} label="Active products" value={d.stats.products}/><Card icon={Users} label="Customers" value={d.stats.customers}/><Link href="/admin/b2b-enquiries" className="rounded-2xl border bg-white p-5 transition hover:border-gray-400"><div className="flex items-center gap-3 text-gray-500"><Users size={18}/><span className="text-sm">B2B Leads</span></div><div className="mt-3 text-2xl font-semibold text-gray-900">{d.stats.b2bLeads||0}</div><div className="mt-1 text-xs text-gray-500">{d.stats.newB2bLeads||0} new · Manage enquiries →</div></Link></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><div className="rounded-2xl border bg-white p-4"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">New / Pending Orders</div><div className="mt-2 text-xl font-semibold">{(d.orderQueue?.pending||0)+(d.orderQueue?.new||0)}</div></div><div className="rounded-2xl border bg-white p-4"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Processing</div><div className="mt-2 text-xl font-semibold">{d.orderQueue?.processing||0}</div></div><div className="rounded-2xl border bg-white p-4"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Packed</div><div className="mt-2 text-xl font-semibold">{d.orderQueue?.packed||0}</div></div><div className="rounded-2xl border bg-white p-4"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Shipped</div><div className="mt-2 text-xl font-semibold">{d.orderQueue?.shipped||0}</div></div><Link href="/admin/b2b-enquiries" className="rounded-2xl border bg-white p-4 transition hover:border-gray-400"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">New B2B Leads</div><div className="mt-2 text-xl font-semibold">{d.b2bQueue?.new||0}</div><div className="mt-1 text-xs text-gray-500">Open enquiries →</div></Link></div>
- <div className="grid gap-5 xl:grid-cols-2"><div className="rounded-2xl border bg-white"><div className="border-b px-5 py-4 font-semibold">Recent Orders</div><div className="divide-y">{d.recentOrders.length?d.recentOrders.map(o=><div key={o.id} className="flex items-center justify-between px-5 py-4"><div><div className="font-medium">{o.order_number||o.id.slice(0,8)}</div><div className="text-xs text-gray-500">{new Date(o.created_at).toLocaleString('en-IN')}</div></div><div className="text-right"><div className="font-semibold">{money(o.total_amount)}</div><span className="text-xs uppercase text-gray-500">{o.order_status}</span></div></div>):<div className="p-8 text-center text-sm text-gray-500">No orders yet.</div>}</div></div>
- <div className="rounded-2xl border bg-white"><div className="flex items-center justify-between border-b px-5 py-4"><div className="flex items-center gap-2 font-semibold"><AlertTriangle size={17}/>Low Stock</div>{d.lowStock.length>0&&waHref(lowStockText)&&<a href={waHref(lowStockText)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white"><MessageCircle size={13}/> Share</a>}</div><div className="divide-y">{d.lowStock.length?d.lowStock.map(p=><div key={p.id} className="flex items-center justify-between px-5 py-4"><div><div className="font-medium">{p.title}</div><div className="text-xs text-gray-500">{p.sku}</div></div><div className="font-semibold text-amber-600">{p.stock_quantity||0}</div></div>):<div className="p-8 text-center text-sm text-gray-500">No low-stock products.</div>}</div></div></div></div>}
+export function WebsiteDashboard() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/website/dashboard', { cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to load dashboard.');
+      setData(result);
+    } catch (err) {
+      setError(err.message || 'Unable to load dashboard.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const cards = [
+    ['leads', 'Leads'],
+    ['subscribers', 'Subscribers'],
+    ['blog_posts', 'Blog posts'],
+    ['banners', 'Banners'],
+    ['coupons', 'Coupons'],
+  ];
+  const latestLeads = Array.isArray(data?.latestLeads) ? data.latestLeads : [];
+
+  return (
+    <div className="space-y-8 text-gray-900">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">Pink Box website overview.</p>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          aria-label="Refresh dashboard"
+          className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {error && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map(([key, label]) => (
+          <div key={key} className="rounded-2xl border border-gray-200 bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+            <p className="mt-2 font-display text-3xl font-semibold text-gray-900">
+              {loading ? '…' : Number(data?.counts?.[key] || 0).toLocaleString('en-IN')}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <section>
+        <h2 className="font-display text-lg font-semibold">Latest enquiries</h2>
+        <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Name</th>
+                  <th className="px-4 py-3 font-semibold">Phone</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td className="px-4 py-6 text-gray-500" colSpan={4}>Loading enquiries…</td></tr>
+                ) : latestLeads.length === 0 ? (
+                  <tr><td className="px-4 py-6 text-gray-500" colSpan={4}>No enquiries yet.</td></tr>
+                ) : latestLeads.map((lead) => (
+                  <tr key={lead.id} className="border-t border-gray-100">
+                    <td className="px-4 py-3">{lead.name || lead.company_name || '—'}</td>
+                    <td className="px-4 py-3">{lead.phone || '—'}</td>
+                    <td className="px-4 py-3">{lead.organisation_type || 'Website enquiry'}</td>
+                    <td className="px-4 py-3 capitalize">{String(lead.status || 'new').replaceAll('_', ' ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 export function WebsiteSettings(){const[s,setS]=useState(null),[saving,setSaving]=useState(false),[msg,setMsg]=useState(''),[err,setErr]=useState('');const load=async()=>{const r=await fetch('/api/website/settings',{cache:'no-store'}),j=await r.json();if(r.ok)setS(j.data);else setErr(j.error)};useEffect(()=>{load()},[]);const set=(k,v)=>setS(x=>({...x,[k]:v}));const save=async e=>{e.preventDefault();setSaving(true);setMsg('');setErr('');try{const r=await fetch('/api/website/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)}),j=await r.json();if(!r.ok)throw Error(j.error);setS(j.data);setMsg('Website settings saved.')}catch(e){setErr(e.message)}finally{setSaving(false)}};if(!s)return <div className="p-12 text-center text-gray-500">Loading settings…</div>;return <form onSubmit={save} className="space-y-5"><div><h1 className="text-2xl font-semibold">Website Settings</h1><p className="mt-1 text-sm text-gray-500">PinkBox storefront identity, contact, commerce and SEO defaults.</p></div>{(msg||err)&&<div className={`rounded-xl p-4 text-sm ${err?'bg-red-50 text-red-700':'bg-green-50 text-green-700'}`}>{err||msg}</div>}<div className="grid gap-5 lg:grid-cols-2">{[['website_name','Website Name'],['slug','Slug'],['logo_url','Logo URL'],['favicon_url','Favicon URL'],['whatsapp_number','WhatsApp Number'],['phone','Phone'],['email','Email'],['gstin','GSTIN'],['currency','Currency'],['timezone','Timezone'],['address','Business Address'],['meta_title','Meta Title'],['meta_description','Meta Description'],['free_shipping_threshold','Free Shipping Threshold'],['default_shipping_charge','Default Shipping Charge'],['ga4_measurement_id','Google Analytics 4 ID (G-XXXXXXX)'],['meta_pixel_id','Meta (Facebook) Pixel ID']].map(([k,l])=><label key={k} className={k==='address'||k==='meta_description'?'lg:col-span-2':''}><span className="mb-1.5 block text-sm font-medium">{l}</span>{k==='address'||k==='meta_description'?<textarea rows={3} value={s[k]??''} onChange={e=>set(k,e.target.value)} className="w-full rounded-xl border px-3 py-2.5"/>:<input type={k.includes('threshold')||k.includes('charge')?'number':'text'} value={s[k]??''} onChange={e=>set(k,e.target.value)} className="w-full rounded-xl border px-3 py-2.5"/>}</label>)}</div><div className="flex flex-wrap gap-5 rounded-2xl border bg-white p-5">{[['cod_enabled','Cash on Delivery'],['online_payment_enabled','Online Payment'],['shipping_enabled','Shipping']].map(([k,l])=><label key={k} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!s[k]} onChange={e=>set(k,e.target.checked)}/>{l}</label>)}</div><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-3 font-semibold text-white"><Save size={17}/>{saving?'Saving…':'Save Settings'}</button></form>}
 export function WebsiteOrders(){const[rows,setRows]=useState([]),[loading,setLoading]=useState(true),[err,setErr]=useState('');const load=async()=>{setLoading(true);const r=await fetch('/api/website/orders',{cache:'no-store'}),j=await r.json();if(r.ok)setRows(j.data||[]);else setErr(j.error);setLoading(false)};useEffect(()=>{load()},[]);const statuses=['new','confirmed','processing','packed','shipped','delivered','cancelled','returned','refunded'];const change=async(o,status)=>{const r=await fetch('/api/website/orders',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,order_status:status,status_note:`Status changed to ${status}`})});const j=await r.json();if(!r.ok)setErr(j.error);else load()};return <div className="space-y-5"><div className="flex justify-between"><div><h1 className="text-2xl font-semibold">Orders</h1><p className="text-sm text-gray-500">Manage the complete order lifecycle.</p></div><button onClick={load} className="rounded-xl border bg-white p-2.5"><RefreshCw size={17}/></button></div>{err&&<div className="rounded-xl bg-red-50 p-4 text-red-700">{err}</div>}<div className="overflow-hidden rounded-2xl border bg-white"><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3">Order</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Date</th></tr></thead><tbody className="divide-y">{loading?<tr><td colSpan="6" className="p-12 text-center">Loading…</td></tr>:rows.length===0?<tr><td colSpan="6" className="p-12 text-center text-gray-500">No orders yet.</td></tr>:rows.map(o=><tr key={o.id}><td className="px-4 py-3 font-medium">{o.order_number}</td><td className="px-4 py-3">{o.customer_name||'—'}<div className="text-xs text-gray-500">{o.phone||o.email||''}</div></td><td className="px-4 py-3">{money(o.total_amount)}</td><td className="px-4 py-3">{o.payment_method} / {o.payment_status}</td><td className="px-4 py-3"><select value={o.order_status} onChange={e=>change(o,e.target.value)} className="rounded-lg border px-2 py-1.5 text-xs">{statuses.map(x=><option key={x}>{x}</option>)}</select></td><td className="px-4 py-3 text-gray-500">{new Date(o.created_at).toLocaleDateString('en-IN')}</td></tr>)}</tbody></table></div></div></div>}
 export function WebsiteInventory(){
