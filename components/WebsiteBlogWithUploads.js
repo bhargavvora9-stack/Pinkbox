@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 import {Save,Trash2,Edit3,Plus,RefreshCw} from 'lucide-react';
 import WebsiteImageUpload from './WebsiteImageUpload';
 
-const blank={title:'',slug:'',excerpt:'',content:'',cover_image_url:'',is_published:false,published_at:'',seo_title:'',seo_description:'',seo_keywords:''};
+const blank={title:'',slug:'',excerpt:'',content:'',cover_image_url:'',category:'',is_published:false,published_at:'',seo_title:'',seo_description:'',seo_keywords:''};
 const input='w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10';
 
 const api=async(url,options)=>{const r=await fetch(url,options);const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j};
@@ -23,6 +23,7 @@ export default function WebsiteBlogWithUploads(){
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Title</span><input required value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} className={input}/></label>
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Slug</span><input value={form.slug||''} onChange={e=>setForm({...form,slug:e.target.value})} className={input}/></label>
     <WebsiteImageUpload value={form.cover_image_url||''} onChange={v=>setForm({...form,cover_image_url:v})} label="Cover Image" folder="blog-covers"/>
+    <label className="block text-sm font-medium"><span className="mb-1.5 block">Category</span><input value={form.category||''} onChange={e=>setForm({...form,category:e.target.value})} placeholder="Period education" className={input}/></label>
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Excerpt</span><textarea rows={3} value={form.excerpt||''} onChange={e=>setForm({...form,excerpt:e.target.value})} className={input}/></label>
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Content</span><textarea rows={10} required value={form.content||''} onChange={e=>setForm({...form,content:e.target.value})} className={input}/></label>
     <div className="space-y-3 rounded-xl border border-gray-200 p-4">
