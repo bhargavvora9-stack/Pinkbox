@@ -22,5 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Upload regenerated lockfile for deterministic dependency pinning
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinkbox-regenerated-package-lock
+          path: package-lock.json
+          retention-days: 1
+
       - name: Build
         run: npm run build
