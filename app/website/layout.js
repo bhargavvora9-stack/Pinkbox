@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 import LogoutButton from '@/components/LogoutButton';
 import './website-theme.css';
+import Image from 'next/image';
 
 export const metadata = { title: 'PinkBox Website Admin', robots: { index: false, follow: false, nocache: true } };
 
@@ -36,7 +37,7 @@ export default async function WebsiteAdminLayout({ children }) {
       <aside className="hidden md:flex w-64 shrink-0 glass-sidebar flex-col">
         <div className="border-b border-white/10 p-4">
           <div className="flex items-center gap-3">
-            {company.logo_url ? <img src={company.logo_url} alt="logo" className="h-9 w-9 rounded-lg bg-white object-contain" /> : <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-sm font-bold text-white">PB</div>}
+            {company.logo_url ? <Image src={company.logo_url} alt="logo" width={36} height={36} unoptimized className="h-9 w-9 rounded-lg bg-white object-contain" /> : <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-500 text-sm font-bold text-white">PB</div>}
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-wider text-gray-500">Website Admin</div>
               <div className="truncate font-semibold text-white">{company.name || 'PinkBox'}</div>
