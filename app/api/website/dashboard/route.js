@@ -23,7 +23,7 @@ export async function GET(request) {
     supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
     supabase.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
     supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
-    supabase.from('website_bulk_enquiries').select('id,name,phone,company_name,organisation_type,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+    supabase.from('website_bulk_enquiries').select('id,name,phone,company_name,city,lead_type,organisation_type,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     supabase.from('website_newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
     supabase.from('website_blog_posts').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
     supabase.from('website_banners').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
