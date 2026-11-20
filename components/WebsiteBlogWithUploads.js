@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 import {Save,Trash2,Edit3,Plus,RefreshCw} from 'lucide-react';
 import WebsiteImageUpload from './WebsiteImageUpload';
 
-const blank={title:'',slug:'',excerpt:'',content:'',cover_image_url:'',is_published:false,published_at:''};
+const blank={title:'',slug:'',excerpt:'',content:'',cover_image_url:'',is_published:false,published_at:'',seo_title:'',seo_description:'',seo_keywords:''};
 const input='w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10';
 
 const api=async(url,options)=>{const r=await fetch(url,options);const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j};
@@ -25,6 +25,12 @@ export default function WebsiteBlogWithUploads(){
     <WebsiteImageUpload value={form.cover_image_url||''} onChange={v=>setForm({...form,cover_image_url:v})} label="Cover Image" folder="blog-covers"/>
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Excerpt</span><textarea rows={3} value={form.excerpt||''} onChange={e=>setForm({...form,excerpt:e.target.value})} className={input}/></label>
     <label className="block text-sm font-medium"><span className="mb-1.5 block">Content</span><textarea rows={10} required value={form.content||''} onChange={e=>setForm({...form,content:e.target.value})} className={input}/></label>
+    <div className="space-y-3 rounded-xl border border-gray-200 p-4">
+     <div><h3 className="text-sm font-semibold">SEO settings</h3><p className="mt-1 text-xs text-gray-500">Search title and description for this article.</p></div>
+     <label className="block text-sm font-medium"><span className="mb-1.5 block">SEO Title</span><input maxLength={180} value={form.seo_title||''} onChange={e=>setForm({...form,seo_title:e.target.value})} className={input}/></label>
+     <label className="block text-sm font-medium"><span className="mb-1.5 block">SEO Description</span><textarea rows={3} maxLength={320} value={form.seo_description||''} onChange={e=>setForm({...form,seo_description:e.target.value})} className={input}/></label>
+     <label className="block text-sm font-medium"><span className="mb-1.5 block">SEO Keywords</span><input value={form.seo_keywords||''} onChange={e=>setForm({...form,seo_keywords:e.target.value})} placeholder="period care, sanitary pads, menstrual hygiene" className={input}/></label>
+    </div>
     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.is_published} onChange={e=>setForm({...form,is_published:e.target.checked})}/>{form.is_published?'Published':'Draft'}</label>
     <div className="flex gap-2"><button type="button" onClick={()=>{setForm(blank);setEdit(null)}} className="rounded-xl border px-4 py-2.5">Clear</button><button disabled={saving} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 py-2.5 font-semibold text-white disabled:opacity-50"><Save size={16}/>{saving?'Saving…':edit?'Update':'Save'}</button></div>
    </form>
