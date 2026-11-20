@@ -1,5 +1,5 @@
 import { getWebsiteAdminContext, jsonError, audit } from '@/lib/website-admin';
-const tables={campaigns:'website_campaigns',settings:'website_notification_settings',logs:'website_notification_logs'};
+const tables={campaigns:'website_campaigns',broadcasts:'website_campaigns',settings:'website_notification_settings',logs:'website_notification_logs'};
 export async function GET(request){const u=new URL(request.url),r=u.searchParams.get('resource')||'campaigns',ctx=await getWebsiteAdminContext(request);if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);const{supabase,companyId}=ctx,t=tables[r];if(!t)return jsonError('Unknown Phase 5 resource.',404);let q=supabase.from(t).select('*').eq('company_id',companyId);q=['settings'].includes(r)?q.maybeSingle():q.order('created_at',{ascending:false}).limit(200);const{data,error}=await q;if(error)return jsonError(error.message,500);return Response.json({data:data??(r==='settings'?{}:[]),provider:r==='settings'?{email:Boolean(process.env.RESEND_API_KEY)}:undefined})}
 export async function POST(request){return write(request,false)}
 export async function PATCH(request){return write(request,true)}
