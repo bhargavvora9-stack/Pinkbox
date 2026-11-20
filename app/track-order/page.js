@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import { Package, Search, Loader2 } from 'lucide-react';
@@ -51,7 +50,7 @@ export default function TrackOrderPage() {
         <section className="mt-8 rounded-2xl border border-border bg-card p-6">
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label htmlFor="track-order-number" className="block text-sm font-semibold text-foreground">Order number</label>
+              <label htmlFor="track-order-number" className="text-sm font-medium text-foreground">Order number</label>
               <input
                 id="track-order-number"
                 value={orderNumber}
@@ -65,7 +64,7 @@ export default function TrackOrderPage() {
               />
             </div>
             <div>
-              <label htmlFor="track-order-phone" className="block text-sm font-semibold text-foreground">Mobile number</label>
+              <label htmlFor="track-order-phone" className="text-sm font-medium text-foreground">Mobile number</label>
               <input
                 id="track-order-phone"
                 type="tel"
@@ -77,7 +76,7 @@ export default function TrackOrderPage() {
                 required
                 minLength={10}
                 maxLength={16}
-                className="mt-2 h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
               />
               <p className="mt-1.5 text-xs text-muted-foreground">You may enter the number with or without +91.</p>
             </div>
