@@ -7,6 +7,10 @@ export async function POST(request) {
     const db = createAdminClient();
     const body = await request.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
+    const name = String(body.name || '').trim().slice(0, 180);
+    const phone = String(body.phone || '').trim().slice(0, 40);
+    const whatsappOptIn = body.whatsapp_opt_in === true;
+    const source = String(body.source || 'Homepage newsletter').trim().slice(0, 80);
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     }
@@ -27,6 +31,10 @@ export async function POST(request) {
       .upsert({
         company_id: settings.company_id,
         email,
+        name: name || null,
+        phone: phone || null,
+        whatsapp_opt_in: whatsappOptIn,
+        source,
         coupon_code: coupon,
         is_active: true,
         updated_at: new Date().toISOString(),
