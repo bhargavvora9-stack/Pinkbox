@@ -21,7 +21,7 @@ export async function GET() {
 
     const { data: offers, error } = await db
       .from('website_discounts')
-      .select('id,name,code,discount_type,value,minimum_order_amount,starts_at,ends_at')
+      .select('id,name,code,discount_type,value,minimum_order_amount,starts_at,ends_at,usage_limit,usage_count')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -33,7 +33,8 @@ export async function GET() {
     const offer = (offers || []).find((item) =>
       Boolean(item.code) &&
       (!item.starts_at || new Date(item.starts_at).getTime() <= now) &&
-      (!item.ends_at || new Date(item.ends_at).getTime() >= now)
+      (!item.ends_at || new Date(item.ends_at).getTime() >= now) &&
+      (item.usage_limit == null || Number(item.usage_count || 0) < Number(item.usage_limit))
     ) || null;
 
     return Response.json({ offer }, {
