@@ -2,9 +2,9 @@ name: Pinkbox lint verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, pinkbox-zip-design-rebuild]
   pull_request:
-    branches: [main]
+    branches: [main, pinkbox-zip-design-rebuild]
 
 jobs:
   lint:
