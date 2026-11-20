@@ -8,6 +8,7 @@ import AdminNav from '@/components/AdminNav';
 const NAV = [
   { href: '/admin', label: 'Dashboard', module: 'dashboard', exact: true },
   { href: '/admin/orders', label: 'Orders', module: 'orders' },
+  { href: '/admin/payments', label: 'Payments', module: 'payments' },
   { href: '/admin/banners', label: 'Banners', module: 'banners' },
   { href: '/admin/blog', label: 'Blog', module: 'blog' },
   { href: '/admin/coupons', label: 'Coupons', module: 'discounts' },
