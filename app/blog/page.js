@@ -38,7 +38,7 @@ export async function generateMetadata() {
       type: 'website',
       images: settings?.logo_url ? [settings.logo_url] : undefined,
     },
-    twitter: { card: 'summary_large_image', title: TITLE, description, images: settings?.logo_url ? [settings.logo_url] : undefined },
+    twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: settings?.logo_url ? [settings.logo_url] : undefined },
   };
 }
 
