@@ -57,7 +57,7 @@ export default function WebsiteProductsBulkTools(){
 
   const downloadBlob=(blob,name)=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)};
   const downloadTemplate=()=>{const csv=Papa.unparse([templateRow],{columns});downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'pinkbox-product-import-template.csv');};
-  const exportProducts=()=>{window.location.href='/api/website/catalog-import';};
+  const exportProducts=()=>{const link=document.createElement('a');link.href='/api/website/catalog-import';link.download='';document.body.appendChild(link);link.click();link.remove();};
 
   const handleFile=e=>{
     const file=e.target.files?.[0];
