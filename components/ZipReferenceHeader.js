@@ -17,7 +17,7 @@ export default function ZipReferenceHeader({ settings = {} }) {
   const phone = settings.phone || '+91 73592 52000';
   const phoneHref = phone.replace(/[^\d+]/g, '');
   return (
-    <header id="top" className="sticky top-0 z-50 w-full">
+    <header className="sticky top-0 z-50 w-full">
       <div className="overflow-hidden bg-gradient-brand text-primary-foreground">
         <div className="flex w-max animate-marquee gap-12 py-2 text-xs font-medium tracking-wide whitespace-nowrap">
           {[...TICKER, ...TICKER, ...TICKER, ...TICKER].map((t, i) => (
