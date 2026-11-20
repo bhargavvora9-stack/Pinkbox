@@ -6,18 +6,39 @@ const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFract
 export default function ZipReferenceProductCard({product}){
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
+ const variants=Array.isArray(product.variants)?product.variants.filter((variant)=>variant?.is_active!==false):[];
+ const canSellVariant=(variant)=>product.track_inventory===false||product.allow_backorder===true||Number(variant?.stock_quantity||0)>0;
+ const preferredVariant=variants.find(canSellVariant)||variants[0]||null;
  const stockTracked=product.track_inventory!==false;
- const available=!stockTracked||product.allow_backorder||Number(product.stock_quantity||0)>0;
+ const available=variants.length>0
+  ? Boolean(preferredVariant&&canSellVariant(preferredVariant))
+  : (!stockTracked||product.allow_backorder||Number(product.stock_quantity||0)>0);
  async function addToCart(event){
   event.preventDefault();event.stopPropagation();
   if(!available||busy)return;
   setBusy(true);setMessage('');
   try{
    const current=JSON.parse(localStorage.getItem('pinkbox_cart')||'[]');
-   const id=product.id,existing=current.find((item)=>item.id===id),quantity=Number(existing?.quantity||0)+1,max=Number(product.stock_quantity||0);
+   const cartId=preferredVariant?product.id+':'+preferredVariant.id:product.id;
+   const existing=current.find((item)=>item.id===cartId);
+   const quantity=Number(existing?.quantity||0)+1;
+   const max=stockTracked?Number(preferredVariant?preferredVariant.stock_quantity||0:product.stock_quantity||0):0;
    if(stockTracked&&max>0&&quantity>max&&!product.allow_backorder)throw new Error('Only '+max+' available');
-   const item={...product,id,product_id:product.id,variant_id:null,title:product.title,price:Number(product.price||0),image_url:image,quantity,personalization:null};
-   const next=existing?current.map((entry)=>entry.id===id?{...entry,...item}:entry):[...current,item];
+   const cartImage=preferredVariant?.image_url||image;
+   const item={
+    ...product,
+    id:cartId,
+    product_id:product.id,
+    variant_id:preferredVariant?.id||null,
+    variant_title:preferredVariant?.title||null,
+    sku:preferredVariant?.sku||product.sku,
+    title:preferredVariant?product.title+' - '+preferredVariant.title:product.title,
+    price:Number(preferredVariant?.price)>0?Number(preferredVariant.price):Number(product.price||0),
+    image_url:cartImage,
+    quantity:1,
+    personalization:null,
+   };
+   const next=existing?current.map((entry)=>entry.id===cartId?{...entry,quantity,...item}:entry):[...current,item];
    localStorage.setItem('pinkbox_cart',JSON.stringify(next));
    window.dispatchEvent(new Event('pinkbox-cart-updated'));
    setMessage('Added to cart');
