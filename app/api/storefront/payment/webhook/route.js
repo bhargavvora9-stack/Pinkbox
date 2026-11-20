@@ -6,8 +6,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 function safeSignatureEqual(expected, received) {
+  const signature = String(received || '');
+  if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
   const a = Buffer.from(String(expected || ''), 'hex');
-  const b = Buffer.from(String(received || ''), 'hex');
+  const b = Buffer.from(signature, 'hex');
   return a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
