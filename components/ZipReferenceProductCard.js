@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 export default function ZipReferenceProductCard({product}){
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -25,7 +25,7 @@ export default function ZipReferenceProductCard({product}){
   finally{setBusy(false);}
  }
  return (
-  <article className="group overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
+  <article className="group overflow-hidden rounded-xl border bg-card text-card-foreground shadow transition-shadow hover:shadow-md">
    <Link href={'/products/'+product.slug}>
     <div className="aspect-square overflow-hidden bg-muted">
      {image?<img src={image} alt={product.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
@@ -33,8 +33,8 @@ export default function ZipReferenceProductCard({product}){
     <div className="p-4"><h3 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
    </Link>
    <div className="px-4 pb-4">
-    <button type="button" onClick={addToCart} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
-     {busy?<Loader2 className="h-4 w-4 animate-spin"/>:<ShoppingBag className="h-4 w-4"/>}{busy?'Adding…':available?'Add to Cart':'Out of stock'}
+    <button type="button" onClick={addToCart} disabled={busy||!available} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
+     {busy&&<Loader2 className="h-4 w-4 animate-spin"/>}{busy?'Adding…':available?'Add to Cart':'Out of stock'}
     </button>
     {message&&<p className="mt-2 text-center text-xs text-muted-foreground" role="status">{message}</p>}
    </div>
