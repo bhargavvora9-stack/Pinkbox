@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
+import Image from 'next/image';
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const readCart = () => {
@@ -366,7 +367,7 @@ export default function CartPage() {
               {items.map((item) => (
                 <article key={item.id} className="flex gap-4 border-b border-border p-4 last:border-b-0">
                   <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted">
-                    {item.image_url ? <img src={item.image_url} alt={item.title || ''} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-serif text-xl text-primary">PB</div>}
+                    {item.image_url ? <Image src={item.image_url} alt={item.title || ''} width={96} height={96} unoptimized className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-serif text-xl text-primary">PB</div>}
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link href={`/products/${item.slug}`} className="font-semibold hover:text-primary">{item.title}</Link>
