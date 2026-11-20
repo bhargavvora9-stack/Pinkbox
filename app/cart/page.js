@@ -227,7 +227,9 @@ export default function CartPage() {
       const order = await orderRes.json();
       if (!orderRes.ok || !order?.order_id) throw Error(order?.error || 'Unable to place the order.');
 
-      const trackingUrl = `/orders/${order.order_id}${order.tracking_token ? `?token=${encodeURIComponent(order.tracking_token)}` : ''}`;
+      const trackingUrl = order.tracking_token
+        ? `/order-confirmed?id=${encodeURIComponent(order.order_id)}&token=${encodeURIComponent(order.tracking_token)}`
+        : `/orders/${order.order_id}`;
 
       if (payment !== 'ONLINE') {
         trackGa4Event('purchase', {
