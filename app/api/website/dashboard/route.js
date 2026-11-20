@@ -15,7 +15,7 @@ export async function GET(request) {
   const { supabase, companyId } = ctx;
   const startOfToday = startOfIndiaDay();
 
-  const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes, b2bRes] = await Promise.all([
+  const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes, b2bRes, subscribersRes, blogPostsRes, bannersRes, discountsRes] = await Promise.all([
     supabase.from('website_orders').select('total_amount,order_status').eq('company_id', companyId),
     supabase.from('website_products').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('is_active', true),
     supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
@@ -23,10 +23,14 @@ export async function GET(request) {
     supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
     supabase.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
     supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
-    supabase.from('website_bulk_enquiries').select('id,status').eq('company_id', companyId),
+    supabase.from('website_bulk_enquiries').select('id,name,phone,company_name,organisation_type,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+    supabase.from('website_newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    supabase.from('website_blog_posts').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    supabase.from('website_banners').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    supabase.from('website_discounts').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
   ]);
 
-  const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, b2bRes].map(x => x.error).filter(Boolean);
+  const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, b2bRes, subscribersRes, blogPostsRes, bannersRes, discountsRes].map(x => x.error).filter(Boolean);
   if (errs.length) return jsonError(errs[0].message, 500);
 
   const allOrders = ordersRes.data || [];
@@ -64,6 +68,14 @@ export async function GET(request) {
       lowStock: lowStock.length,
       outOfStock: outOfStock.length,
     },
+    counts: {
+      leads: b2bLeads.length,
+      subscribers: subscribersRes.count || 0,
+      blog_posts: blogPostsRes.count || 0,
+      banners: bannersRes.count || 0,
+      coupons: discountsRes.count || 0,
+    },
+    latestLeads: b2bLeads.slice(0, 5),
     recentOrders: recentRes.data || [],
     lowStock,
     outOfStock,
