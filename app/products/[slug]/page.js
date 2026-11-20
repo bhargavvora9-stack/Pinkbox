@@ -89,6 +89,13 @@ async function getProduct(slug) {
     ...product,
     website_name: settings.website_name,
     logo_url: settings.logo_url,
+    phone: settings.phone,
+    email: settings.email,
+    address: settings.address,
+    instagram_url: settings.instagram_url,
+    facebook_url: settings.facebook_url,
+    youtube_url: settings.youtube_url,
+    announcement_text: settings.announcement_text,
     whatsapp_number: settings.whatsapp_number,
     free_shipping_threshold: settings.free_shipping_threshold,
     default_shipping_charge: settings.default_shipping_charge,
@@ -187,7 +194,7 @@ export default async function ProductPage({ params }) {
     <div className="min-h-screen bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
-      <ZipReferenceHeader settings={{ website_name: p.website_name }} />
+      <ZipReferenceHeader settings={p} />
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
@@ -281,7 +288,7 @@ export default async function ProductPage({ params }) {
           )}
         </section>
       </main>
-      <ZipReferenceFooter settings={{ website_name: p.website_name }} />
+      <ZipReferenceFooter settings={p} />
     </div>
   );
 }
