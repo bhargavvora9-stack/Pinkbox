@@ -79,7 +79,7 @@ async function getStoreData() {
       .order('created_at', { ascending: false })
       .limit(30),
     db.from('website_product_variants')
-      .select('product_id,stock_quantity,is_active')
+      .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
       .eq('company_id', companyId)
       .eq('is_active', true),
     db.from('website_discounts')
@@ -109,11 +109,19 @@ async function getStoreData() {
     if (!catMap[mapping.product_id]) catMap[mapping.product_id] = mapping.category_id;
   }
 
+  const variantsByProductId = new Map();
+  for (const variant of variants.data || []) {
+    const items = variantsByProductId.get(variant.product_id) || [];
+    items.push(variant);
+    variantsByProductId.set(variant.product_id, items);
+  }
+
   const productData = (products.data || []).map((product) => ({
     ...product,
     image_url: imageMap[product.id] || (product.sku?.startsWith('MDH-') ? `/catalog-products/${product.sku.toLowerCase()}.webp` : null),
     images: imageListMap[product.id] || [],
     category_id: catMap[product.id] || null,
+    variants: variantsByProductId.get(product.id) || [],
   }));
 
   // Public listings include only active, priced products that checkout can currently sell.
