@@ -326,37 +326,27 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-background">
       <ZipReferenceHeader />
-      <main className="min-h-screen bg-background px-5 py-10 text-foreground">
+      <main className="container mx-auto px-4 py-12 text-foreground md:py-16">
       <div className="mx-auto max-w-6xl">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="font-semibold text-primary">← PinkBox</Link>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">Secure checkout</span>
-            <Link href="/account" className="text-sm font-semibold">Account</Link>
-          </div>
-        </div>
-
-        <header className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[.22em] text-primary">Your selection</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Shopping cart</h1>
-          <p className="mt-2 text-muted-foreground">Review your items, save your delivery details, and complete your PinkBox order.</p>
+        <header>
+          <h1 className="font-display text-3xl font-semibold text-foreground md:text-5xl">Your cart</h1>
         </header>
 
         {error && <div role="alert" className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
         {!items.length ? (
-          <section className="mt-8 rounded-3xl border border-border bg-card p-10 text-center">
-            <h2 className="text-2xl font-semibold">Your cart is empty</h2>
+          <section className="mt-16 text-center">
+            <h2 className="font-display text-2xl font-semibold text-foreground">Your cart is empty.</h2>
             <p className="mt-2 text-muted-foreground">Add something beautiful for everyday use.</p>
-            <Link href="/#new-arrivals" className="mt-5 inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-primary-foreground">Continue shopping</Link>
+            <Link href="/shop" className="mt-5 inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-primary-foreground">Continue shopping</Link>
           </section>
         ) : (
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_.85fr]">
-            <section className="space-y-4">
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
+            <section className="overflow-hidden rounded-lg border border-border bg-card">
               {items.map((item) => (
-                <article key={item.id} className="flex gap-4 rounded-3xl border border-border bg-card p-4">
-                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-muted">
-                    {item.image_url ? <img src={item.image_url} alt={item.title || ''} className="h-full w-full object-contain" /> : <div className="grid h-full place-items-center font-serif text-xl text-primary">PB</div>}
+                <article key={item.id} className="flex gap-4 border-b border-border p-4 last:border-b-0">
+                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted">
+                    {item.image_url ? <img src={item.image_url} alt={item.title || ''} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-serif text-xl text-primary">PB</div>}
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link href={`/products/${item.slug}`} className="font-semibold hover:text-primary">{item.title}</Link>
@@ -371,16 +361,16 @@ export default function CartPage() {
                 </article>
               ))}
 
-              <div className="rounded-3xl border border-border bg-secondary/40 p-5 text-sm text-[var(--muted-foreground)]">
+              <div className="mt-4 rounded-lg bg-secondary/40 p-5 text-sm text-[var(--muted-foreground)]">
                 <div className="flex items-center justify-between gap-3"><b className="text-foreground">Free shipping</b><span className="font-semibold text-primary">{shippingMessage}</span></div>
                 {freeShippingThreshold > 0 && <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--border)]"><div className="h-full rounded-full bg-primary" style={{ width: shippingProgress + '%' }} /></div>}
                 <p className="mt-2">{quoteLoading ? 'Updating delivery total…' : quote.shipping ? 'Shipping charge: ' + money(quote.shipping) : 'No shipping charge.'}</p>
               </div>
             </section>
 
-            <form onSubmit={submit} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <form onSubmit={submit} className="h-fit rounded-lg border border-border bg-secondary/40 p-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-semibold">Checkout</h2>
+                <h2 className="font-display text-xl font-semibold text-foreground">Checkout details</h2>
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-primary">Guest checkout available</span>
               </div>
 
@@ -409,7 +399,7 @@ export default function CartPage() {
                 <div className="flex justify-between border-t border-border pt-3 text-lg"><span>Total</span><b>{money(total)}</b></div>
               </div>
 
-              <button disabled={busy || quoteLoading || (!codAllowed && !onlineEnabled)} className="mt-6 w-full rounded-2xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-60">
+              <button disabled={busy || quoteLoading || (!codAllowed && !onlineEnabled)} className="mt-6 w-full rounded-md bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-60">
                 {busy ? 'Processing…' : quoteLoading ? 'Updating total…' : payment === 'ONLINE' ? 'Place order & pay' : 'Place order'}
               </button>
               <p className="mt-3 text-center text-xs text-muted-foreground">Your checkout details are saved on this device until the order is completed.</p>
