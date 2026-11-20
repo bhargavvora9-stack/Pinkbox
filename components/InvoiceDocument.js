@@ -1,4 +1,5 @@
 import InvoiceActions from './InvoiceActions';
+import Image from 'next/image';
 
 const money=n=>`₹${Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 const dateText=v=>v?new Date(v).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
@@ -15,7 +16,7 @@ export default function InvoiceDocument({settings,order,items,backHref}){
   <article className="invoice-sheet mx-auto w-full max-w-4xl bg-white text-gray-900 shadow-xl">
    <header className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-gray-900 p-8 pb-6">
     <div className="flex items-start gap-4">
-      {settings.logo_url?<img src={settings.logo_url} alt={settings.website_name||'Logo'} className="h-16 w-16 rounded-xl object-contain"/>:null}
+      {settings.logo_url?<Image src={settings.logo_url} alt={settings.website_name||'Logo'} width={64} height={64} unoptimized className="h-16 w-16 rounded-xl object-contain"/>:null}
       <div><h1 className="text-2xl font-black tracking-tight">{settings.website_name||'PinkBox'}</h1>{line(settings.address)&&<p className="mt-1 max-w-md whitespace-pre-line text-xs leading-5 text-gray-600">{settings.address}</p>}{line(settings.phone)&&<p className="mt-1 text-xs text-gray-600">Phone: {settings.phone}</p>}{line(settings.email)&&<p className="text-xs text-gray-600">Email: {settings.email}</p>}{line(settings.gstin)&&<p className="mt-1 text-xs font-semibold">GSTIN: {settings.gstin}</p>}</div>
     </div>
     <div className="text-right"><p className="text-xs font-bold uppercase tracking-[.2em] text-gray-500">Tax Invoice</p><h2 className="mt-1 text-xl font-black">{invoiceNo}</h2><p className="mt-1 text-xs text-gray-600">Order: {order.order_number}</p><p className="text-xs text-gray-600">Date: {dateText(order.created_at)}</p><p className="mt-2 text-xs font-semibold capitalize">Payment: {String(order.payment_method||'').replaceAll('_',' ')} · {String(order.payment_status||'').replaceAll('_',' ')}</p></div>
