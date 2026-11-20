@@ -25,7 +25,9 @@ export default async function AdminModulePage({ params }) {
   if (key === 'inventory') return <WebsiteInventory />;
   if (key === 'customers') return <WebsiteCustomersPhase3 />;
   if (key === 'subscribers') return <WebsiteResourceManager3 resource="subscribers" />;
-  if (key === 'b2b-enquiries') return <WebsiteResourceManager3 resource="bulk-enquiries" />;
+  if (key === 'b2b-enquiries' || key === 'leads') return <WebsiteResourceManager3 resource="bulk-enquiries" />;
+  if (key === 'coupons') return <WebsiteResourceManager3 resource="discounts" />;
+  if (key === 'broadcasts') return <Phase5Notifications />;
   if (key === 'invoices') return <Phase3Orders />;
   if (key === 'products/bulk-edit') return <WebsiteProductsManagerWizard />;
   if (key === 'audit-log') return <WebsiteAuditLog />;
