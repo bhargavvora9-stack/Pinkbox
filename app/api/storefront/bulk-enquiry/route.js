@@ -11,6 +11,8 @@ export async function POST(request) {
     const phone = String(body.phone || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
     const organisationType = String(body.organisation_type || '').trim();
+    const city = String(body.city || '').trim().slice(0, 120);
+    const leadType = ['contact', 'dealer', 'bulk'].includes(String(body.lead_type || '').trim()) ? String(body.lead_type).trim() : 'contact';
     const quantity = String(body.quantity || '').trim();
     const message = String(body.message || '').trim();
 
@@ -39,9 +41,12 @@ export async function POST(request) {
         company_name: companyName || null,
         phone,
         email: email || null,
+        city: city || null,
+        lead_type: leadType,
         organisation_type: organisationType || null,
         quantity: quantity || null,
         message: message || null,
+        source: String(body.source || 'Website').slice(0, 80),
       })
       .select('id')
       .single();
@@ -64,6 +69,8 @@ export async function POST(request) {
             `Company/Organisation: ${companyName || '-'}`,
             `Phone: ${phone}`,
             `Email: ${email || '-'}`,
+            `City: ${city || '-'}`,
+            `Lead type: ${leadType}`,
             `Type: ${organisationType || '-'}`,
             `Quantity: ${quantity || '-'}`,
             `Message: ${message || '-'}`,
