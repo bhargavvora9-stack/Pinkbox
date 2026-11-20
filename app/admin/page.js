@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { WebsiteDashboard } from '@/components/WebsiteSpecialPages';
 
 export default function AdminPage() {
-  redirect('/admin/dashboard');
+  return <WebsiteDashboard />;
 }
