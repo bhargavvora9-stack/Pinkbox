@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
@@ -28,6 +29,7 @@ const getSessionId = () => {
 const blankForm = { name: '', phone: '', email: '', address: '', city: '', state: '', pincode: '', note: '', coupon_code: '' };
 
 export default function CartPage() {
+  const router = useRouter();
   const [items, setItems] = useState([]);
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -244,7 +246,7 @@ export default function CartPage() {
         sessionStorage.removeItem('pinkbox_checkout_form');
         sessionStorage.removeItem('pinkbox_payment_method');
         setItems([]);
-        window.location.href = trackingUrl;
+        router.push(trackingUrl);
         return;
       }
 
@@ -331,7 +333,7 @@ export default function CartPage() {
       sessionStorage.removeItem('pinkbox_checkout_form');
       sessionStorage.removeItem('pinkbox_payment_method');
       setItems([]);
-      window.location.href = trackingUrl;
+      router.push(trackingUrl);
     } catch (err) {
       setError(err.message || 'Something went wrong.');
     } finally {
