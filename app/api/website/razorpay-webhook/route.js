@@ -1,102 +1,150 @@
-import { createAdminClient } from '@/lib/supabase-admin';
 import crypto from 'crypto';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
-// Configure this exact URL in the Razorpay Dashboard → Settings → Webhooks:
-//   https://<your-domain>/api/website/razorpay-webhook
-// Events to enable: payment.captured, payment.failed
-// Use the same secret you set as RAZORPAY_WEBHOOK_SECRET in Vercel.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+function safeSignatureEqual(expected, received) {
+  const signature = String(received || '');
+  if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
+  const a = Buffer.from(String(expected || ''), 'hex');
+  const b = Buffer.from(signature, 'hex');
+  return a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+async function getWebhookSecret(db, companyId) {
+  const { data, error } = await db
+    .from('website_payment_methods')
+    .select('config')
+    .eq('company_id', companyId)
+    .eq('provider', 'razorpay')
+    .eq('is_active', true)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  const config = data?.config && typeof data.config === 'object' ? data.config : {};
+  return String(
+    config.webhook_secret ||
+    config.razorpay_webhook_secret ||
+    process.env.RAZORPAY_WEBHOOK_SECRET ||
+    ''
+  ).trim();
+}
 
 export async function POST(request) {
   try {
+    const rawBody = await request.text();
+    if (!rawBody) return Response.json({ error: 'Empty webhook payload.' }, { status: 400 });
+
     const db = createAdminClient();
-    const { data: settings } = await db
+    const { data: settings, error: settingsError } = await db
       .from('website_settings')
       .select('company_id')
       .eq('slug', 'pinkbox')
       .eq('status', 'active')
       .maybeSingle();
 
-    if (!settings?.company_id) return Response.json({ error: 'PinkBox store is not configured.' }, { status: 404 });
+    if (settingsError || !settings?.company_id) {
+      return Response.json({ error: 'PinkBox store is not configured.' }, { status: 503 });
+    }
 
-    const { data: pm } = await db
-      .from('website_payment_methods')
-      .select('config')
+    const webhookSecret = await getWebhookSecret(db, settings.company_id);
+    if (!webhookSecret) {
+      return Response.json({ error: 'Razorpay webhook secret is not configured.' }, { status: 503 });
+    }
+
+    const receivedSignature = request.headers.get('x-razorpay-signature') || '';
+    const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+    if (!safeSignatureEqual(expectedSignature, receivedSignature)) {
+      return Response.json({ error: 'Invalid webhook signature.' }, { status: 400 });
+    }
+
+    let event;
+    try {
+      event = JSON.parse(rawBody);
+    } catch {
+      return Response.json({ error: 'Invalid webhook JSON.' }, { status: 400 });
+    }
+
+    if (!['payment.captured', 'order.paid'].includes(String(event?.event || ''))) {
+      return Response.json({ ok: true, ignored: true });
+    }
+
+    const payment = event?.payload?.payment?.entity;
+    const razorpayOrderId = String(payment?.order_id || '').trim();
+    const razorpayPaymentId = String(payment?.id || '').trim();
+    if (!razorpayOrderId || !razorpayPaymentId) {
+      return Response.json({ error: 'Captured payment details are missing.' }, { status: 400 });
+    }
+    if (String(payment?.status || '').toLowerCase() !== 'captured') {
+      return Response.json({ ok: true, ignored: true });
+    }
+
+    const { data: order, error: orderError } = await db
+      .from('website_orders')
+      .select('id,company_id,order_number,total_amount,payment_method,payment_status,order_status,razorpay_order_id')
       .eq('company_id', settings.company_id)
-      .eq('provider', 'razorpay')
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false })
-      .limit(1)
+      .eq('razorpay_order_id', razorpayOrderId)
       .maybeSingle();
 
-    // Vercel's dedicated webhook secret is canonical; DB config is only a legacy fallback.
-    const secret = String(process.env.RAZORPAY_WEBHOOK_SECRET || pm?.config?.webhook_secret || '').trim();
-    if (!secret) return Response.json({ error: 'Webhook not configured.' }, { status: 503 });
+    if (orderError) {
+      console.error('Razorpay webhook order lookup failed:', orderError.message);
+      return Response.json({ error: 'Unable to find the linked order.' }, { status: 500 });
+    }
+    if (!order) return Response.json({ ok: true, ignored: true });
+    if (order.payment_method !== 'ONLINE') return Response.json({ ok: true, ignored: true });
+    if (order.payment_status === 'paid') return Response.json({ ok: true, already_paid: true });
 
-    const rawBody = await request.text();
-    const signature = request.headers.get('x-razorpay-signature');
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-    const a = Buffer.from(String(expected || ''), 'utf8');
-    const b = Buffer.from(String(signature || ''), 'utf8');
-    if (!signature || a.length !== b.length || !crypto.timingSafeEqual(a, b)) return Response.json({ error: 'Invalid signature.' }, { status: 400 });
+    const expectedAmountPaise = Math.round(Number(order.total_amount) * 100);
+    if (
+      payment.currency !== 'INR' ||
+      !Number.isSafeInteger(expectedAmountPaise) ||
+      Number(payment.amount) !== expectedAmountPaise
+    ) {
+      console.error('Razorpay webhook amount mismatch for order:', order.id);
+      return Response.json({ error: 'Captured payment does not match the order amount.' }, { status: 400 });
+    }
 
-    const payload = JSON.parse(rawBody);
-    const event = payload.event;
-    const paymentEntity = payload.payload?.payment?.entity;
-    const orderEntity = payload.payload?.order?.entity;
-    const razorpayOrderId = paymentEntity?.order_id || orderEntity?.id || null;
-    const razorpayPaymentId = paymentEntity?.id || null;
+    if (['cancelled', 'returned', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
+      console.error('Captured Razorpay payment belongs to a cancelled or returned order:', order.id);
+      return Response.json({ ok: true, manual_review_required: true });
+    }
 
-    if ((event === 'payment.captured' || event === 'order.paid') && razorpayOrderId) {
-      const { data: order } = await db
-        .from('website_orders')
-        .select('id, company_id, payment_status')
-        .eq('company_id', settings.company_id)
-        .eq('razorpay_order_id', razorpayOrderId)
-        .maybeSingle();
-      if (order && order.payment_status !== 'paid') {
-        const { error } = await db.rpc('finalize_website_online_payment', {
-          p_order_id: order.id,
-          p_razorpay_payment_id: razorpayPaymentId,
-          p_razorpay_signature: null,
+    const { data: finalized, error: finalizeError } = await db.rpc('finalize_website_online_payment', {
+      p_order_id: order.id,
+      p_razorpay_payment_id: razorpayPaymentId,
+      p_razorpay_signature: null,
+    });
+
+    if (finalizeError) {
+      console.error('Razorpay webhook finalization failed:', finalizeError.message);
+      return Response.json({ error: 'Unable to finalize the paid order.' }, { status: 500 });
+    }
+
+    if (!finalized?.already_paid) {
+      try {
+        const { data: confirmedOrder } = await db
+          .from('website_orders')
+          .select('*')
+          .eq('company_id', settings.company_id)
+          .eq('id', order.id)
+          .maybeSingle();
+        await runWebsiteAutomations({
+          companyId: settings.company_id,
+          trigger: 'confirmed',
+          order: confirmedOrder || { id: order.id, order_number: order.order_number, order_status: 'confirmed' },
         });
-        if (error) {
-          console.error('Webhook payment finalization failed:', error.message);
-          return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
-        }
-        try {
-          const { data: confirmedOrder } = await db.from('website_orders').select('*').eq('id', order.id).maybeSingle();
-          await runWebsiteAutomations({ companyId: order.company_id, trigger: 'confirmed', order: confirmedOrder || { id: order.id, order_status: 'confirmed' } });
-        } catch (automationError) {
-          console.error('Webhook confirmation automation failed:', automationError);
-        }
+      } catch (automationError) {
+        console.error('Razorpay webhook confirmation automation failed:', automationError);
       }
     }
 
-    if (event === 'payment.failed' && razorpayOrderId) {
-      const { data: order } = await db
-        .from('website_orders')
-        .select('id, payment_status, order_status')
-        .eq('company_id', settings.company_id)
-        .eq('razorpay_order_id', razorpayOrderId)
-        .maybeSingle();
-      if (order && order.payment_status !== 'paid' && order.order_status === 'pending') {
-        const { error } = await db.rpc('cancel_website_online_order', {
-          p_order_id: order.id,
-          p_reason: 'Razorpay payment failed',
-        });
-        if (error) {
-          console.error('Webhook payment cancellation failed:', error.message);
-          return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
-        }
-      }
-    }
-
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, already_paid: Boolean(finalized?.already_paid) });
   } catch (error) {
     console.error('Razorpay webhook failed:', error);
-    return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
+    return Response.json({ error: 'Unable to process Razorpay webhook.' }, { status: 500 });
   }
 }
-
-export const dynamic = 'force-dynamic';
