@@ -1,4 +1,5 @@
 import WebsiteResourceManager3 from '@/components/WebsiteResourceManager3';
+import WebsiteReviewModeration from '@/components/WebsiteReviewModeration';
 import { WebsiteDashboard, WebsiteInventory } from '@/components/WebsiteSpecialPages';
 import WebsiteSettingsWithUploads from '@/components/WebsiteSettingsWithUploads';
 import WebsiteBlogWithUploads from '@/components/WebsiteBlogWithUploads';
@@ -35,7 +36,8 @@ export default async function AdminModulePage({ params }) {
   if (key === 'products/categories') return <ProductCategoryMapping />;
   if (key === 'products/import-export') return <WebsiteBulkTools />;
   if (key === 'products/collections') return <WebsiteProductCollectionMapping />;
-  if (['brands','collections','variants','reviews'].includes(key)) return <Phase2Manager resource={key} />;
+  if (key === 'reviews') return <WebsiteReviewModeration />;
+  if (['brands','collections','variants'].includes(key)) return <Phase2Manager resource={key} />;
   if (key === 'shipping') return <Phase3Shipping resource="shipping-methods" />;
   if (key === 'shipping/methods') return <Phase3Shipping resource="shipping-methods" />;
   if (key === 'shipping/zones') return <Phase3Shipping resource="shipping-zones" />;
