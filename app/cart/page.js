@@ -255,13 +255,29 @@ export default function CartPage() {
         throw Error(`${loadError.message} Please choose Cash on Delivery.`);
       }
 
-      const pr = await fetch('/api/storefront/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', order_id: order.order_id }),
-      });
-      const pd = await pr.json();
-      if (!pr.ok) throw Error(pd?.error || 'Unable to start online payment.');
+      let pd = null;
+      try {
+        const pr = await fetch('/api/storefront/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', order_id: order.order_id }),
+        });
+        pd = await pr.json().catch(() => null);
+        if (
+          !pr.ok ||
+          !pd?.razorpay_order_id ||
+          !pd?.key_id ||
+          !Number.isSafeInteger(Number(pd.amount)) ||
+          Number(pd.amount) < 100 ||
+          pd.currency !== 'INR'
+        ) {
+          throw Error(pd?.error || 'Unable to start online payment.');
+        }
+      } catch (paymentSetupError) {
+        // Do not leave an unpaid ONLINE order behind when payment setup fails.
+        await cancelOnlineOrder(order.order_id);
+        throw paymentSetupError;
+      }
 
       await new Promise((resolve, reject) => {
         const checkout = new window.Razorpay({
