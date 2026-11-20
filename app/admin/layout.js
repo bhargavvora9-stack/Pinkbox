@@ -3,16 +3,17 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getWebsiteRolePermissions } from '@/lib/website-admin';
 import LogoutButton from '@/components/LogoutButton';
+import AdminNav from '@/components/AdminNav';
 
 const NAV = [
-  { href: '/admin/dashboard', label: 'Dashboard', module: 'dashboard' },
+  { href: '/admin', label: 'Dashboard', module: 'dashboard', exact: true },
   { href: '/admin/orders', label: 'Orders', module: 'orders' },
   { href: '/admin/banners', label: 'Banners', module: 'banners' },
   { href: '/admin/blog', label: 'Blog', module: 'blog' },
-  { href: '/admin/discounts', label: 'Coupons', module: 'discounts' },
-  { href: '/admin/b2b-enquiries', label: 'Leads', module: 'b2b_enquiries' },
+  { href: '/admin/coupons', label: 'Coupons', module: 'discounts' },
+  { href: '/admin/leads', label: 'Leads', module: 'b2b_enquiries' },
   { href: '/admin/subscribers', label: 'Subscribers', module: 'notifications' },
-  { href: '/admin/notifications', label: 'WhatsApp', module: 'notifications' },
+  { href: '/admin/broadcasts', label: 'WhatsApp', module: 'notifications' },
   { href: '/admin/reviews', label: 'Reviews', module: 'reviews' },
   { href: '/admin/settings', label: 'Site settings', module: 'settings' },
 ];
@@ -63,12 +64,8 @@ export default async function AdminLayout({ children }) {
         </div>
       </header>
       <div className="container mx-auto flex flex-col gap-8 px-4 py-8 md:flex-row">
-        <nav className="flex flex-wrap gap-1 md:w-52 md:flex-col">
-          {visibleNav.map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">
-              {item.label}
-            </Link>
-          ))}
+        <nav className="flex flex-wrap gap-1 md:w-52 md:flex-col" aria-label="Admin navigation">
+          <AdminNav items={visibleNav} />
         </nav>
         <main className="min-w-0 flex-1">{children}</main>
       </div>
