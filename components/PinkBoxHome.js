@@ -101,7 +101,7 @@ function CouponStrip({ coupons = [] }) {
             <div>
               <p className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                 <Tag className="h-4 w-4 text-primary" />
-                {coupon.discount_type === 'percent' ? coupon.discount_value + '% off' : '₹' + coupon.discount_value + ' off'}
+                {['percent', 'percentage'].includes(String(coupon.discount_type || '').toLowerCase()) ? coupon.discount_value + '% off' : '₹' + coupon.discount_value + ' off'}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{coupon.description || (Number(coupon.min_order_amount || 0) > 0 ? 'On orders above ₹' + coupon.min_order_amount : 'Sitewide')}</p>
             </div>
