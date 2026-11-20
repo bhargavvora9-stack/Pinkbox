@@ -35,9 +35,9 @@ export default function ZipReferenceFooter({settings={}}){
       <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary"/>{address}</p>
      </div>
      {(currentSettings.instagram_url || currentSettings.facebook_url || currentSettings.youtube_url) && <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold">
-      {settings.instagram_url && <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Instagram</a>}
-      {settings.facebook_url && <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Facebook</a>}
-      {settings.youtube_url && <a href={settings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">YouTube</a>}
+      {currentSettings.instagram_url && <a href={currentSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Instagram</a>}
+      {currentSettings.facebook_url && <a href={currentSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Facebook</a>}
+      {currentSettings.youtube_url && <a href={currentSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">YouTube</a>}
      </div>}
     </div>
     {LINKS.map((col)=><div key={col.title}><h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h3><ul className="mt-4 space-y-2.5">{col.items.map((item)=><li key={item.label}><Link href={item.href} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label}</Link></li>)}</ul></div>)}
