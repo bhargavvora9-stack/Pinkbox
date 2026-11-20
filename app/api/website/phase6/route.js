@@ -51,7 +51,7 @@ export async function POST(request){
   if(!['admin','super_admin'].includes(ctx.profile?.role))return jsonError('Only company admins can invite staff.',403);
   const email=clean(b.email,254).toLowerCase();
   const displayName=clean(b.display_name,120);
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return jsonError('Enter a valid staff email address.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return jsonError('Enter a valid staff email address.');
   if(!displayName)return jsonError('Staff name is required.');
   const admin=createAdminClient();
   const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{
