@@ -15,12 +15,13 @@ const TICKER = [
 export default function ZipReferenceHeader({ settings = {} }) {
   const [open, setOpen] = useState(false);
   const phone = settings.phone || '+91 73592 52000';
+  const ticker = settings.announcement_text?.trim() ? [settings.announcement_text.trim()] : TICKER;
   const phoneHref = phone.replace(/[^\d+]/g, '');
   return (
     <header className="sticky top-0 z-50 w-full">
       <div className="overflow-hidden bg-gradient-brand text-primary-foreground">
         <div className="flex w-max animate-marquee gap-12 py-2 text-xs font-medium tracking-wide whitespace-nowrap">
-          {[...TICKER, ...TICKER, ...TICKER, ...TICKER].map((t, i) => (
+          {[...ticker, ...ticker, ...ticker, ...ticker].map((t, i) => (
             <span key={i} className="flex items-center gap-2"><Flower2 className="h-3.5 w-3.5" aria-hidden />{t}</span>
           ))}
         </div>
