@@ -1,3 +1,5 @@
+'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
 const LINKS = [
@@ -6,10 +8,21 @@ const LINKS = [
  {title:'Support',items:[{label:'Shipping Policy',href:'/policies/shipping'},{label:'Returns & Refunds',href:'/policies/returns'},{label:'Privacy Policy',href:'/policies/privacy'},{label:'Terms of Service',href:'/policies/terms'},{label:'Dealer Enquiry',href:'/#contact'}]},
 ];
 export default function ZipReferenceFooter({settings={}}){
- const phone=settings.phone||'+91 73592 52000';
- const email=settings.email||'care@sakhicare.in';
- const address=settings.address||'Ahmedabad, Gujarat, India';
- const name=settings.website_name||'Pink Box';
+ const [siteSettings,setSiteSettings]=useState(settings||{});
+ useEffect(()=>{
+  if(Object.keys(settings||{}).length){setSiteSettings(settings);return;}
+  let active=true;
+  fetch('/api/storefront/settings',{cache:'no-store'})
+   .then(response=>response.ok?response.json():null)
+   .then(data=>{if(active&&data?.settings)setSiteSettings(data.settings)})
+   .catch(()=>{});
+  return ()=>{active=false};
+ },[]);
+ const currentSettings=siteSettings||settings||{};
+ const phone=currentSettings.phone||'+91 73592 52000';
+ const email=currentSettings.email||'care@sakhicare.in';
+ const address=currentSettings.address||'Ahmedabad, Gujarat, India';
+ const name=currentSettings.website_name||'Pink Box';
  return (
   <footer className="border-t border-border bg-secondary/40">
    <div className="container mx-auto grid gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-5">
@@ -21,7 +34,7 @@ export default function ZipReferenceFooter({settings={}}){
       <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary"/>{email}</p>
       <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary"/>{address}</p>
      </div>
-     {(settings.instagram_url || settings.facebook_url || settings.youtube_url) && <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold">
+     {(currentSettings.instagram_url || currentSettings.facebook_url || currentSettings.youtube_url) && <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold">
       {settings.instagram_url && <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Instagram</a>}
       {settings.facebook_url && <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Facebook</a>}
       {settings.youtube_url && <a href={settings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">YouTube</a>}
