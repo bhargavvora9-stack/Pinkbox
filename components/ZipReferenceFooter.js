@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
 import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
 const LINKS = [
@@ -7,7 +8,7 @@ const LINKS = [
  {title:'Company',items:[{label:'About Us',href:'/about'},{label:'Blog',href:'/blog'},{label:'FAQ',href:'/faq'},{label:'Contact',href:'/#contact'}]},
  {title:'Support',items:[{label:'Shipping Policy',href:'/policies/shipping'},{label:'Returns & Refunds',href:'/policies/returns'},{label:'Privacy Policy',href:'/policies/privacy'},{label:'Terms of Service',href:'/policies/terms'},{label:'Dealer Enquiry',href:'/#contact'}]},
 ];
-export default function ZipReferenceFooter({settings={}}){
+export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const [siteSettings,setSiteSettings]=useState(settings||{});
  useEffect(()=>{
   if(Object.keys(settings||{}).length){setSiteSettings(settings);return;}
@@ -17,7 +18,7 @@ export default function ZipReferenceFooter({settings={}}){
    .then(data=>{if(active&&data?.settings)setSiteSettings(data.settings)})
    .catch(()=>{});
   return ()=>{active=false};
- },[]);
+ },[settings]);
  const currentSettings=siteSettings||settings||{};
  const phone=currentSettings.phone||'+91 73592 52000';
  const email=currentSettings.email||'care@sakhicare.in';
