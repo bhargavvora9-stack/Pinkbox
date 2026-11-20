@@ -196,7 +196,7 @@ export async function POST(request) {
         .order('created_at', { ascending: false })
         .limit(100),
       db.from('website_product_variants')
-        .select('product_id,stock_quantity,is_active')
+        .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
         .eq('company_id', settings.company_id)
         .eq('is_active', true),
     ]);
@@ -204,7 +204,17 @@ export async function POST(request) {
       return Response.json({ error: 'Unable to load the product catalogue.' }, { status: 503 });
     }
 
-    const saleable = filterAvailableProducts(productsResult.data || [], variantsResult.data || []);
+    const variantsByProductId = new Map();
+    for (const variant of variantsResult.data || []) {
+      const items = variantsByProductId.get(variant.product_id) || [];
+      items.push(variant);
+      variantsByProductId.set(variant.product_id, items);
+    }
+    const catalogue = (productsResult.data || []).map((product) => ({
+      ...product,
+      variants: variantsByProductId.get(product.id) || [],
+    }));
+    const saleable = filterAvailableProducts(catalogue, variantsResult.data || []);
     if (!saleable.length) {
       return Response.json({ message: 'Our catalogue is empty right now — please check back soon.', products: [], reasons: {} });
     }
