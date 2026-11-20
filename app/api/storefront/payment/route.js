@@ -45,13 +45,14 @@ export async function POST(request) {
     const db = createAdminClient();
     const settings = await getSettings(db);
     if (!settings) return Response.json({ error: 'PinkBox store is not configured.' }, { status: 404 });
-    if (!settings.online_payment_enabled) return Response.json({ error: 'Online payment is not enabled.' }, { status: 400 });
-
     const b = await request.json().catch(() => null);
     if (!b || !b.action) return Response.json({ error: 'Invalid request.' }, { status: 400 });
     const c = settings.company_id;
 
     if (b.action === 'create') {
+      if (!settings.online_payment_enabled) {
+        return Response.json({ error: 'Online payment is not enabled.' }, { status: 400 });
+      }
       if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
 
       const { data: order, error } = await db
