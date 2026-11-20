@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 import { Loader2 } from 'lucide-react';
@@ -11,14 +11,21 @@ const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
 });
 
 export default function ProductPurchasePanel({ product, description = '' }) {
-  const variants = Array.isArray(product.variants)
-    ? product.variants.filter((variant) => variant?.is_active !== false)
-    : [];
-  const canSellVariant = (variant) =>
+  const variants = useMemo(
+    () => Array.isArray(product.variants)
+      ? product.variants.filter((variant) => variant?.is_active !== false)
+      : [],
+    [product.variants],
+  );
+  const canSellVariant = useCallback((variant) =>
     product.track_inventory === false ||
     product.allow_backorder === true ||
-    Number(variant?.stock_quantity || 0) > 0;
-  const preferredVariant = variants.find(canSellVariant) || variants[0] || null;
+    Number(variant?.stock_quantity || 0) > 0,
+  [product.track_inventory, product.allow_backorder]);
+  const preferredVariant = useMemo(
+    () => variants.find(canSellVariant) || variants[0] || null,
+    [variants, canSellVariant],
+  );
   const [selectedVariantId, setSelectedVariantId] = useState(preferredVariant?.id || null);
   const selectedVariant = useMemo(
     () => variants.find((variant) => variant.id === selectedVariantId) || preferredVariant,
@@ -47,7 +54,7 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       value: effectivePrice,
       items: toAnalyticsItems([product]),
     });
-  }, [product.id, effectivePrice]);
+  }, [product, effectivePrice]);
 
   function addToCart() {
     if (!canBuy || busy) return;
