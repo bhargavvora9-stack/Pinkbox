@@ -9,7 +9,7 @@ import WebsiteBulkTools from '@/components/WebsiteBulkTools';
 import WebsiteCustomersPhase3 from '@/components/WebsiteCustomersPhase3';
 import { Phase3Orders, Phase3Shipping, Phase3Payments, Phase3AbandonedCarts } from '@/components/WebsitePhase3Orders';
 import { Phase4Theme, Phase4SEO, Phase4Footer, Phase4Homepage } from '@/components/WebsitePhase4CMS';
-import { Phase5Campaigns, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
+import { Phase5Campaigns, Phase5Broadcasts, Phase5Notifications, Phase5NotificationLogs } from '@/components/WebsitePhase5Marketing';
 import { Phase6Analytics, Phase6Reports, Phase6Roles, Phase6Automations, Phase6Health } from '@/components/WebsitePhase6Admin';
 import WebsiteProductsManagerWizard from '@/components/WebsiteProductsManagerWizard';
 import PinkBoxDesignStudio from '@/components/PinkBoxDesignStudio';
@@ -27,7 +27,7 @@ export default async function AdminModulePage({ params }) {
   if (key === 'subscribers') return <WebsiteResourceManager3 resource="subscribers" />;
   if (key === 'b2b-enquiries' || key === 'leads') return <WebsiteResourceManager3 resource="bulk-enquiries" />;
   if (key === 'coupons') return <WebsiteResourceManager3 resource="discounts" />;
-  if (key === 'broadcasts') return <Phase5Notifications />;
+  if (key === 'broadcasts') return <div className="space-y-10"><Phase5Broadcasts /><div className="border-t border-gray-200 pt-8"><Phase5Notifications /></div></div>;
   if (key === 'invoices') return <Phase3Orders />;
   if (key === 'products/bulk-edit') return <WebsiteProductsManagerWizard />;
   if (key === 'audit-log') return <WebsiteAuditLog />;
