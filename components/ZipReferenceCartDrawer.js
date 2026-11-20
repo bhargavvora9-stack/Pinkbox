@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, X } from 'lucide-react';
+import Image from 'next/image';
 
 const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const readCart = () => {
@@ -88,7 +89,7 @@ export default function ZipReferenceCartDrawer({ settings = {} }) {
                         return (
                           <div key={item.id} className="flex gap-4 rounded-xl p-2">
                             <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-                              {image ? <img src={image} alt={item.title || 'Pink Box product'} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-xs text-muted-foreground">Pink Box</div>}
+                              {image ? <Image src={image} alt={item.title || 'Pink Box product'} width={64} height={64} unoptimized className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-xs text-muted-foreground">Pink Box</div>}
                             </div>
                             <div className="min-w-0 flex-1">
                               <h3 className="truncate font-medium text-foreground">{item.title || item.name}</h3>
