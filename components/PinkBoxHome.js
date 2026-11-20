@@ -7,6 +7,7 @@ import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import ZipReferenceProductCard from '@/components/ZipReferenceProductCard';
 import {
+import Image from 'next/image';
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
   Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
   Mail, MessageSquareHeart, PackageCheck, Search, Send, ShieldCheck,
@@ -80,7 +81,7 @@ function Hero({ banner }) {
         </div>
         <div className="relative">
           <div className="absolute -top-8 -right-6 h-40 w-40 rounded-full bg-accent/50 blur-3xl" aria-hidden />
-          <img src={image} alt={title} width="1280" height="1280" className="relative w-full rounded-[2rem] object-cover shadow-soft" />
+          <Image src={image} alt={title} width={1280} height={1280} unoptimized className="relative w-full rounded-[2rem] object-cover shadow-soft" />
           <div className="absolute bottom-5 left-5 rounded-2xl bg-background/90 px-5 py-3 shadow-soft backdrop-blur">
             <p className="font-display text-2xl font-semibold text-foreground">12 hrs</p>
             <p className="text-xs text-muted-foreground">of dry, worry-free protection</p>
@@ -248,7 +249,7 @@ function AboutStrip() {
   return (
     <section className="bg-cream/60">
       <div className="container mx-auto grid items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
-        <img src={zipAboutImage} alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width="1200" height="912" loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
+        <Image src={zipAboutImage} alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width={1200} height={912} unoptimized loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
         <div>
           <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our promise</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Hygiene is not a luxury — it&apos;s a right</h2>
