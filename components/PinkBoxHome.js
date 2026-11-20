@@ -5,6 +5,7 @@ import { zipHeroImage, zipAboutImage } from '@/lib/zip-reference-artwork';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
+import ZipReferenceProductCard from '@/components/ZipReferenceProductCard';
 import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
   Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
@@ -222,7 +223,7 @@ function ProductFinder({ products = [] }) {
               <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {result.products.map((product) => (
                   <div key={product.id} className="space-y-2">
-                    <ZipReferenceProductGrid products={[product]} />
+                    <ZipReferenceProductCard product={product} />
                     {result.reasons?.[product.slug] && (
                       <p className="px-1 text-sm text-muted-foreground">{result.reasons[product.slug]}</p>
                     )}
