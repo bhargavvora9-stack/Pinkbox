@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Save, PackageCheck, AlertTriangle, ShoppingBag, Users, IndianRupee, Boxes, Search, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase-browser';
 
@@ -8,8 +8,8 @@ const money=n=>`₹${Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:
 
 export default function WebsitePage(){
   const [tab,setTab]=useState('dashboard'); const [data,setData]=useState(null); const [error,setError]=useState(''); const [loading,setLoading]=useState(true); const [query,setQuery]=useState(''); const [settings,setSettings]=useState(null); const [saving,setSaving]=useState(false); const [products,setProducts]=useState([]); const [transactions,setTransactions]=useState([]); const [orders,setOrders]=useState([]); const [customers,setCustomers]=useState([]); const [selected,setSelected]=useState(''); const [change,setChange]=useState(''); const [reason,setReason]=useState(''); const [msg,setMsg]=useState('');
-  const load=async(t=tab)=>{setLoading(true);setError('');setMsg('');try{const r=await fetch(`/api/website/${t}`,{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Unable to load'); if(t==='dashboard')setData(j); if(t==='settings')setSettings(j.data||{}); if(t==='inventory'){setProducts(j.products||[]);setTransactions(j.transactions||[])} if(t==='orders')setOrders(j.data||[]); if(t==='customers')setCustomers(j.data||[]);}catch(e){setError(e.message)}finally{setLoading(false)}};
-  useEffect(()=>{load(tab)},[tab]);
+  const load=useCallback(async(t=tab)=>{setLoading(true);setError('');setMsg('');try{const r=await fetch(`/api/website/${t}`,{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Unable to load'); if(t==='dashboard')setData(j); if(t==='settings')setSettings(j.data||{}); if(t==='inventory'){setProducts(j.products||[]);setTransactions(j.transactions||[])} if(t==='orders')setOrders(j.data||[]); if(t==='customers')setCustomers(j.data||[]);}catch(e){setError(e.message)}finally{setLoading(false)}},[tab]);
+  useEffect(()=>{load(tab)},[load,tab]);
   const logout=async()=>{await createClient().auth.signOut();location.href='/login'};
   const adjust=async e=>{e.preventDefault();setError('');const r=await fetch('/api/website/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:selected,change_quantity:Number(change),reason})});const j=await r.json();if(!r.ok)setError(j.error);else{setMsg('Stock adjusted.');setChange('');setReason('');load('inventory')}};
   const save=async e=>{e.preventDefault();setSaving(true);setError('');const r=await fetch('/api/website/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(settings)});const j=await r.json();if(!r.ok)setError(j.error);else{setSettings(j.data);setMsg('Website settings saved.')}setSaving(false)};
