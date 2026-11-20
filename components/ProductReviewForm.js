@@ -1,53 +1,143 @@
 'use client';
+
 import { useState } from 'react';
-import { Star } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 
-export default function ProductReviewForm({ productId }) {
+export default function ProductReviewForm({ productId, hasReviews = false }) {
+  const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(5);
-  const [hoverRating, setHoverRating] = useState(0);
   const [name, setName] = useState('');
-  const [text, setText] = useState('');
-  const [status, setStatus] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [sending, setSending] = useState(false);
-  const [done, setDone] = useState(false);
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setError(''); setStatus(''); setSending(true);
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+    setSuccess('');
+    setSending(true);
     try {
-      const r = await fetch('/api/storefront/reviews', {
+      const response = await fetch('/api/storefront/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, rating, customer_name: name, review_text: text }),
+        body: JSON.stringify({
+          product_id: productId,
+          rating,
+          customer_name: name,
+          title,
+          review_text: body,
+        }),
       });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'Unable to submit review.');
-      setStatus(j.message || 'Thank you! Your review will appear once approved.');
-      setDone(true);
-    } catch (err) {
-      setError(err.message);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not submit review.');
+
+      setSuccess(result.message || 'Thank you! Your review will appear once approved.');
+      setShowForm(false);
+      setName('');
+      setTitle('');
+      setBody('');
+      setRating(5);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not submit review.');
     } finally {
       setSending(false);
     }
-  };
-
-  if (done) return <div className="rounded-2xl border border-green-200 bg-green-50 p-5 text-sm text-green-700">{status}</div>;
+  }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border bg-[#fff9fb] p-5">
-      <b className="text-sm">Write a review</b>
-      <div className="mt-3 flex gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button type="button" key={n} onClick={() => setRating(n)} onMouseEnter={() => setHoverRating(n)} onMouseLeave={() => setHoverRating(0)} aria-label={`${n} star`}>
-            <Star size={22} className="text-[#d9295f]" fill={n <= (hoverRating || rating) ? 'currentColor' : 'none'} />
+    <div className="shrink-0">
+      <button
+        type="button"
+        onClick={() => {
+          setShowForm((visible) => !visible);
+          setError('');
+          setSuccess('');
+        }}
+        className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+      >
+        {showForm ? 'Cancel review' : 'Write a review'}
+      </button>
+
+      {success && <p className="mt-3 text-sm text-muted-foreground" role="status">{success}</p>}
+
+      {showForm && (
+        <form onSubmit={submit} className="mt-6 w-full space-y-4 rounded-lg border border-border bg-card p-6 sm:min-w-[320px]">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="review-name" className="sr-only">Your name</label>
+              <input
+                id="review-name"
+                placeholder="Your name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                minLength={2}
+                maxLength={180}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Your rating:</span>
+              <div className="flex gap-1" role="radiogroup" aria-label="Your rating">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={rating === value}
+                    aria-label={value + ' star' + (value > 1 ? 's' : '')}
+                    onClick={() => setRating(value)}
+                  >
+                    <Star className={'h-6 w-6 ' + (value <= rating
+                      ? 'fill-primary text-primary'
+                      : 'text-muted-foreground/40')} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <label htmlFor="review-title" className="sr-only">Review title (optional)</label>
+          <input
+            id="review-title"
+            placeholder="Review title (optional)"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            maxLength={200}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+          />
+          <label htmlFor="review-body" className="sr-only">How was your experience with this product?</label>
+          <textarea
+            id="review-body"
+            placeholder="How was your experience with this product?"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            required
+            minLength={10}
+            maxLength={3000}
+            rows={4}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary"
+          />
+          {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+          <button
+            type="submit"
+            disabled={sending}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {sending && <Loader2 className="h-4 w-4 animate-spin" />}
+            Submit review
           </button>
-        ))}
-      </div>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="mt-3 w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#d9295f]" required />
-      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your experience with this product..." rows="3" className="mt-3 w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#d9295f]" required />
-      {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
-      <button disabled={sending} className="mt-3 rounded-full bg-[#d9295f] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-50">{sending ? 'Submitting…' : 'Submit review'}</button>
-    </form>
+        </form>
+      )}
+
+      {!hasReviews && !showForm && !success && (
+        <div className="mt-6 rounded-lg border border-dashed border-border py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Bought this product? Your review helps other shoppers decide.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
