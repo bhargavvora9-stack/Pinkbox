@@ -1,9 +1,11 @@
 'use client';
 import {useState} from 'react';
+import {useRouter} from 'next/navigation';
 import {createClient} from '@/lib/supabase-browser';
 import Link from 'next/link';
 
 export default function Signup(){
+  const router=useRouter();
   const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
 
   async function submit(e){
@@ -11,7 +13,7 @@ export default function Signup(){
     setBusy(true); setError(''); setMessage('');
     const {data,error}=await createClient().auth.signUp({email:email.trim(),password,options:{data:{full_name:name.trim(),display_name:name.trim()}}});
     if(error)setError(error.message);
-    else if(data.session)window.location.href='/account';
+    else if(data.session)router.push('/account');
     else setMessage('Account created. Please verify your email, then sign in.');
     setBusy(false);
   }
