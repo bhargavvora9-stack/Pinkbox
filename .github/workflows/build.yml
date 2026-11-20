@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, pinkbox-zip-design-rebuild]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,12 +25,15 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Upload regenerated lockfile for deterministic dependency pinning
-        uses: actions/upload-artifact@v4
-        with:
-          name: pinkbox-regenerated-package-lock
-          path: package-lock.json
-          retention-days: 1
+      - name: Commit regenerated dependency lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync patched dependency lockfile"
+            git push
+          fi
 
       - name: Build
         run: npm run build
