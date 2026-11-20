@@ -53,6 +53,7 @@ function buildPayload(resource, body, companyId, partial = false) {
   }
   if (resource === 'blog') {
     text('title', 180); text('slug', 180); text('excerpt', 1000); text('cover_image_url', 1500);
+    text('seo_title', 180); text('seo_description', 320); text('seo_keywords', 1000);
     if (!partial || body.content !== undefined) p.content = jsonObject(body.content, { html: cleanString(body.content, 30000) });
     bool('is_published', false);
     if (!partial || body.published_at !== undefined) p.published_at = body.published_at || null;
