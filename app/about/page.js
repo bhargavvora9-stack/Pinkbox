@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
+import { zipAboutImage } from '@/lib/zip-reference-artwork';
 
 const VALUES = [
   { t: 'Comfort first', d: 'Soft, breathable layers designed for all-day wear.' },
@@ -25,7 +26,7 @@ export default function AboutPage() {
             <p className="mt-5 leading-relaxed text-muted-foreground">Pink Box was started to make periods a little easier — with pads that feel soft, stay put and are kind to skin. We believe every woman deserves reliable protection without compromise.</p>
             <Link href="/shop" className="mt-8 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Shop our range</Link>
           </div>
-          <img src="/zip-reference/about-strip.jpg" alt="Pink Box comfort" width="1024" height="1024" loading="lazy" className="rounded-2xl object-cover" />
+          <img src={zipAboutImage} alt="Pink Box comfort" width="1024" height="1024" loading="lazy" className="rounded-2xl object-cover" />
         </section>
         <section className="bg-secondary/40 py-16">
           <div className="container mx-auto grid gap-6 px-4 md:grid-cols-3">
