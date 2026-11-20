@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Flower2, Menu, X, Phone } from 'lucide-react';
 import ZipReferenceCartDrawer from '@/components/ZipReferenceCartDrawer';
@@ -14,8 +14,22 @@ const TICKER = [
 ];
 export default function ZipReferenceHeader({ settings = {} }) {
   const [open, setOpen] = useState(false);
-  const phone = settings.phone || '+91 73592 52000';
-  const ticker = settings.announcement_text?.trim() ? [settings.announcement_text.trim()] : TICKER;
+  const [siteSettings, setSiteSettings] = useState(settings || {});
+  useEffect(() => {
+    if (Object.keys(settings || {}).length) {
+      setSiteSettings(settings);
+      return;
+    }
+    let active = true;
+    fetch('/api/storefront/settings', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (active && data?.settings) setSiteSettings(data.settings); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+  const currentSettings = siteSettings || settings || {};
+  const phone = currentSettings.phone || '+91 73592 52000';
+  const ticker = currentSettings.announcement_text?.trim() ? [currentSettings.announcement_text.trim()] : TICKER;
   const phoneHref = phone.replace(/[^\d+]/g, '');
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -37,7 +51,7 @@ export default function ZipReferenceHeader({ settings = {} }) {
           </nav>
           <div className="flex items-center gap-1">
             <a href={'tel:' + phoneHref} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary lg:inline-flex"><Phone className="h-4 w-4" />{phone}</a>
-            <ZipReferenceCartDrawer settings={settings} />
+            <ZipReferenceCartDrawer settings={currentSettings} />
             <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground md:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
