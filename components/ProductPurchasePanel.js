@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
-import { Loader2, ShoppingBag, Star } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
   minimumFractionDigits: 2,
@@ -186,9 +186,9 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         type="button"
         onClick={addToCart}
         disabled={!canBuy || busy}
-        className="mt-8 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
+        className="mt-8 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
       >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         {busy ? 'Adding…' : canBuy ? 'Add to Cart' : 'Out of stock'}
       </button>
 
