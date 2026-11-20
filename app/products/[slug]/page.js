@@ -20,7 +20,7 @@ async function getProduct(slug) {
   const db = createAdminClient();
   const { data: settings } = await db
     .from('website_settings')
-    .select('company_id,website_name,logo_url,whatsapp_number,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled')
+    .select('company_id,website_name,logo_url,phone,whatsapp_number,email,address,instagram_url,facebook_url,youtube_url,announcement_text,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled')
     .eq('slug', 'pinkbox')
     .eq('status', 'active')
     .maybeSingle();
