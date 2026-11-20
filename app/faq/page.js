@@ -14,6 +14,12 @@ const FAQS = [
 export const metadata = {
   title: 'FAQ — Pads, Delivery & Orders | Pink Box',
   description: 'Answers to common questions about Pink Box pads, delivery and bulk orders.',
+  openGraph: {
+    title: 'FAQ | Pink Box',
+    description: 'Answers to common questions about SakhiCare pads, delivery and bulk orders.',
+    type: 'website',
+  },
+  twitter: { card: 'summary' },
 };
 
 export default function FaqPage() {
@@ -24,7 +30,7 @@ export default function FaqPage() {
         <h1 className="font-display text-3xl font-semibold text-foreground md:text-5xl">Frequently asked questions</h1>
         <div className="mt-10 border-t border-border">
           {FAQS.map((item) => (
-            <details key={item.q} className="group border-b border-border">
+            <details key={item.q} name="pinkbox-faq" className="group border-b border-border">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-sm font-medium text-foreground transition-all hover:underline [&::-webkit-details-marker]:hidden">
                 <span>{item.q}</span>
                 <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
