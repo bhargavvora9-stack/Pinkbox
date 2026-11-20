@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useCallback,useEffect,useState} from 'react';
 import {Save,Trash2,Edit3,Plus,RefreshCw} from 'lucide-react';
 import WebsiteImageUpload from './WebsiteImageUpload';
 
@@ -10,8 +10,8 @@ const api=async(url,options)=>{const r=await fetch(url,options);const j=await r.
 
 export default function WebsiteBlogWithUploads(){
  const [rows,setRows]=useState([]),[edit,setEdit]=useState(null),[form,setForm]=useState(blank),[err,setErr]=useState(''),[msg,setMsg]=useState(''),[saving,setSaving]=useState(false);
- const load=async()=>{try{setRows((await api('/api/website/phase4?resource=blog')).data||[]);setErr('')}catch(e){setErr(e.message)}};
- useEffect(()=>{load()},[]);
+ const load=useCallback(async()=>{try{setRows((await api('/api/website/phase4?resource=blog')).data||[]);setErr('')}catch(e){setErr(e.message)}},[]);
+ useEffect(()=>{load()},[load]);
  const save=async e=>{e.preventDefault();setSaving(true);setErr('');setMsg('');try{const body={...form,content:{html:form.content||''}};if(!body.slug&&body.title)body.slug=body.title.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');await api('/api/website/phase4?resource=blog',{method:edit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(edit?{...body,id:edit}:body)});setForm(blank);setEdit(null);setMsg('Blog post saved successfully.');load()}catch(e){setErr(e.message)}finally{setSaving(false)}};
  const remove=async id=>{if(!confirm('Delete post?'))return;try{await api(`/api/website/phase4?resource=blog&id=${id}`,{method:'DELETE'});setMsg('Blog post deleted.');load()}catch(e){setErr(e.message)}};
  return <div className="space-y-5 text-gray-900">
