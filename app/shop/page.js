@@ -30,7 +30,7 @@ async function getShopData() {
       .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_product_variants')
-      .select('product_id,stock_quantity,is_active')
+      .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
       .eq('company_id', settings.company_id)
       .eq('is_active', true),
   ]);
@@ -61,12 +61,24 @@ async function getShopData() {
     imageMap.set(image.product_id, current);
   }
 
+  const variantsByProductId = new Map();
+  for (const variant of variantsResult.data || []) {
+    const items = variantsByProductId.get(variant.product_id) || [];
+    items.push(variant);
+    variantsByProductId.set(variant.product_id, items);
+  }
+
   const products = visibleProducts.map((product) => {
     const productImages = (imageMap.get(product.id) || []).sort(
       (a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
     );
     const fallback = { image_url: `/catalog-products/${product.sku.toLowerCase()}.webp`, alt_text: product.title, is_primary: true };
-    return { ...product, images: productImages.length ? productImages : [fallback], image_url: productImages[0]?.image_url || fallback.image_url };
+    return {
+      ...product,
+      variants: variantsByProductId.get(product.id) || [],
+      images: productImages.length ? productImages : [fallback],
+      image_url: productImages[0]?.image_url || fallback.image_url,
+    };
   });
 
   return { settings, products };
