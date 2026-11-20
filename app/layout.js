@@ -3,6 +3,10 @@ import StorefrontAnalytics from '@/components/StorefrontAnalytics';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { getSiteUrl } from '@/lib/seo';
+import { Fraunces, Manrope } from 'next/font/google';
+
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 const defaultTitle = 'Sanitary Pads & Baby Diapers Online | PinkBox';
 const defaultDescription = 'Shop sanitary pads, sanitary napkins and baby diapers online at PinkBox. Compare 320mm and everyday hygiene products, check current prices and order for delivery across India.';
@@ -57,12 +61,7 @@ export async function generateMetadata() {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
       <body><StorefrontAnalytics />{children}<ExitIntentPopup /></body>
     </html>
   );
