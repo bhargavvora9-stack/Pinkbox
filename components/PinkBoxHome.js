@@ -380,7 +380,7 @@ function Newsletter() {
       const response = await fetch('/api/storefront/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone, whatsapp_opt_in: whatsappOptIn }),
+        body: JSON.stringify({ email, phone: whatsappOptIn ? phone : '', whatsapp_opt_in: whatsappOptIn }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'We could not subscribe you. Please try again.');
@@ -398,7 +398,7 @@ function Newsletter() {
     <section className="container mx-auto px-4 py-16 md:py-20">
       <div className="rounded-[2rem] bg-gradient-brand px-6 py-14 text-center text-primary-foreground shadow-soft md:px-16">
         <Mail className="mx-auto h-8 w-8 opacity-90" />
-        <h2 className="mt-4 font-display text-3xl font-semibold md:text-4xl">Get ₹100 off your first order</h2>
+        <h2 className="mt-4 font-display text-3xl font-semibold md:text-4xl">Get exclusive offers on your first order</h2>
         <p className="mx-auto mt-3 max-w-lg text-sm opacity-90 md:text-base">Join our list for period care tips, new launches and subscriber-only offers. No spam, ever.</p>
         <form className="mx-auto mt-8 max-w-md" onSubmit={submit}>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -406,7 +406,7 @@ function Newsletter() {
             <button type="submit" disabled={busy} className="h-12 rounded-full bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90">{busy ? 'Joining…' : 'Subscribe'}</button>
           </div>
           <label className="mt-4 flex cursor-pointer items-start justify-center gap-2 text-xs opacity-90">
-            <input type="checkbox" className="mt-0.5" checked={whatsappOptIn} onChange={(event) => setWhatsappOptIn(event.target.checked)} />Send me occasional WhatsApp offers too
+            <input type="checkbox" className="mt-0.5" checked={whatsappOptIn} onChange={(event) => { const checked = event.target.checked; setWhatsappOptIn(checked); if (!checked) setPhone(''); }} />Send me occasional WhatsApp offers too
           </label>
           {whatsappOptIn && <input type="tel" required aria-label="WhatsApp number" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="WhatsApp number with country code" className="mt-3 h-12 w-full rounded-full bg-background px-5 text-sm text-foreground outline-none placeholder:text-muted-foreground" />}
           {status && <p role="status" className="mt-3 text-xs opacity-90">{status}</p>}
