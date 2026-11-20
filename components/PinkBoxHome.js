@@ -317,8 +317,11 @@ function ContactForm() {
           name: form.name,
           phone: form.phone,
           email: form.email,
+          city: form.city,
+          lead_type: type,
           organisation_type: type === 'dealer' ? 'Dealer / distributor partnership' : type === 'bulk' ? 'School / NGO bulk order' : 'General enquiry',
-          message: [form.city ? 'City: ' + form.city : null, form.message].filter(Boolean).join('\n'),
+          source: 'Homepage contact form',
+          message: form.message,
         }),
       });
       const data = await response.json();
