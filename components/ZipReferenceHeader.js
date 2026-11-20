@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
 import { Flower2, Menu, X, Phone } from 'lucide-react';
 import ZipReferenceCartDrawer from '@/components/ZipReferenceCartDrawer';
@@ -12,7 +13,7 @@ const TICKER = [
   'Free shipping on orders above ₹499','Ultra-soft cotton top sheet',
   'Rash-free · Leak-proof · 12 hr protection','Dealer & bulk enquiries welcome',
 ];
-export default function ZipReferenceHeader({ settings = {} }) {
+export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
   const [open, setOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState(settings || {});
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function ZipReferenceHeader({ settings = {} }) {
       .then((data) => { if (active && data?.settings) setSiteSettings(data.settings); })
       .catch(() => {});
     return () => { active = false; };
-  }, []);
+  }, [settings]);
   const currentSettings = siteSettings || settings || {};
   const phone = currentSettings.phone || '+91 73592 52000';
   const ticker = currentSettings.announcement_text?.trim() ? [currentSettings.announcement_text.trim()] : TICKER;
