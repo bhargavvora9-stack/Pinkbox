@@ -1,7 +1,7 @@
 import { getWebsiteAdminContext, jsonError, audit } from '@/lib/website-admin';
 
 const SOURCES = new Set(['Website', 'Phone call', 'WhatsApp', 'Instagram', 'Google', 'Referral', 'Other']);
-const STATUSES = new Set(['new', 'contacted', 'qualified', 'converted', 'lost']);
+const STATUSES = new Set(['new', 'contacted', 'closed', 'qualified', 'converted', 'lost']);
 const LEAD_TYPES = new Set(['contact', 'dealer', 'bulk']);
 const clean = (value, max = 2000) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 const validEmail = (value) => {
