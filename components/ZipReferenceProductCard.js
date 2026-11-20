@@ -38,7 +38,7 @@ export default function ZipReferenceProductCard({product}){
     quantity:1,
     personalization:null,
    };
-   const next=existing?current.map((entry)=>entry.id===cartId?{...entry,quantity,...item}:entry):[...current,item];
+   const next=existing?current.map((entry)=>entry.id===cartId?{...entry,...item,quantity}:entry):[...current,item];
    localStorage.setItem('pinkbox_cart',JSON.stringify(next));
    window.dispatchEvent(new Event('pinkbox-cart-updated'));
    setMessage('Added to cart');
