@@ -14,7 +14,7 @@ async function getShopData() {
   const db = createAdminClient();
   const { data: settings, error: settingsError } = await db
     .from('website_settings')
-    .select('company_id,website_name,logo_url,phone,whatsapp_number,email,address,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled')
+    .select('company_id,website_name,logo_url,phone,whatsapp_number,email,address,instagram_url,facebook_url,youtube_url,announcement_text,free_shipping_threshold,default_shipping_charge,cod_enabled,online_payment_enabled')
     .eq('slug', 'pinkbox')
     .eq('status', 'active')
     .maybeSingle();
