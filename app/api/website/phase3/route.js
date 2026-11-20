@@ -90,11 +90,14 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const ctx=await ctxOrError(request);if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
-  const{supabase,companyId,user}=ctx;const b=await request.json().catch(()=>null);
+  const b=await request.json().catch(()=>null);
   if(!b?.id||!b.resource)return jsonError('Resource and record id are required.');
-  if(b.resource==='orders'&&b.order_status&&!ORDER_STATUSES.includes(cleanString(b.order_status,40).toLowerCase()))return jsonError('Invalid order status.');
   const table=tables[b.resource];if(!table)return jsonError('Unknown Phase 3 resource.',404);
+  const permissionModule=b.resource==='orders'?'orders':b.resource==='payments'?'payments':'shipping';
+  const ctx=await ctxOrError(request,{resource:permissionModule,action:'update'});
+  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
+  const{supabase,companyId,user}=ctx;
+  if(b.resource==='orders'&&b.order_status&&!ORDER_STATUSES.includes(cleanString(b.order_status,40).toLowerCase()))return jsonError('Invalid order status.');
   const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',b.id).maybeSingle();
   if(!oldData)return jsonError('Record not found.',404);
   const p={...b,company_id:companyId};delete p.id;delete p.resource;delete p.created_at;p.updated_at=new Date().toISOString();
