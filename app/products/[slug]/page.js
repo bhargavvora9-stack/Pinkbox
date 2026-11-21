@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import { Star } from 'lucide-react';
-import { absoluteUrl, safeJsonLd, buildProductMetaDescription } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd, buildProductMetaDescription, sanitizePublicProductText } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,7 +26,7 @@ async function getProduct(slug) {
     .maybeSingle();
   if (!settings) return null;
 
-  const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label';
+  const productFields = 'id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label';
   const { data: matchedProduct } = await db
     .from('website_products')
     .select(productFields)
@@ -136,10 +136,12 @@ export default async function ProductPage({ params }) {
 
   // The raw catalogue record contains internal supplier notes and saved SEO text
   // with stale prices. Do not serialize those fields into the client component payload.
+  const publicShortDescription = sanitizePublicProductText(fetchedProduct.short_description);
+  const publicProduct = { ...fetchedProduct, short_description: publicShortDescription };
   const p = {
-    ...fetchedProduct,
-    description: fetchedProduct.short_description || '',
-    seo_description: buildProductMetaDescription(fetchedProduct),
+    ...publicProduct,
+    description: publicShortDescription,
+    seo_description: buildProductMetaDescription(publicProduct),
   };
 
   const url = absoluteUrl('/products/' + encodeURIComponent(p.slug));
