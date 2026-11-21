@@ -221,18 +221,23 @@ export default function WebsiteProductImageUploader() {
           )}
 
           <div className="mt-5 mb-1 text-sm font-semibold">2. Choose Images</div>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            multiple
-            disabled={uploading}
-            onChange={(event) => {
-              addFiles(Array.from(event.target.files || []));
-              event.target.value = '';
-            }}
-            className="block w-full text-sm"
-          />
-          <div className="mt-2 text-xs text-gray-500">JPG, PNG, WEBP or GIF · up to 5 MB each · multiple files supported. Large photos are optimized automatically.</div>
+          <label className="mt-2 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-pink-700 focus-within:outline-none focus-within:ring-2 focus-within:ring-pink-300 focus-within:ring-offset-2">
+            <Upload size={18} />
+            Choose Images
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              disabled={uploading}
+              onChange={(event) => {
+                addFiles(Array.from(event.target.files || []));
+                event.target.value = '';
+              }}
+              className="sr-only"
+            />
+          </label>
+          <p className="mt-2 text-center text-xs text-gray-500">Click to browse and select multiple images · JPG, PNG, WEBP or GIF · up to 5 MB each</p>
+          <p className="mt-1 text-center text-[11px] text-gray-400">Large JPG, PNG and WEBP photos are optimized automatically.</p>
 
           {files.length > 0 && (
             <div className="mt-3 space-y-2">
