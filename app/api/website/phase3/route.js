@@ -52,7 +52,7 @@ export async function GET(request) {
     stats.cod_pending = counts[ORDER_STATUSES.length].count || 0;
     return Response.json({ data: data || [], total: count || 0, page, pageSize, totalPages: Math.max(1, Math.ceil((count || 0) / pageSize)), stats });
   }
-  const {data,error}=await supabase.from(table).select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(500);
+  const {data,error}=await db.from(table).select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(500);
   if(error)return jsonError(error.message,500);
   const rows=data||[];
   return Response.json({data:resource==='payments'?rows.map(sanitizePayment):rows});
