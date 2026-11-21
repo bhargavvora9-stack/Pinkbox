@@ -144,7 +144,7 @@ function ProductsSection({ categories = [] }) {
           {categories.map((category) => (
             <article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft">
               <Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block">
-                <div className="relative aspect-[5/4] overflow-hidden bg-[#fff4f7]">
+                <div className={`relative overflow-hidden bg-[#fff4f7] ${category.slug === 'sanitary-pads' ? 'aspect-[3/2]' : 'aspect-[5/4]'}`}>
                   {category.image_url ? (
                     <Image
                       src={category.image_url}
@@ -152,7 +152,7 @@ function ProductsSection({ categories = [] }) {
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       unoptimized
-                      className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]"
+                      className={`${category.slug === 'sanitary-pads' ? 'object-contain p-0' : 'object-contain p-5'} transition-transform duration-300 group-hover:scale-[1.03]`}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6">
