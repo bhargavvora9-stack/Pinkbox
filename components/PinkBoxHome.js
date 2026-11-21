@@ -7,6 +7,7 @@ import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import ZipReferenceProductCard from '@/components/ZipReferenceProductCard';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
   Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
@@ -132,14 +133,52 @@ function TrustBadges() {
   );
 }
 
-function ProductsSection({ products = [] }) {
+function ProductsSection({ categories = [] }) {
   return (
     <section id="products" className="container mx-auto px-4 py-16 md:py-24">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our range</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Pads for every day and every flow</h2>
+        <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Explore our collections</h2>
       </div>
-      <div className="mt-12"><ZipReferenceProductGrid products={products} /></div>
+      {categories.length ? (
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {categories.map((category) => (
+            <article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft">
+              <Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block">
+                <div className="relative aspect-[5/4] overflow-hidden bg-[#fff4f7]">
+                  {category.image_url ? (
+                    <Image
+                      src={category.image_url}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      unoptimized
+                      className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6">
+                      <span className="font-display text-2xl font-semibold text-primary">{category.name}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-4 p-5">
+                  <div>
+                    <p className="text-xs font-semibold tracking-widest text-primary uppercase">PinkBox Collection</p>
+                    <h3 className="mt-2 font-display text-xl font-semibold text-foreground">{category.name}</h3>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    Explore
+                  </span>
+                </div>
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-12 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Collections will appear here soon.
+        </p>
+      )}
     </section>
   );
 }
@@ -430,7 +469,7 @@ export default function PinkBoxHome({ initialData }) {
         <Hero banner={banners} />
         <CouponStrip coupons={coupons} />
         <TrustBadges />
-        <ProductsSection products={products} />
+        <ProductsSection categories={data.categories || []} />
         <ProductFinder products={products} />
         <AboutStrip />
         <Features />
