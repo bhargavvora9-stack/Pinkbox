@@ -1,6 +1,6 @@
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
-import Image from 'next/image';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
@@ -197,22 +197,7 @@ export default async function ProductPage({ params }) {
       <ZipReferenceHeader settings={p} />
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
-          <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-            {p.images[0]?.image_url ? (
-              <Image
-                src={p.images[0].image_url}
-                alt={p.images[0].alt_text || p.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="h-full w-full object-contain p-3"
-                priority
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                No image
-              </div>
-            )}
-          </div>
+          <ProductImageGallery images={p.images} title={p.title} />
 
           <section className="flex flex-col">
             <h1 className="text-3xl font-bold text-foreground">{p.title}</h1>
