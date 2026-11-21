@@ -189,16 +189,16 @@ export async function generateMetadata() {
     return category.name;
   }).filter(Boolean);
   const categoryLabel = categoryNames.join(' & ');
-  const title = categoryLabel ? `${categoryLabel} | ${name}` : `${name} | Online Store`;
-  const description = categoryLabel
+  const title = s?.meta_title || (categoryLabel ? `${categoryLabel} | ${name}` : `${name} | Online Store`);
+  const description = s?.meta_description || (categoryLabel
     ? `Explore ${categoryLabel.toLowerCase()} currently available at ${name}. Review the details on each product page before ordering.`
-    : `Explore current products and collections at ${name}.`;
+    : `Explore current products and collections at ${name}.`);
   return {
     title,
     description,
-    openGraph: { title, description, images: s?.logo_url ? [s.logo_url] : undefined, type: 'website' },
+    openGraph: { title, description, url: absoluteUrl('/'), images: s?.logo_url ? [s.logo_url] : undefined, type: 'website' },
     twitter: { card: 'summary_large_image', title, description },
-    alternates: { canonical: (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '') || undefined },
+    alternates: { canonical: absoluteUrl('/') },
   };
 }
 
