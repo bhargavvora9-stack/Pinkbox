@@ -144,19 +144,15 @@ function ProductsSection({ categories = [] }) {
           {categories.map((category) => (
             <article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft">
               <Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block">
-                <div className={`relative overflow-hidden bg-[#fff4f7] ${category.slug === 'sanitary-pads' ? 'flex aspect-[3/2] items-center justify-center' : 'aspect-[5/4]'}`}>
+                <div className="relative aspect-square overflow-hidden bg-muted">
                   {category.image_url ? (
                     <Image
                       src={category.image_url}
                       alt={category.name}
-                      fill={category.slug !== 'sanitary-pads'}
-                      width={category.slug === 'sanitary-pads' ? 300 : undefined}
-                      height={category.slug === 'sanitary-pads' ? 200 : undefined}
+                      fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       unoptimized
-                      className={category.slug === 'sanitary-pads'
-                        ? 'block h-full w-full object-contain'
-                        : 'object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]'}
+                      className="h-full w-full object-contain p-3"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6">
