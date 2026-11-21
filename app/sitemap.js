@@ -18,7 +18,7 @@ export default async function sitemap() {
   // Keep core URLs available even if the store database is temporarily unavailable.
   const urls = [
     { url: base },
-    { url: `${base}/products` },
+    { url: `${base}/shop` },
     { url: `${base}/blog` },
   ];
   if (settingsError || !settings) return urls;
