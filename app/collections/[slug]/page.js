@@ -18,7 +18,7 @@ async function getCollection(slug) {
   if (!category) return null;
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
-  const { data: products, error: productsError } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).like('sku','MDH-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
+  const { data: products, error: productsError } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
   if (productsError) throw new Error(productsError.message);
   const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
   if (variantsError) throw new Error(variantsError.message);
