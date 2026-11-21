@@ -362,7 +362,7 @@ function Testimonials({ reviews = [] }) {
 }
 
 function WhatsAppFloatingButton({ settings = {} }) {
-  const rawNumber = String(settings.whatsapp_number || '').replace(/\\D/g, '');
+  const rawNumber = String(settings.whatsapp_number || '').replace(/\D/g, '');
   const number = rawNumber.length === 10 ? '91' + rawNumber : rawNumber;
   if (!number) return null;
   const message = encodeURIComponent('Hello PinkBox, I have a question about your products.');
