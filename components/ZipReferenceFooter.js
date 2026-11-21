@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
-import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
+import { Flower2, Mail, MapPin, Phone, Instagram, Facebook, Youtube } from 'lucide-react';
 const LINKS = [
  {title:'Shop',items:[{label:'All Products',href:'/shop'},{label:'Your Cart',href:'/cart'},{label:'Track Order',href:'/track-order'},{label:'Bulk Orders',href:'/#contact'}]},
  {title:'Company',items:[{label:'About Us',href:'/about'},{label:'Blog',href:'/blog'},{label:'FAQ',href:'/faq'},{label:'Contact',href:'/#contact'}]},
@@ -35,10 +35,13 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
       <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary"/>{email}</p>
       <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary"/>{address}</p>
      </div>
-     {(currentSettings.instagram_url || currentSettings.facebook_url || currentSettings.youtube_url) && <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold">
-      {currentSettings.instagram_url && <a href={currentSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Instagram</a>}
-      {currentSettings.facebook_url && <a href={currentSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Facebook</a>}
-      {currentSettings.youtube_url && <a href={currentSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">YouTube</a>}
+     {(currentSettings.instagram_url || currentSettings.facebook_url || currentSettings.youtube_url) && <div className="mt-6">
+      <p className="mb-3 text-xs font-semibold tracking-widest text-foreground uppercase">Follow Pink Box</p>
+      <div className="flex flex-wrap items-center gap-3">
+       {currentSettings.instagram_url && <a href={currentSettings.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Follow Pink Box on Instagram" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Instagram className="h-5 w-5"/></a>}
+       {currentSettings.facebook_url && <a href={currentSettings.facebook_url} target="_blank" rel="noopener noreferrer" aria-label="Follow Pink Box on Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Facebook className="h-5 w-5"/></a>}
+       {currentSettings.youtube_url && <a href={currentSettings.youtube_url} target="_blank" rel="noopener noreferrer" aria-label="Watch Pink Box on YouTube" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:text-primary"><Youtube className="h-5 w-5"/></a>}
+      </div>
      </div>}
     </div>
     {LINKS.map((col)=><div key={col.title}><h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h3><ul className="mt-4 space-y-2.5">{col.items.map((item)=><li key={item.label}><Link href={item.href} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label}</Link></li>)}</ul></div>)}
