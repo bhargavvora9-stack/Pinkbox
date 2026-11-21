@@ -204,7 +204,7 @@ export default async function ProductPage({ params }) {
                 alt={p.images[0].alt_text || p.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain p-3"
                 priority
               />
             ) : (
