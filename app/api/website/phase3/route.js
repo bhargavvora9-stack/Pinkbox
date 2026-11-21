@@ -1,4 +1,5 @@
 import { getWebsiteAdminContext, cleanString, audit, jsonError } from '@/lib/website-admin';
+import { sanitizePaymentAuditSnapshot } from '@/lib/sanitize-payment-audit';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
@@ -85,7 +86,7 @@ export async function POST(request) {
   if(resource==='shipping-zones'){if(typeof payload.states==='string')try{payload.states=JSON.parse(payload.states)}catch{return jsonError('States must be valid JSON.')};if(typeof payload.pincodes==='string')try{payload.pincodes=JSON.parse(payload.pincodes)}catch{return jsonError('Pincodes must be valid JSON.')}}
   if(resource==='shipping-rules'){for(const k of ['zone_id','method_id'])if(payload[k]==='')payload[k]=null;}
   const {data,error}=await supabase.from(table).insert(payload).select().single(); if(error)return jsonError(error.message,500);
-  await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.create`,entityType:table,entityId:data.id,newData:data});
+  await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.create`,entityType:table,entityId:data.id,newData:resource==='payments'?sanitizePaymentAuditSnapshot(data):data});
   return Response.json({data:resource==='payments'?sanitizePayment(data):data},{status:201});
 }
 
@@ -119,9 +120,9 @@ export async function PATCH(request) {
   const{data,error}=await supabase.from(table).update(p).eq('company_id',companyId).eq('id',b.id).select().single();
   if(error)return jsonError(error.message,500);
   const finalData=data||statusUpdate;
-  await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:b.id,oldData,newData:finalData});
+  await audit(supabase,{companyId,userId:user.id,action:`phase3.${b.resource}.update`,entityType:table,entityId:b.id,oldData:b.resource==='payments'?sanitizePaymentAuditSnapshot(oldData):oldData,newData:b.resource==='payments'?sanitizePaymentAuditSnapshot(finalData):finalData});
   if(statusUpdate){try{await runWebsiteAutomations({companyId,trigger:statusUpdate.order_status,order:statusUpdate})}catch(e){console.error('Order automation failed:',e)}}
   return Response.json({data:b.resource==='payments'?sanitizePayment(finalData):finalData});
 }
 
-export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError(request);if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData});return Response.json({ok:true}); }
+export async function DELETE(request) { const u=new URL(request.url);const resource=u.searchParams.get('resource');const id=u.searchParams.get('id');const ctx=await ctxOrError(request);if(ctx.error)return jsonError('Access denied.',403);const{supabase,companyId,user}=ctx;const table=tables[resource];if(!table||!id)return jsonError('Resource and id are required.');const{data:oldData}=await supabase.from(table).select('*').eq('company_id',companyId).eq('id',id).maybeSingle();if(!oldData)return jsonError('Record not found.',404);const{error}=await supabase.from(table).delete().eq('company_id',companyId).eq('id',id);if(error)return jsonError(error.message,500);await audit(supabase,{companyId,userId:user.id,action:`phase3.${resource}.delete`,entityType:table,entityId:id,oldData:resource==='payments'?sanitizePaymentAuditSnapshot(oldData):oldData});return Response.json({ok:true}); }
