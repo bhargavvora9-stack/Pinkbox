@@ -18,6 +18,17 @@ async function getRazorpayCreds(db, companyId) {
     .limit(1)
     .maybeSingle();
 
+  // Preview and local deployments share the production Supabase database.
+  // Never fall back to live Razorpay credentials outside Production.
+  if (process.env.VERCEL_ENV !== 'production') {
+    const previewKeyId = String(process.env.RAZORPAY_PREVIEW_KEY_ID || '').trim();
+    const previewKeySecret = String(process.env.RAZORPAY_PREVIEW_KEY_SECRET || '').trim();
+    if (!previewKeyId.startsWith('rzp_test_') || !previewKeySecret) {
+      return { keyId: '', keySecret: '' };
+    }
+    return { keyId: previewKeyId, keySecret: previewKeySecret };
+  }
+
   const cfg = paymentMethod?.config || {};
   const dbKeyId = String(cfg.key_id || cfg.razorpay_key_id || '').trim();
   const dbKeySecret = String(cfg.key_secret || cfg.razorpay_key_secret || '').trim();
