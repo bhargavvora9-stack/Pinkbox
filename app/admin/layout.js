@@ -3,21 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getWebsiteRolePermissions } from '@/lib/website-admin';
 import LogoutButton from '@/components/LogoutButton';
-import AdminNav from '@/components/AdminNav';
-
-const NAV = [
-  { href: '/admin', label: 'Dashboard', module: 'dashboard', exact: true },
-  { href: '/admin/orders', label: 'Orders', module: 'orders' },
-  { href: '/admin/payments', label: 'Payments', module: 'payments' },
-  { href: '/admin/banners', label: 'Banners', module: 'banners' },
-  { href: '/admin/blog', label: 'Blog', module: 'blog' },
-  { href: '/admin/coupons', label: 'Coupons', module: 'discounts' },
-  { href: '/admin/leads', label: 'Leads', module: 'b2b_enquiries' },
-  { href: '/admin/subscribers', label: 'Subscribers', module: 'notifications' },
-  { href: '/admin/broadcasts', label: 'WhatsApp', module: 'notifications' },
-  { href: '/admin/reviews', label: 'Reviews', module: 'reviews' },
-  { href: '/admin/settings', label: 'Site settings', module: 'settings' },
-];
+import WebsiteAdminNav from '@/components/WebsiteAdminNav';
 
 export const metadata = { title: 'Admin — Pink Box', robots: { index: false, follow: false, nocache: true } };
 export const dynamic = 'force-dynamic';
@@ -54,20 +40,25 @@ export default async function AdminLayout({ children }) {
     redirect('/login?error=company_access');
   }
 
-  const visibleNav = isAdministrator ? NAV : NAV.filter((item) => permissions[item.module]?.view === true);
+  const navPermissions = isAdministrator ? null : permissions;
 
   return (
     <div className="min-h-screen bg-secondary/20">
-      <header className="border-b border-border bg-background">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="font-display text-lg font-semibold text-foreground">Pink Box admin</Link>
-          <LogoutButton />
+          <div className="flex items-center gap-3">
+            <div className="md:hidden">
+              <WebsiteAdminNav mobile permissions={navPermissions} />
+            </div>
+            <LogoutButton />
+          </div>
         </div>
       </header>
-      <div className="container mx-auto flex flex-col gap-8 px-4 py-8 md:flex-row">
-        <nav className="flex flex-wrap gap-1 md:w-52 md:flex-col" aria-label="Admin navigation">
-          <AdminNav items={visibleNav} />
-        </nav>
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 md:flex-row md:items-start">
+        <aside className="hidden md:sticky md:top-[88px] md:flex md:h-[calc(100vh-112px)] md:w-[285px] md:shrink-0 md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-white/10 md:bg-[#111116] md:shadow-xl">
+          <WebsiteAdminNav permissions={navPermissions} />
+        </aside>
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
