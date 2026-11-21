@@ -168,7 +168,15 @@ export default function CartPage() {
   const analyticsMerchandiseValue = Math.max(0, Number(quote.subtotal || localSubtotal) - Number(quote.discount || 0));
 
   const updateQty = (id, q) =>
-    setItems((a) => a.map((x) => x.id === id ? { ...x, quantity: Math.max(1, Number(q) || 1) } : x));
+    setItems((a) => a.map((x) => {
+      if (x.id !== id) return x;
+      const requested = Math.max(1, Number(q) || 1);
+      const limit = Number(x.quantity_limit || 0);
+      return {
+        ...x,
+        quantity: limit > 0 && !x.allow_backorder ? Math.min(requested, limit) : requested,
+      };
+    }));
 
   const onField = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -374,7 +382,11 @@ export default function CartPage() {
                     {item.personalization && <p className="mt-0.5 text-xs font-semibold text-primary">Embroidered name: {item.personalization}</p>}
                     <p className="mt-1 text-sm text-muted-foreground">{money(item.price)}</p>
                     <div className="mt-3 flex items-center gap-3">
-                      <input aria-label={`Quantity for ${item.title}`} type="number" min="1" value={item.quantity} onChange={(e) => updateQty(item.id, e.target.value)} className="w-20 rounded-xl border border-border bg-background px-3 py-2" />
+                      <div className="inline-flex h-9 items-center rounded-xl border border-border bg-background">
+                        <button type="button" aria-label={`Decrease quantity for ${item.title}`} onClick={() => updateQty(item.id, Number(item.quantity || 1) - 1)} disabled={Number(item.quantity || 1) <= 1} className="h-full w-9 text-lg font-semibold disabled:opacity-40">−</button>
+                        <span className="min-w-9 text-center text-sm font-semibold" aria-live="polite">{item.quantity}</span>
+                        <button type="button" aria-label={`Increase quantity for ${item.title}`} onClick={() => updateQty(item.id, Number(item.quantity || 1) + 1)} disabled={Number(item.quantity_limit || 0) > 0 && !item.allow_backorder && Number(item.quantity || 1) >= Number(item.quantity_limit)} className="h-full w-9 text-lg font-semibold disabled:opacity-40">+</button>
+                      </div>
                       <button type="button" onClick={() => setItems((a) => a.filter((x) => x.id !== item.id))} className="text-sm font-semibold text-[var(--primary)]">Remove</button>
                     </div>
                   </div>

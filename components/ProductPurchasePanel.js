@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +12,7 @@ const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
 });
 
 export default function ProductPurchasePanel({ product, description = '' }) {
+  const router = useRouter();
   const variants = useMemo(
     () => Array.isArray(product.variants)
       ? product.variants.filter((variant) => variant?.is_active !== false)
@@ -42,11 +44,16 @@ export default function ProductPurchasePanel({ product, description = '' }) {
     ? Number(selectedVariant ? selectedVariant.stock_quantity || 0 : product.stock_quantity || 0)
     : 0;
   const canBuy = !tracksInventory || max > 0 || product.allow_backorder === true;
+  const [quantity, setQuantity] = useState(1);
   const [personalization, setPersonalization] = useState('');
   const [personalizationError, setPersonalizationError] = useState('');
   const [status, setStatus] = useState('');
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [selectedVariantId]);
 
   useEffect(() => {
     trackGa4Event('view_item', {
@@ -56,7 +63,13 @@ export default function ProductPurchasePanel({ product, description = '' }) {
     });
   }, [product, effectivePrice]);
 
-  function addToCart() {
+  function changeQuantity(value) {
+    const parsed = Math.max(1, Number.parseInt(value, 10) || 1);
+    const capped = max > 0 && !product.allow_backorder ? Math.min(parsed, max) : parsed;
+    setQuantity(capped);
+  }
+
+  function addToCart({ buyNow = false } = {}) {
     if (!canBuy || busy) return;
     if (product.requires_personalization && !personalization.trim()) {
       setPersonalizationError('Please enter a name for embroidery.');
@@ -71,9 +84,9 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       const current = Array.isArray(stored) ? stored : [];
       const cartId = selectedVariant ? product.id + ':' + selectedVariant.id : product.id;
       const existing = current.find((item) => item.id === cartId);
-      const nextQuantity = Number(existing?.quantity || 0) + 1;
+      const nextQuantity = Number(existing?.quantity || 0) + quantity;
       if (max > 0 && nextQuantity > max && !product.allow_backorder) {
-        setStatus('Only ' + max + ' available');
+        setStatus('Only ' + max + ' available in total');
         setAdded(false);
         return;
       }
@@ -88,26 +101,33 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         title: selectedVariant ? product.title + ' - ' + selectedVariant.title : product.title,
         price: effectivePrice,
         image_url: effectiveImage,
-        quantity: 1,
+        quantity,
         personalization: product.requires_personalization ? personalization.trim() : null,
+        quantity_limit: max > 0 && !product.allow_backorder ? max : null,
       };
       const next = existing
         ? current.map((item) =>
             item.id === cartId
-              ? { ...item, quantity: nextQuantity, personalization: cartItem.personalization }
+              ? { ...item, quantity: nextQuantity, personalization: cartItem.personalization, image_url: effectiveImage, quantity_limit: cartItem.quantity_limit, allow_backorder: product.allow_backorder }
               : item,
           )
         : [...current, cartItem];
 
       localStorage.setItem('pinkbox_cart', JSON.stringify(next));
       window.dispatchEvent(new Event('pinkbox-cart-updated'));
-      setStatus('Added to cart');
-      setAdded(true);
       trackGa4Event('add_to_cart', {
         currency: 'INR',
-        value: effectivePrice,
-        items: toAnalyticsItems([{ ...product, ...cartItem, quantity: 1 }]),
+        value: effectivePrice * quantity,
+        items: toAnalyticsItems([{ ...product, ...cartItem, quantity }]),
       });
+
+      if (buyNow) {
+        router.push('/checkout');
+        return;
+      }
+
+      setStatus('Added to cart');
+      setAdded(true);
     } catch {
       setStatus('Unable to add to cart. Please try again.');
       setAdded(false);
@@ -164,6 +184,41 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         </div>
       )}
 
+      <div className="mt-6">
+        <p className="mb-2 text-sm font-medium text-foreground">Quantity</p>
+        <div className="inline-flex h-11 items-center rounded-md border border-input bg-background">
+          <button
+            type="button"
+            aria-label="Decrease quantity"
+            onClick={() => changeQuantity(quantity - 1)}
+            disabled={quantity <= 1 || !canBuy || busy}
+            className="h-full w-11 text-xl font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            −
+          </button>
+          <input
+            aria-label="Product quantity"
+            type="number"
+            min="1"
+            max={max > 0 && !product.allow_backorder ? max : undefined}
+            value={quantity}
+            onChange={(event) => changeQuantity(event.target.value)}
+            disabled={!canBuy || busy}
+            className="h-full w-14 border-x border-input bg-transparent text-center text-sm font-semibold text-foreground outline-none"
+          />
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            onClick={() => changeQuantity(quantity + 1)}
+            disabled={!canBuy || busy || (max > 0 && !product.allow_backorder && quantity >= max)}
+            className="h-full w-11 text-xl font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+        {max > 0 && <p className="mt-2 text-xs text-muted-foreground">{max} available</p>}
+      </div>
+
       {product.requires_personalization && canBuy && (
         <div className="mt-6">
           <label className="block text-sm font-medium text-foreground" htmlFor="personalization-input">
@@ -189,15 +244,27 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={addToCart}
-        disabled={!canBuy || busy}
-        className="mt-8 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
-      >
-        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-        {busy ? 'Adding…' : canBuy ? 'Add to Cart' : 'Out of stock'}
-      </button>
+      <div className="mt-8 grid w-full gap-3 sm:grid-cols-2 md:max-w-xl">
+        <button
+          type="button"
+          onClick={() => addToCart()}
+          disabled={!canBuy || busy}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-primary bg-background px-5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          Add to Cart
+        </button>
+        <button
+          type="button"
+          onClick={() => addToCart({ buyNow: true })}
+          disabled={!canBuy || busy}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Buy Now
+        </button>
+      </div>
+      {!canBuy && <p className="mt-3 text-sm text-muted-foreground">This item is currently unavailable.</p>}
 
       {status && (
         <div role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
