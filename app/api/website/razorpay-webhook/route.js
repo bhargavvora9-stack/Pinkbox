@@ -26,6 +26,9 @@ async function getWebhookSecret(db, companyId) {
 
   if (error) throw error;
   const config = data?.config && typeof data.config === 'object' ? data.config : {};
+  if (process.env.VERCEL_ENV !== 'production') {
+    return String(process.env.RAZORPAY_PREVIEW_WEBHOOK_SECRET || '').trim();
+  }
   return String(
     config.webhook_secret ||
     config.razorpay_webhook_secret ||

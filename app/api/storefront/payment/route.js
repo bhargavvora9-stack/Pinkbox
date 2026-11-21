@@ -18,8 +18,7 @@ async function getRazorpayCreds(db, companyId) {
     .limit(1)
     .maybeSingle();
 
-  // Preview and local environments share the production Supabase database. Never
-  // let those environments fall back to the live Razorpay credentials stored there.
+  // Preview deployments share the production Supabase database; use Test Mode only.
   if (process.env.VERCEL_ENV !== 'production') {
     const previewKeyId = String(process.env.RAZORPAY_PREVIEW_KEY_ID || '').trim();
     const previewKeySecret = String(process.env.RAZORPAY_PREVIEW_KEY_SECRET || '').trim();
