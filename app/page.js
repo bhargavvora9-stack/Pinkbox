@@ -23,7 +23,7 @@ async function getStoreData() {
 
   const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants, discounts] = await Promise.all([
     db.from('website_products')
-      .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override,created_at,updated_at')
+      .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
       .eq('is_active', true)
       .or('sku.like.MDH-%,sku.like.BAG-%')
@@ -135,28 +135,9 @@ async function getStoreData() {
     categoryProductCounts[mapping.category_id] = (categoryProductCounts[mapping.category_id] || 0) + 1;
   }
 
-  const saleableProductById = new Map(saleableProducts.map((product) => [product.id, product]));
-  const latestProductImageByCategory = new Map();
-  for (const mapping of mappings.data || []) {
-    const product = saleableProductById.get(mapping.product_id);
-    if (!product?.image_url) continue;
-    const updatedAt = Date.parse(product.updated_at || product.created_at || '') || 0;
-    const current = latestProductImageByCategory.get(mapping.category_id);
-    if (!current || updatedAt > current.updatedAt) {
-      latestProductImageByCategory.set(mapping.category_id, { image_url: product.image_url, updatedAt });
-    }
-  }
-
-  const visibleCategories = (categories.data || [])
-    .filter((category) => Number(categoryProductCounts[category.id] || 0) > 0)
-    .map((category) => {
-      // The Sanitary Pads collection tile follows the latest product's primary uploaded image,
-      // instead of keeping the old static catalog thumbnail from website_categories.image_url.
-      const latestProductImage = category.slug === 'sanitary-pads'
-        ? latestProductImageByCategory.get(category.id)?.image_url
-        : null;
-      return latestProductImage ? { ...category, image_url: latestProductImage } : category;
-    });
+  const visibleCategories = (categories.data || []).filter(
+    (category) => Number(categoryProductCounts[category.id] || 0) > 0
+  );
   const contentContext = {
     categories: categories.data || [],
     products: saleableProducts,
