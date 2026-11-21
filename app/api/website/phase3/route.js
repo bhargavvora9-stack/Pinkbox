@@ -1,5 +1,6 @@
 import { getWebsiteAdminContext, cleanString, audit, jsonError } from '@/lib/website-admin';
 import { sanitizePaymentAuditSnapshot } from '@/lib/sanitize-payment-audit';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 
 const tables = { orders:'website_orders', 'shipping-methods':'website_shipping_methods', 'shipping-zones':'website_shipping_zones', 'shipping-rules':'website_shipping_rules', payments:'website_payment_methods', 'abandoned-carts':'website_abandoned_carts' };
@@ -20,6 +21,7 @@ export async function GET(request) {
   const u = new URL(request.url); const resource = u.searchParams.get('resource'); const ctx = await ctxOrError(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
   const { supabase, companyId } = ctx;
+  const db = resource === 'payments' ? createAdminClient() : supabase;
   if (resource === 'order') {
     const id = u.searchParams.get('id'); if (!id) return jsonError('Order id is required.');
     const [order, items, history] = await Promise.all([
