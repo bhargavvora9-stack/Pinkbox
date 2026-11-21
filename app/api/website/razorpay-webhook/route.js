@@ -29,8 +29,10 @@ export async function POST(request) {
       .limit(1)
       .maybeSingle();
 
-    // Vercel's dedicated webhook secret is canonical; DB config is only a legacy fallback.
-    const secret = String(process.env.RAZORPAY_WEBHOOK_SECRET || pm?.config?.webhook_secret || '').trim();
+    // Preview shares Production data, so it must use a dedicated Test Mode webhook secret.
+    const secret = process.env.VERCEL_ENV !== 'production'
+      ? String(process.env.RAZORPAY_PREVIEW_WEBHOOK_SECRET || '').trim()
+      : String(process.env.RAZORPAY_WEBHOOK_SECRET || pm?.config?.webhook_secret || '').trim();
     if (!secret) return Response.json({ error: 'Webhook not configured.' }, { status: 503 });
 
     const rawBody = await request.text();
