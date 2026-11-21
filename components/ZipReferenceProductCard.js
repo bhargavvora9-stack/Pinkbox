@@ -50,7 +50,7 @@ export default function ZipReferenceProductCard({product}){
   <article className="group overflow-hidden rounded-xl border bg-card text-card-foreground shadow transition-shadow hover:shadow-md">
    <Link href={'/products/'+product.slug}>
     <div className="aspect-square overflow-hidden bg-muted">
-     {image?<Image src={image} alt={product.title} width={600} height={600} unoptimized className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
+     {image?<Image src={image} alt={product.title} width={600} height={600} unoptimized className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
     <div className="p-4"><h3 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
    </Link>
