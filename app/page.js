@@ -1,6 +1,6 @@
 import PinkBoxHome from '../components/PinkBoxHome';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 import { filterAvailableProducts } from '@/lib/product-availability';
 
@@ -23,7 +23,7 @@ async function getStoreData() {
 
   const [products, categories, banners, sections, menu, theme, footer, blog, images, mappings, reviews, variants, discounts] = await Promise.all([
     db.from('website_products')
-      .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override')
+      .select('id,sku,title,slug,short_description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
       .eq('is_active', true)
       .or('sku.like.MDH-%,sku.like.BAG-%')
@@ -118,6 +118,7 @@ async function getStoreData() {
 
   const productData = (products.data || []).map((product) => ({
     ...product,
+    short_description: sanitizePublicProductText(product.short_description),
     image_url: imageMap[product.id] || (product.sku?.startsWith('MDH-') ? `/catalog-products/${product.sku.toLowerCase()}.webp` : null),
     images: imageListMap[product.id] || [],
     category_id: catMap[product.id] || null,
