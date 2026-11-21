@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd } from '@/lib/seo';
@@ -7,8 +7,6 @@ import { filterAvailableProducts } from '@/lib/product-availability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 async function getCollection(slug) {
   const db = createAdminClient();
@@ -18,14 +16,51 @@ async function getCollection(slug) {
   if (!category) return null;
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
-  const { data: products, error: productsError } = ids.length ? await db.from('website_products').select('id,sku,title,slug,short_description,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active').eq('company_id',settings.company_id).in('id',ids).eq('is_active',true).or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
+  const { data: products, error: productsError } = ids.length ? await db.from('website_products')
+    .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+    .eq('company_id',settings.company_id).in('id',ids).eq('is_active',true)
+    .or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
   if (productsError) throw new Error(productsError.message);
-  const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
+  const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants')
+    .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
+    .eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
   if (variantsError) throw new Error(variantsError.message);
   const availableProducts = filterAvailableProducts(products || [], variants || []);
-  const { data: images } = ids.length ? await db.from('website_product_images').select('product_id,image_url,is_primary,sort_order').eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[]};
-  const imageMap = {}; (images || []).forEach(x => { if (!imageMap[x.product_id] || x.is_primary) imageMap[x.product_id] = x.image_url; });
-  return {category, products:availableProducts.map(p => ({...p,image_url:imageMap[p.id]||`/catalog-products/${p.sku.toLowerCase()}.webp`}))};
+  const { data: images, error: imagesError } = ids.length ? await db.from('website_product_images')
+    .select('product_id,image_url,alt_text,is_primary,sort_order')
+    .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[],error:null};
+  if (imagesError) throw new Error(imagesError.message);
+  const imageMap = {};
+  (images || []).forEach((image) => {
+    const productImages = imageMap[image.product_id] || [];
+    productImages.push(image);
+    imageMap[image.product_id] = productImages;
+  });
+  const variantsByProduct = {};
+  (variants || []).forEach((variant) => {
+    const productVariants = variantsByProduct[variant.product_id] || [];
+    productVariants.push(variant);
+    variantsByProduct[variant.product_id] = productVariants;
+  });
+  const collectionProducts = availableProducts.map((product) => {
+    const productImages = (imageMap[product.id] || []).sort(
+      (a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0),
+    );
+    const fallback = {
+      image_url: `/catalog-products/${product.sku.toLowerCase()}.webp`,
+      alt_text: product.title,
+      is_primary: true,
+      sort_order: 0,
+    };
+    const resolvedImages = productImages.length ? productImages : [fallback];
+    return {
+      ...product,
+      variants: variantsByProduct[product.id] || [],
+      images: resolvedImages,
+      image_url: resolvedImages[0]?.image_url || fallback.image_url,
+    };
+  });
+  return {category, products:collectionProducts};
 }
 
 export async function generateMetadata({params}) {
@@ -86,7 +121,7 @@ export default async function CollectionPage({params}) {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><div className="flex gap-4 text-sm font-semibold"><Link href="/account">Account</Link><Link href="/products">All products</Link></div></div></header>
     <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diapers online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
-{!c.products.length ? <div className="mt-10 rounded-3xl border border-dashed p-12 text-center text-gray-500">No products available in this collection yet.</div> : <div className="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">{c.products.map(p=><Link href={`/products/${p.slug}`} key={p.id} className="group"><div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f7f4f5]">{p.image_url ? <Image src={p.image_url} alt={p.title} fill sizes="(max-width:768px) 50vw, 25vw" style={{objectFit:'contain'}} className="transition group-hover:scale-[1.03]"/> : <div className="grid h-full place-items-center text-6xl font-black text-[#d9295f]/25">PB</div>}</div><p className="mt-3 text-xs text-gray-400">{p.sku || 'PinkBox'}</p><h2 className="mt-1 font-bold">{p.title}</h2><div className="mt-2 font-black">{money(p.price)} {Number(p.compare_at_price)>0 && <del className="ml-1 text-xs font-normal text-gray-400">{money(p.compare_at_price)}</del>}</div></Link>)}</div>}
+<div className="mt-10"><ZipReferenceProductGrid products={c.products} /></div>
       {isSanitary && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Explore sanitary care</p><h2 className="mt-2 text-2xl font-black">Sanitary pads for everyday, night and heavy flow</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">PinkBox covers common sanitary pad searches including sanitary pads, sanitary napkins, 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads and anti-bacterial sanitary pads. Use the guides below to compare the right type for your needs.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Journal</Link></div></div>}
       {isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Baby care</p><h2 className="mt-2 text-2xl font-black">Compare Baby Diaper Sizes and Pack Counts</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">Browse 7 Soft disposable baby diapers in sizes S, M, L and XL. Compare Jumbo, Maha Jumbo and Premium packs by the listed size, piece count and current price before ordering.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}</div></div>}
       {!isSanitary && !isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Related guide</p><h2 className="mt-2 text-2xl font-black">Explore PinkBox guides</h2><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">View all articles</Link></div></div>}
