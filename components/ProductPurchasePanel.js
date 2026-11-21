@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
 
 const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
   minimumFractionDigits: 2,
@@ -47,6 +47,7 @@ export default function ProductPurchasePanel({ product, description = '' }) {
   const [quantity, setQuantity] = useState(1);
   const [personalization, setPersonalization] = useState('');
   const [personalizationError, setPersonalizationError] = useState('');
+  const [spellingConfirmed, setSpellingConfirmed] = useState(false);
   const [status, setStatus] = useState('');
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,10 @@ export default function ProductPurchasePanel({ product, description = '' }) {
     if (!canBuy || busy) return;
     if (product.requires_personalization && !personalization.trim()) {
       setPersonalizationError('Please enter a name for embroidery.');
+      return;
+    }
+    if (product.requires_personalization && !spellingConfirmed) {
+      setPersonalizationError('Please confirm that the name spelling is correct.');
       return;
     }
 
@@ -139,6 +144,11 @@ export default function ProductPurchasePanel({ product, description = '' }) {
   return (
     <div className="mt-4 flex flex-col">
       <p className="text-2xl font-semibold text-foreground">{money(effectivePrice)}</p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        {product.online_payment_enabled !== false && <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary" />Secure online payment</span>}
+        <Link href="/policies/returns" className="inline-flex items-center gap-1.5 underline underline-offset-2 hover:text-primary">Returns & refund policy</Link>
+        <Link href="/policies/shipping" className="inline-flex items-center gap-1.5"><Truck className="h-4 w-4 text-primary" />Shipping information</Link>
+      </div>
 
       {!canBuy && (
         <span className="mt-4 w-fit rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -220,8 +230,12 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       </div>
 
       {product.requires_personalization && canBuy && (
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-foreground" htmlFor="personalization-input">
+        <div className="mt-6 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            Personalise your product
+          </p>
+          <label className="mt-3 block text-sm font-semibold text-foreground" htmlFor="personalization-input">
             {product.personalization_label || 'Name for embroidery'}
           </label>
           <input
@@ -229,17 +243,35 @@ export default function ProductPurchasePanel({ product, description = '' }) {
             value={personalization}
             onChange={(event) => {
               setPersonalization(event.target.value.slice(0, 20));
+              setSpellingConfirmed(false);
               setPersonalizationError('');
             }}
-            placeholder="e.g. Priya"
+            placeholder="Enter the name exactly as you want it embroidered"
             maxLength={20}
-            className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary sm:max-w-sm"
+            autoComplete="off"
+            className="mt-2 h-12 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary sm:max-w-md"
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Max 20 characters. This name will be added to your personalized product.
+          <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>Use the exact spelling, capital letters and spaces you want.</span>
+            <span className="shrink-0 tabular-nums">{personalization.length}/20</span>
+          </div>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={spellingConfirmed}
+              onChange={(event) => {
+                setSpellingConfirmed(event.target.checked);
+                setPersonalizationError('');
+              }}
+              className="mt-0.5 h-4 w-4 accent-primary"
+            />
+            <span>I have checked the spelling and confirm this is exactly how I want the name embroidered.</span>
+          </label>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Please check carefully before adding to cart. Personalised names are made using the text entered above.
           </p>
           {personalizationError && (
-            <p className="mt-1.5 text-xs font-medium text-destructive">{personalizationError}</p>
+            <p className="mt-2 text-xs font-semibold text-destructive" role="alert">{personalizationError}</p>
           )}
         </div>
       )}

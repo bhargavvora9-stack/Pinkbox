@@ -11,7 +11,7 @@ import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
   Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
   Mail, MessageSquareHeart, PackageCheck, Search, Send, ShieldCheck,
-  Sparkles, Star, Truck, Wind
+  Sparkles, Star, Truck, Wind, MessageCircle
 } from 'lucide-react';
 
 const EXAMPLES = [
@@ -299,6 +299,36 @@ function AboutStrip() {
   );
 }
 
+function BrandReelSection() {
+  const reelUrl = 'https://www.instagram.com/reel/De9YTwLtSmB/';
+  return (
+    <section className="bg-secondary/40 py-16 md:py-24" aria-labelledby="brand-reel-heading">
+      <div className="container mx-auto grid items-center gap-10 px-4 lg:grid-cols-2">
+        <div>
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">From 24 CARE</p>
+          <h2 id="brand-reel-heading" className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">See more from our brand</h2>
+          <p className="mt-4 max-w-xl leading-relaxed text-muted-foreground">
+            Explore this video from the official 24 CARE Instagram profile. The original video stays on Instagram, with its source and creator attribution intact.
+          </p>
+          <a href={reelUrl} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            Watch on Instagram
+          </a>
+        </div>
+        <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-background shadow-soft">
+          <iframe
+            src="https://www.instagram.com/reel/De9YTwLtSmB/embed"
+            title="24 CARE Instagram Reel"
+            className="block h-[620px] w-full"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allow="encrypted-media; picture-in-picture; clipboard-write"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Features() {
   return (
     <section id="why" className="container mx-auto px-4 py-16 md:py-24">
@@ -320,23 +350,63 @@ function Features() {
   );
 }
 
-function Testimonials() {
+function Testimonials({ reviews = [] }) {
+  const visibleReviews = reviews.filter((review) => review?.review_text || review?.title).slice(0, 3);
   return (
     <section id="reviews" className="bg-secondary/40">
       <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Real voices</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Customer reviews</h2>
-          <p className="mt-3 text-muted-foreground">Only verified reviews from real customers will appear here.</p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">Real voices</p>
+            <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">What customers say</h2>
+            <p className="mt-3 text-muted-foreground">Feedback shared by customers about their PinkBox orders.</p>
+          </div>
+          <Link href="/shop" className="text-sm font-semibold text-primary underline underline-offset-4">Explore products</Link>
         </div>
-        <div className="mt-12 rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-soft/50">
-          <MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50" />
-          <p className="mt-4 font-display text-xl font-semibold text-foreground">No reviews yet</p>
-          <div className="mt-3 flex items-center justify-center gap-1">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 text-muted-foreground/40" />)}</div>
-          <p className="mt-3 text-sm text-muted-foreground">Be the first to share your experience after your order arrives.</p>
-        </div>
+        {visibleReviews.length ? (
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {visibleReviews.map((review) => (
+              <article key={review.id} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center gap-1" aria-label={Number(review.rating || 0) + ' out of 5 stars'}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className={'h-4 w-4 ' + (i < Number(review.rating || 0) ? 'fill-primary text-primary' : 'text-muted-foreground/30')} />
+                  ))}
+                </div>
+                {review.title && <h3 className="mt-4 font-semibold text-foreground">{review.title}</h3>}
+                {review.review_text && <p className="mt-2 line-clamp-5 text-sm leading-relaxed text-muted-foreground">{review.review_text}</p>}
+                <p className="mt-5 text-sm font-semibold text-foreground">{review.customer_name || 'PinkBox customer'}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Customer review</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 rounded-3xl border border-dashed border-border bg-card p-8 text-center">
+            <MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50" />
+            <p className="mt-4 font-display text-xl font-semibold text-foreground">Customer stories are coming soon</p>
+            <p className="mt-2 text-sm text-muted-foreground">After your order arrives, share your experience on the product page. Approved reviews will appear here.</p>
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function WhatsAppFloatingButton({ settings = {} }) {
+  const rawNumber = String(settings.whatsapp_number || '').replace(/\D/g, '');
+  const number = rawNumber.length === 10 ? '91' + rawNumber : rawNumber;
+  if (!number) return null;
+  const message = encodeURIComponent('Hello PinkBox, I have a question about your products.');
+  return (
+    <a
+      href={'https://wa.me/' + number + '?text=' + message}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Chat with PinkBox on WhatsApp"
+      className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full bg-[#168b53] px-5 py-3 text-sm font-semibold text-white shadow-xl transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+    >
+      <MessageCircle className="h-5 w-5" />
+      <span>Chat on WhatsApp</span>
+    </a>
   );
 }
 
@@ -460,6 +530,7 @@ export default function PinkBoxHome({ initialData }) {
   const products = data.products || [];
   const banners = (data.banners || []).filter((banner) => banner?.is_active !== false);
   const coupons = data.coupons || [];
+  const reviews = data.reviews || [];
   const settings = data.settings || {};
   return (
     <div className="min-h-screen bg-background">
@@ -471,12 +542,14 @@ export default function PinkBoxHome({ initialData }) {
         <ProductsSection categories={data.categories || []} />
         <ProductFinder products={products} />
         <AboutStrip />
+        <BrandReelSection />
         <Features />
-        <Testimonials />
+        <Testimonials reviews={reviews} />
         <ContactForm />
         <Newsletter />
       </main>
       <ZipReferenceFooter settings={settings} />
+      <WhatsAppFloatingButton settings={settings} />
     </div>
   );
 }
