@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { zipHeroImage, zipAboutImage } from '@/lib/zip-reference-artwork';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
-import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import ZipReferenceProductCard from '@/components/ZipReferenceProductCard';
 import Image from 'next/image';
 import Link from 'next/link';
