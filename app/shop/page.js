@@ -1,13 +1,20 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { filterAvailableProducts } from '@/lib/product-availability';
+import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Tote Bags Online | PinkBox';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and personalized cotton tote bags online at PinkBox. Compare product details and current prices, with delivery across India.';
+
 export const metadata = {
-  title: 'Shop Baby Diapers & Hygiene Essentials | PinkBox',
-  description: 'Browse PinkBox baby diapers and everyday hygiene essentials. Compare pack sizes, listed prices and MRP, then order securely online.',
+  title: SHOP_TITLE,
+  description: SHOP_DESCRIPTION,
+  alternates: { canonical: '/shop' },
+  openGraph: { title: SHOP_TITLE, description: SHOP_DESCRIPTION, url: '/shop', type: 'website' },
+  twitter: { card: 'summary_large_image', title: SHOP_TITLE, description: SHOP_DESCRIPTION },
 };
 
 async function getShopData() {
@@ -86,5 +93,37 @@ async function getShopData() {
 
 export default async function ShopPage() {
   const data = await getShopData();
-  return <PinkBoxShopListing settings={data.settings} products={data.products} />;
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: SHOP_TITLE,
+    description: SHOP_DESCRIPTION,
+    url: absoluteUrl('/shop'),
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: data.products.length,
+      itemListElement: data.products.map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: product.title,
+        url: absoluteUrl(`/products/${encodeURIComponent(product.slug)}`),
+      })),
+    },
+  };
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: absoluteUrl('/shop') },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbs) }} />
+      <PinkBoxShopListing settings={data.settings} products={data.products} />
+    </>
+  );
 }
