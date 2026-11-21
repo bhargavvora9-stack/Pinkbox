@@ -26,7 +26,7 @@ async function getShopData() {
       .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
-      .like('sku', 'MDH-%')
+      .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_product_variants')
