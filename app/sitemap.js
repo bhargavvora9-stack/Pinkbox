@@ -80,7 +80,9 @@ export default async function sitemap() {
     }
   }
 
-  for (const product of saleableProducts) {
+  // Keep active product detail URLs discoverable even when inventory is temporarily unavailable.
+  // Their Product schema still reports the current InStock / OutOfStock offer state.
+  for (const product of productsResult.data || []) {
     if (product.slug) {
       urls.push({
         url: `${base}/products/${encodeURIComponent(product.slug)}`,
