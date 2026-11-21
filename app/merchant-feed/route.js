@@ -38,7 +38,7 @@ export async function GET() {
     .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
-    .like('sku', 'MDH-%')
+    .or('sku.like.MDH-%,sku.like.BAG-%')
     .gt('price', 0)
     .order('updated_at', { ascending: false });
 
@@ -78,7 +78,7 @@ export async function GET() {
     const id = product.sku || product.id;
     const primaryImage = imageMap[product.id]
       ? absoluteUrl(`/merchant-image/${encodeURIComponent(id)}`)
-      : (product.sku?.startsWith('MDH-') ? absoluteUrl(`/catalog-products/${product.sku.toLowerCase()}.webp`) : '');
+      : (/^(MDH-|BAG-)/i.test(String(product.sku || '')) ? absoluteUrl(`/catalog-products/${product.sku.toLowerCase()}.webp`) : '');
     if (!primaryImage) return '';
     return `  <item>
     <g:id>${xml(id)}</g:id>
