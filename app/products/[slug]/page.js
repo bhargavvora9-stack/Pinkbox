@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import { Star } from 'lucide-react';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd, buildProductMetaDescription } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -113,7 +113,7 @@ export async function generateMetadata({ params }) {
   if (!p) return { title: 'Product | PinkBox' };
   const url = absoluteUrl('/products/' + encodeURIComponent(p.slug));
   const title = p.seo_title || p.title + ' | ' + (p.website_name || 'PinkBox');
-  const description = p.seo_description || p.short_description || p.description || '';
+  const description = buildProductMetaDescription(p);
   const images = p.images.filter((image) => image.image_url).map((image) => image.image_url);
 
   return {
@@ -144,7 +144,7 @@ export default async function ProductPage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: p.title,
-    description: p.seo_description || p.short_description || p.description || undefined,
+    description: buildProductMetaDescription(p),
     sku: p.sku || undefined,
     brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
     image: imageUrls.length ? imageUrls : undefined,
@@ -208,7 +208,7 @@ export default async function ProductPage({ params }) {
                 image_url: p.images[0]?.image_url || null,
                 variants: p.variants,
               }}
-              description={p.description || p.short_description || ''}
+              description={p.short_description || ''}
             />
           </section>
         </div>
