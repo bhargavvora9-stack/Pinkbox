@@ -108,7 +108,7 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       const next = existing
         ? current.map((item) =>
             item.id === cartId
-              ? { ...item, quantity: nextQuantity, personalization: cartItem.personalization, image_url: effectiveImage }
+              ? { ...item, quantity: nextQuantity, personalization: cartItem.personalization, image_url: effectiveImage, quantity_limit: cartItem.quantity_limit, allow_backorder: product.allow_backorder }
               : item,
           )
         : [...current, cartItem];
