@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const TITLE = 'Period Education Hub — Pink Box Blog';
-const DESCRIPTION = 'Honest, doctor-informed articles on periods, menstrual hygiene, cramps and pad care from the Pink Box period education hub.';
+const DESCRIPTION = 'Practical articles on periods, menstrual hygiene, cramps and pad care from the PinkBox period education hub.';
 
 async function getBlogStore() {
   const db = createAdminClient();

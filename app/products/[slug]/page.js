@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import { Star } from 'lucide-react';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd, buildProductMetaDescription } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -113,7 +113,7 @@ export async function generateMetadata({ params }) {
   if (!p) return { title: 'Product | PinkBox' };
   const url = absoluteUrl('/products/' + encodeURIComponent(p.slug));
   const title = p.seo_title || p.title + ' | ' + (p.website_name || 'PinkBox');
-  const description = p.seo_description || p.short_description || p.description || '';
+  const description = buildProductMetaDescription(p);
   const images = p.images.filter((image) => image.image_url).map((image) => image.image_url);
 
   return {
@@ -130,9 +130,17 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const { slug } = await params;
-  const p = await getProduct(slug);
-  if (!p) notFound();
-  if (slug !== p.slug) permanentRedirect('/products/' + encodeURIComponent(p.slug));
+  const fetchedProduct = await getProduct(slug);
+  if (!fetchedProduct) notFound();
+  if (slug !== fetchedProduct.slug) permanentRedirect('/products/' + encodeURIComponent(fetchedProduct.slug));
+
+  // The raw catalogue record contains internal supplier notes and saved SEO text
+  // with stale prices. Do not serialize those fields into the client component payload.
+  const p = {
+    ...fetchedProduct,
+    description: fetchedProduct.short_description || '',
+    seo_description: buildProductMetaDescription(fetchedProduct),
+  };
 
   const url = absoluteUrl('/products/' + encodeURIComponent(p.slug));
   const imageUrls = p.images.filter((image) => image.image_url).map((image) => image.image_url);
@@ -144,7 +152,7 @@ export default async function ProductPage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: p.title,
-    description: p.seo_description || p.short_description || p.description || undefined,
+    description: buildProductMetaDescription(p),
     sku: p.sku || undefined,
     brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
     image: imageUrls.length ? imageUrls : undefined,
@@ -208,7 +216,7 @@ export default async function ProductPage({ params }) {
                 image_url: p.images[0]?.image_url || null,
                 variants: p.variants,
               }}
-              description={p.description || p.short_description || ''}
+              description={p.short_description || ''}
             />
           </section>
         </div>
