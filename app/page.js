@@ -1,12 +1,13 @@
 import PinkBoxHome from '../components/PinkBoxHome';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { absoluteUrl, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const getStoreData = cache(async function getStoreData() {
+const getStoreData = cache(unstable_cache(async function getStoreData() {
   const db = createAdminClient();
   const { data: settings } = await db
     .from('website_settings')
@@ -87,7 +88,7 @@ const getStoreData = cache(async function getStoreData() {
         min_order_amount: coupon.minimum_order_amount || 0,
       })),
   };
-});
+}, ['pinkbox-home-store-data'], { revalidate: 60, tags: ['pinkbox-home-store-data'] }));
 export async function generateMetadata() {
   const data = await getStoreData();
   const s = data?.settings || null;
