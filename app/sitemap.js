@@ -12,6 +12,20 @@ function normalizeImageUrl(value, base) {
   try {
     const imageUrl = new URL(raw, base);
     if (!['http:', 'https:'].includes(imageUrl.protocol)) return null;
+
+    // Use the same-origin Next.js optimized image URL used by product image elements.
+    // This keeps image sitemap URLs on the verified storefront host.
+    if (
+      imageUrl.hostname.endsWith('.supabase.co') &&
+      imageUrl.pathname.startsWith('/storage/v1/object/public/')
+    ) {
+      const optimizedUrl = new URL('/_next/image', base);
+      optimizedUrl.searchParams.set('url', imageUrl.toString());
+      optimizedUrl.searchParams.set('w', '1200');
+      optimizedUrl.searchParams.set('q', '75');
+      return optimizedUrl.toString();
+    }
+
     return imageUrl.toString();
   } catch {
     return null;
