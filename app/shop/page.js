@@ -1,20 +1,20 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { filterAvailableProducts } from '@/lib/product-availability';
-import { absoluteUrl, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
+import { absoluteUrl, limitMetaText, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Tote Bags Online | PinkBox';
-const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and personalized cotton tote bags online at PinkBox. Compare product details, sizes and current prices, with delivery across India.';
+const SHOP_TITLE = 'Shop Sanitary Pads, Diapers & Tote Bags | PinkBox';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and cotton tote bags at PinkBox. Browse designs, sizes and current prices with delivery across India.';
 
 export const metadata = {
   title: SHOP_TITLE,
-  description: SHOP_DESCRIPTION,
+  description: limitMetaText(SHOP_DESCRIPTION),
   alternates: { canonical: '/shop' },
-  openGraph: { title: SHOP_TITLE, description: SHOP_DESCRIPTION, url: '/shop', type: 'website' },
-  twitter: { card: 'summary_large_image', title: SHOP_TITLE, description: SHOP_DESCRIPTION },
+  openGraph: { title: SHOP_TITLE, description: limitMetaText(SHOP_DESCRIPTION), url: '/shop', type: 'website' },
+  twitter: { card: 'summary_large_image', title: SHOP_TITLE, description: limitMetaText(SHOP_DESCRIPTION) },
 };
 
 async function getShopData() {
@@ -98,7 +98,7 @@ export default async function ShopPage() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: SHOP_TITLE,
-    description: SHOP_DESCRIPTION,
+    description: limitMetaText(SHOP_DESCRIPTION),
     url: absoluteUrl('/shop'),
     mainEntity: {
       '@type': 'ItemList',
