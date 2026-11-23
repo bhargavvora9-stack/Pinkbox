@@ -19,13 +19,13 @@ async function getCollection(slug) {
   const { data: products, error: productsError } = ids.length ? await db.from('website_products')
     .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
     .eq('company_id',settings.company_id).in('id',ids).eq('is_active',true)
-    .like('sku','MDH-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
+    .or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
   if (productsError) throw new Error(productsError.message);
   const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants')
     .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
     .eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
   if (variantsError) throw new Error(variantsError.message);
-  const availableProducts = filterAvailableProducts(products || [], variants || []);
+  const availableProducts = filterAvailableProducts(products || [], variants || [], { includeOutOfStock: true });
   const { data: images, error: imagesError } = ids.length ? await db.from('website_product_images')
     .select('product_id,image_url,alt_text,is_primary,sort_order')
     .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[],error:null};
@@ -69,16 +69,21 @@ export async function generateMetadata({params}) {
   if (!c) return { title: 'Collection | PinkBox' };
   const isSanitary = c.category.slug === 'sanitary-pads';
   const isBabyDiapers = c.category.slug === 'baby-diapers';
+  const isBags = c.category.slug === 'bags';
   const title = c.category.seo_title || (isSanitary
     ? 'Sanitary Pads & Sanitary Napkins | PinkBox'
     : isBabyDiapers
       ? 'Buy 7 Soft Baby Diaper Pants Online | PinkBox'
-      : `${c.category.name} | PinkBox`);
+      : isBags
+        ? 'Personalized Cotton Tote Bags Online | PinkBox'
+        : `${c.category.name} | PinkBox`);
   const description = c.category.seo_description || c.category.description || (isSanitary
     ? 'Shop sanitary pads and sanitary napkins online at PinkBox. Explore 320mm, heavy-flow, cottony-surface and anti-bacterial sanitary pad options.'
     : isBabyDiapers
       ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare available S, M, L and XL sizes, pack counts and current prices, with delivery across India.'
-      : `Shop ${c.category.name} products at PinkBox. Explore product options, sizes, prices and everyday essentials.`);
+      : isBags
+        ? 'Explore personalized cotton tote bags at PinkBox. Browse floral and custom designs; current bag designs are listed as out of stock.'
+        : `Shop ${c.category.name} products at PinkBox. Explore product options, sizes, prices and everyday essentials.`);
   return {
     title,
     description,
@@ -128,7 +133,7 @@ export default async function CollectionPage({params}) {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionSchema) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
     <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><div className="flex gap-4 text-sm font-semibold"><Link href="/account">Account</Link><Link href="/shop">All products</Link></div></div></header>
-    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
+    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : isBags ? 'Personalized Bags' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Personalized Cotton Tote Bags' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : isBags ? 'Browse personalized cotton tote bag designs from PinkBox. These designs remain listed for viewing, but ordering is currently paused while they are out of stock.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
 <div className="mt-10"><ZipReferenceProductGrid products={c.products} /></div>
       {isSanitary && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Explore sanitary care</p><h2 className="mt-2 text-2xl font-black">Sanitary pads for everyday, night and heavy flow</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">PinkBox covers common sanitary pad searches including sanitary pads, sanitary napkins, 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads and anti-bacterial sanitary pads. Use the guides below to compare the right type for your needs.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Journal</Link></div></div>}
       {isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Baby care</p><h2 className="mt-2 text-2xl font-black">Compare 7 Soft Baby Diaper Pants by Size and Pack</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">Browse 7 Soft baby diaper pants in sizes S, M, L and XL. Compare Jumbo, Maha Jumbo and Premium packs by the listed size, piece count and current price before ordering.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}</div></div>}
