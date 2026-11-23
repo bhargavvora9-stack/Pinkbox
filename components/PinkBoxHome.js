@@ -145,7 +145,6 @@ function TrustBadges({ section }) {
     </section>
   );
 }function ProductFinder({ section }) {
-  if (section && section.is_active === false) return null;
   const eyebrow=section?.settings?.eyebrow||'AI-powered product finder';
   const title=section?.title||'Tell us what you need';
   const description=section?.settings?.description||'Describe your flow, comfort or skin needs — we’ll suggest the right pads.';
