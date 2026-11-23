@@ -86,7 +86,10 @@ function Hero({ banner }) {
         </div>
         <div className="relative">
           <div className="absolute -top-8 -right-6 h-40 w-40 rounded-full bg-accent/50 blur-3xl" aria-hidden />
-          <Image src={image} alt={title} width={1280} height={1280} priority sizes="(max-width: 1024px) 100vw, 50vw" unoptimized={shouldUnoptimizeImage(image)} className="relative w-full rounded-[2rem] object-cover shadow-soft" />
+          <picture>
+            {active?.mobile_image_url && <source media="(max-width: 767px)" srcSet={active.mobile_image_url}/>}
+            <Image src={image} alt={title} width={1280} height={1280} priority sizes="(max-width: 1024px) 100vw, 50vw" unoptimized={shouldUnoptimizeImage(image)} className="relative w-full rounded-[2rem] object-cover shadow-soft"/>
+          </picture>
           <div className="absolute bottom-5 left-5 rounded-2xl bg-background/90 px-5 py-3 shadow-soft backdrop-blur">
             <p className="font-display text-2xl font-semibold text-foreground">12 hrs</p>
             <p className="text-xs text-muted-foreground">of dry, worry-free protection</p>
