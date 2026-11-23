@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const shouldUnoptimizeImage = (src) => {
+  if (typeof src !== 'string') return true;
+  return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
+};
 export default function ZipReferenceProductCard({product}){
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
@@ -50,7 +54,7 @@ export default function ZipReferenceProductCard({product}){
   <article className="group overflow-hidden rounded-xl border bg-card text-card-foreground shadow transition-shadow hover:shadow-md">
    <Link href={'/products/'+product.slug}>
     <div className="aspect-square overflow-hidden bg-muted">
-     {image?<Image src={image} alt={product.title} width={600} height={600} unoptimized className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
+     {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
     <div className="p-4"><h3 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
    </Link>
