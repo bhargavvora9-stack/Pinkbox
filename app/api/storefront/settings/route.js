@@ -20,16 +20,18 @@ export async function GET() {
       return Response.json({ error: 'PinkBox store is not configured.' }, { status: 404 });
     }
 
+    const companyId = data.company_id;
+    const { company_id: _companyId, ...publicSettings } = data;
     const [menuResult, themeResult] = await Promise.all([
       db.from('website_menus')
         .select('id,location,name,items')
-        .eq('company_id', data.company_id)
+        .eq('company_id', companyId)
         .eq('location', 'header')
         .order('updated_at', { ascending: false })
         .limit(1),
       db.from('website_theme_settings')
         .select('settings')
-        .eq('company_id', data.company_id)
+        .eq('company_id', companyId)
         .maybeSingle(),
     ]);
 
@@ -38,7 +40,7 @@ export async function GET() {
     }
 
     return Response.json({
-      settings: data,
+      settings: publicSettings,
       headerMenu: menuResult.data?.[0] || null,
       theme: themeResult.data?.settings || {},
     }, {
