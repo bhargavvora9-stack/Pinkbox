@@ -19,11 +19,10 @@ function SocialIcon({name}){
 export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const [siteSettings,setSiteSettings]=useState(settings||{});
  useEffect(()=>{
-  if(Object.keys(settings||{}).length){setSiteSettings(settings);return;}
   let active=true;
   fetch('/api/storefront/settings',{cache:'no-store'})
    .then(response=>response.ok?response.json():null)
-   .then(data=>{if(active&&data?.settings)setSiteSettings(data.settings)})
+   .then(data=>{if(active&&data?.settings)setSiteSettings({...settings,...data.settings})})
    .catch(()=>{});
   return ()=>{active=false};
  },[settings]);
