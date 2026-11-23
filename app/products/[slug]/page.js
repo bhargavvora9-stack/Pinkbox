@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import { Star } from 'lucide-react';
+import { cache } from 'react';
 import { absoluteUrl, safeJsonLd, buildProductMetaDescription, sanitizePublicProductText } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ const LEGACY_PRODUCT_SLUGS = {
   e: 'maxi-care-3x-320mm-sanitary-pads',
 };
 
-async function getProduct(slug) {
+const getProduct = cache(async function getProduct(slug) {
   const db = createAdminClient();
   const { data: settings } = await db
     .from('website_settings')
@@ -105,7 +106,7 @@ async function getProduct(slug) {
     variants: variants || [],
     reviews: reviews || [],
   };
-}
+});
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
