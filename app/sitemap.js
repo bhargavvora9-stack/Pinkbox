@@ -36,7 +36,6 @@ export default async function sitemap() {
       .select('id,sku,slug,is_active,updated_at,price,track_inventory,allow_backorder,stock_quantity')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
-      .like('sku', 'MDH-%')
       .gt('price', 0),
     db
       .from('website_categories')
