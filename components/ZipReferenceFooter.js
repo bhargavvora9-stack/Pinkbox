@@ -2,12 +2,14 @@
 import { useEffect, useState } from 'react';
 const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
-import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
+import { Facebook, Flower2, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+
 const LINKS = [
  {title:'Shop',items:[{label:'All Products',href:'/shop'},{label:'Your Cart',href:'/cart'},{label:'Track Order',href:'/track-order'},{label:'Bulk Orders',href:'/#contact'}]},
  {title:'Company',items:[{label:'About Us',href:'/about'},{label:'Blog',href:'/blog'},{label:'FAQ',href:'/faq'},{label:'Contact',href:'/#contact'}]},
  {title:'Support',items:[{label:'Shipping Policy',href:'/policies/shipping'},{label:'Returns & Refunds',href:'/policies/returns'},{label:'Privacy Policy',href:'/policies/privacy'},{label:'Terms of Service',href:'/policies/terms'},{label:'Dealer Enquiry',href:'/#contact'}]},
 ];
+
 export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const [siteSettings,setSiteSettings]=useState(settings||{});
  useEffect(()=>{
@@ -24,6 +26,11 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const email=currentSettings.email||'care@sakhicare.in';
  const address=currentSettings.address||'Ahmedabad, Gujarat, India';
  const name=currentSettings.website_name||'Pink Box';
+ const socialLinks=[
+  {url:currentSettings.instagram_url,label:'Instagram',Icon:Instagram},
+  {url:currentSettings.facebook_url,label:'Facebook',Icon:Facebook},
+  {url:currentSettings.youtube_url,label:'YouTube',Icon:Youtube},
+ ].filter((item)=>item.url);
  return (
   <footer className="border-t border-border bg-secondary/40">
    <div className="container mx-auto grid gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-5">
@@ -35,10 +42,8 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
       <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary"/>{email}</p>
       <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary"/>{address}</p>
      </div>
-     {(currentSettings.instagram_url || currentSettings.facebook_url || currentSettings.youtube_url) && <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold">
-      {currentSettings.instagram_url && <a href={currentSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Instagram</a>}
-      {currentSettings.facebook_url && <a href={currentSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Facebook</a>}
-      {currentSettings.youtube_url && <a href={currentSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">YouTube</a>}
+     {socialLinks.length>0 && <div className="mt-5 flex items-center gap-3" aria-label="Social media links">
+      {socialLinks.map(({url,label,Icon})=><a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Icon className="h-5 w-5" aria-hidden="true"/></a>)}
      </div>}
     </div>
     {LINKS.map((col)=><div key={col.title}><h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h3><ul className="mt-4 space-y-2.5">{col.items.map((item)=><li key={item.label}><Link href={item.href} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label}</Link></li>)}</ul></div>)}
