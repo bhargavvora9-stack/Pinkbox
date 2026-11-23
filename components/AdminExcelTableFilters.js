@@ -338,15 +338,26 @@ export default function AdminExcelTableFilters() {
       timer = setTimeout(scanTables, 100);
     });
     observer.observe(root, { childList: true, subtree: true });
-    const close = () => setActiveMenu(null);
-    const closeOnScroll = () => setActiveMenu(null);
-    document.addEventListener('click', close);
+    // Close only when the pointer starts outside both the open menu and
+    // the column filter buttons. This prevents checkbox/label clicks inside
+    // the menu (especially "Select All") from dismissing the popup.
+    const closeOnOutsidePointer = event => {
+      const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+      if (target?.closest('.pb-excel-filter-menu, .pb-excel-filter-button')) return;
+      setActiveMenu(null);
+    };
+    const closeOnScroll = event => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target && menuRef.current?.contains(target)) return;
+      setActiveMenu(null);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true);
     window.addEventListener('scroll', closeOnScroll, true);
     window.addEventListener('resize', closeOnScroll);
     return () => {
       clearTimeout(timer);
       observer.disconnect();
-      document.removeEventListener('click', close);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
       window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', closeOnScroll);
       document.querySelectorAll('.pb-excel-filter-button').forEach(button => button.remove());
