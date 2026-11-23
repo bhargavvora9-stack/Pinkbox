@@ -21,7 +21,8 @@ export async function GET() {
     }
 
     const companyId = data.company_id;
-    const { company_id: _companyId, ...publicSettings } = data;
+    const publicSettings = { ...data };
+    delete publicSettings.company_id;
     const [menuResult, themeResult] = await Promise.all([
       db.from('website_menus')
         .select('id,location,name,items')
