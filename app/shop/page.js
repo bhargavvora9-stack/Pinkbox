@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { filterAvailableProducts } from '@/lib/product-availability';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,7 @@ async function getShopData() {
 
   const [productsResult, variantsResult] = await Promise.all([
     db.from('website_products')
-      .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+      .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .or('sku.like.MDH-%,sku.like.BAG-%')
@@ -82,6 +82,7 @@ async function getShopData() {
     const fallback = { image_url: `/catalog-products/${product.sku.toLowerCase()}.webp`, alt_text: product.title, is_primary: true };
     return {
       ...product,
+      short_description: sanitizePublicProductText(product.short_description),
       variants: variantsByProductId.get(product.id) || [],
       images: productImages.length ? productImages : [fallback],
       image_url: productImages[0]?.image_url || fallback.image_url,
