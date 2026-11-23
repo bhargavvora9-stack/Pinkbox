@@ -31,7 +31,6 @@ const groups = [
     ['/admin/collections', 'Collections', Layers],
     ['/admin/products/collections', 'Collection Mapping', GitBranch],
     ['/admin/variants', 'Variants', GitBranch],
-    ['/admin/inventory', 'Inventory & Stock', Boxes],
     ['/admin/reviews', 'Product Reviews', Star],
   ] },
   { label: 'MARKETING', items: [
