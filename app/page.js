@@ -26,7 +26,7 @@ async function getStoreData() {
       .select('id,sku,title,slug,short_description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
       .eq('is_active', true)
-      .or('sku.like.MDH-%,sku.like.BAG-%')
+      .like('sku', 'MDH-%')
       .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_categories')
@@ -184,7 +184,6 @@ export async function generateMetadata() {
   const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
   const categoryNames = (data?.categories || []).map((category) => {
-    if (category.slug === 'bags') return 'Personalized Cotton Tote Bags';
     if (category.slug === 'sanitary-pads') return 'Sanitary Pads';
     if (category.slug === 'baby-diapers') return 'Baby Diapers';
     return category.name;
