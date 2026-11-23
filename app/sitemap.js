@@ -64,7 +64,7 @@ export default async function sitemap() {
     : { data: [], error: null };
   if (variantsError) return urls;
 
-  const saleableProducts = filterAvailableProducts(productsResult.data || [], variants || []);
+  const saleableProducts = filterAvailableProducts(productsResult.data || [], variants || [], { includeOutOfStock: true });
   const contentContext = {
     categories: categories.data || [],
     products: saleableProducts,
