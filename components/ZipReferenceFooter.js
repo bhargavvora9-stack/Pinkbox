@@ -18,25 +18,28 @@ function SocialIcon({name}){
 
 export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const [siteSettings,setSiteSettings]=useState(settings||{});
+ const [footerData,setFooterData]=useState(null);
  useEffect(()=>{
-  if(Object.keys(settings||{}).length){setSiteSettings(settings);return;}
   let active=true;
   fetch('/api/storefront/settings',{cache:'no-store'})
    .then(response=>response.ok?response.json():null)
-   .then(data=>{if(active&&data?.settings)setSiteSettings(data.settings)})
+   .then(data=>{if(active&&data){if(data.settings)setSiteSettings({...settings,...data.settings});setFooterData(data.footer||null)}})
    .catch(()=>{});
   return ()=>{active=false};
  },[settings]);
  const currentSettings=siteSettings||settings||{};
- const phone=currentSettings.phone||'+91 73592 52000';
+ const phone=currentSettings.phone||'6358218366';
  const email=currentSettings.email||'care@sakhicare.in';
  const address=currentSettings.address||'Ahmedabad, Gujarat, India';
  const name=currentSettings.website_name||'Pink Box';
+ const configuredSocial=footerData?.social_links||{};
  const socialLinks=[
-  {url:currentSettings.instagram_url,label:'Instagram'},
-  {url:currentSettings.facebook_url,label:'Facebook'},
-  {url:currentSettings.youtube_url,label:'YouTube'},
+  {url:configuredSocial.Instagram||configuredSocial.instagram||currentSettings.instagram_url,label:'Instagram'},
+  {url:configuredSocial.Facebook||configuredSocial.facebook||currentSettings.facebook_url,label:'Facebook'},
+  {url:configuredSocial.YouTube||configuredSocial.youtube||currentSettings.youtube_url,label:'YouTube'},
  ].filter((item)=>item.url);
+ const footerColumns=Array.isArray(footerData?.columns)&&footerData.columns.length?footerData.columns:LINKS;
+ const copyright=String(footerData?.copyright_text||'© {year} {name}. All rights reserved.').replaceAll('{year}',String(new Date().getFullYear())).replaceAll('{name}',name);
  return (
   <footer className="border-t border-border bg-secondary/40">
    <div className="container mx-auto grid gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-5">
@@ -52,9 +55,9 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
       {socialLinks.map(({url,label})=><a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><SocialIcon name={label}/></a>)}
      </div>}
     </div>
-    {LINKS.map((col)=><div key={col.title}><h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h2><ul className="mt-4 space-y-2.5">{col.items.map((item)=><li key={item.label}><Link href={item.href} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label}</Link></li>)}</ul></div>)}
+    {footerColumns.map((col,index)=><div key={col.id||col.title||index}><h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h2><ul className="mt-4 space-y-2.5">{(col.items||[]).map((item,itemIndex)=><li key={item.id||item.label||itemIndex}><Link href={item.href||item.url||'/'} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label||item.title||'Link'}</Link></li>)}</ul></div>)}
    </div>
-   <div className="border-t border-border"><div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row"><p>© {new Date().getFullYear()} {name}. All rights reserved.</p><p>Made with care for every woman.</p></div></div>
+   <div className="border-t border-border"><div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row"><p>{copyright}</p><p>Made with care for every woman.</p></div></div>
   </footer>
  );
 }

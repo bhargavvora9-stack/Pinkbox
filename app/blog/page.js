@@ -115,13 +115,13 @@ export default async function BlogIndex() {
                 className="group overflow-hidden rounded-3xl border border-border bg-card transition-shadow hover:shadow-soft"
               >
                 {post.cover_image_url && (
-                  <div className="relative h-48 w-full overflow-hidden">
+                  <div className="relative h-48 w-full overflow-hidden bg-gray-50">
                     <Image
                       src={post.cover_image_url}
                       alt={post.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover"
+                      className="object-contain"
                     />
                   </div>
                 )}
