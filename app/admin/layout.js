@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getWebsiteRolePermissions } from '@/lib/website-admin';
 import LogoutButton from '@/components/LogoutButton';
 import WebsiteAdminNav from '@/components/WebsiteAdminNav';
+import AdminExcelTableFilters from '@/components/AdminExcelTableFilters';
 
 export const metadata = { title: 'Admin — Pink Box', robots: { index: false, follow: false, nocache: true } };
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,7 @@ export default async function AdminLayout({ children }) {
   const navPermissions = isAdministrator ? null : permissions;
 
   return (
-    <div className="min-h-screen bg-secondary/20">
+    <div className="website-admin min-h-screen bg-secondary/20">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="font-display text-lg font-semibold text-foreground">Pink Box admin</Link>
@@ -61,6 +62,7 @@ export default async function AdminLayout({ children }) {
         </aside>
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+      <AdminExcelTableFilters />
     </div>
   );
 }
