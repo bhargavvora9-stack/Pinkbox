@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { zipHeroImage, zipAboutImage } from '@/lib/zip-reference-artwork';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
@@ -256,24 +256,30 @@ export default function PinkBoxHome({ initialData }) {
   const banners = (data.banners || []).filter((banner) => banner?.is_active !== false);
   const coupons = data.coupons || [];
   const settings = data.settings || {};
-  const sectionMap = Object.fromEntries((data.homepageSections || []).map((item) => [item.section_type, item]));
+  const homepageSections = [...(data.homepageSections || [])].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
+  const sectionMap = Object.fromEntries(homepageSections.map((item) => [item.section_type, item]));
   const section = (type) => sectionMap[type] || null;
+  const defaultOrder = ['trust','collections','product-finder','about','features','reviews','contact','newsletter'];
+  const orderedSections = homepageSections.length ? homepageSections : defaultOrder.map((section_type)=>({section_type}));
+  const sectionNodes = {
+    trust: <TrustBadges section={section('trust')}/>,
+    collections: <ProductsSection categories={data.categories || []} section={section('collections')}/>,
+    'product-finder': <ProductFinder section={section('product-finder')}/>,
+    about: <AboutStrip section={section('about')}/>,
+    features: <Features section={section('features')}/>,
+    reviews: <Testimonials section={section('reviews')}/>,
+    contact: <ContactForm section={section('contact')}/>,
+    newsletter: <Newsletter section={section('newsletter')}/>,
+  };
   return (
     <div className="min-h-screen bg-background">
-      <ZipReferenceHeader settings={settings} />
+      <ZipReferenceHeader settings={settings}/>
       <main>
-        <Hero banner={banners} />
-        <CouponStrip coupons={coupons} />
-        <TrustBadges section={section('trust')} />
-        <ProductsSection categories={data.categories || []} section={section('collections')} />
-        <ProductFinder section={section('product-finder')} />
-        <AboutStrip section={section('about')} />
-        <Features section={section('features')} />
-        <Testimonials section={section('reviews')} />
-        <ContactForm section={section('contact')} />
-        <Newsletter section={section('newsletter')} />
+        <Hero banner={banners}/>
+        <CouponStrip coupons={coupons}/>
+        {orderedSections.map((row,index)=><Fragment key={row.id||row.section_type||index}>{sectionNodes[row.section_type]||null}</Fragment>)}
       </main>
-      <ZipReferenceFooter settings={settings} />
+      <ZipReferenceFooter settings={settings}/>
     </div>
   );
 }
