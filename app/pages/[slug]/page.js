@@ -10,7 +10,7 @@ export const dynamic='force-dynamic'; export const revalidate=0;
 async function isPageLive(db, companyId, page){
  const [categories,products,mappings]=await Promise.all([
   db.from('website_categories').select('id,name,slug').eq('company_id',companyId).eq('is_active',true),
-  db.from('website_products').select('id,sku,slug,is_active,price,stock_quantity,track_inventory,allow_backorder').eq('company_id',companyId).eq('is_active',true).like('sku','MDH-%').gt('price',0),
+  db.from('website_products').select('id,slug,is_active,price,stock_quantity,track_inventory,allow_backorder').eq('company_id',companyId).eq('is_active',true).or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0),
   db.from('website_product_categories').select('product_id,category_id').eq('company_id',companyId),
  ]);
  if(categories.error||products.error||mappings.error) return false;
@@ -19,7 +19,7 @@ async function isPageLive(db, companyId, page){
   ? await db.from('website_product_variants').select('product_id,stock_quantity,is_active').eq('company_id',companyId).in('product_id',productIds).eq('is_active',true)
   : {data:[],error:null};
  if(variantsError) return false;
- const saleableProducts=filterAvailableProducts(products.data||[],variants||[]);
+ const saleableProducts=filterAvailableProducts(products.data||[],variants||[],{includeOutOfStock:true});
  return isContentLiveForAvailableCategory(page,{
   categories:categories.data||[],products:saleableProducts,mappings:mappings.data||[]
  },{keepUncategorized:true});
