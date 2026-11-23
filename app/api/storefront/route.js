@@ -31,7 +31,7 @@ export async function GET(request){
   if(!settings)return Response.json({error:'PinkBox store is not configured.'},{status:404});
   const c=settings.company_id,now=new Date().toISOString();
   const [products,categories,banners,sections,pages,menu,theme,footer,blog,images,mappings,reviews,variants]=await Promise.all([
-   db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label').eq('company_id',c).eq('is_active',true).like('sku','MDH-%').gt('price',0).order('created_at',{ascending:false}),
+   db.from('website_products').select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,seo_title,seo_description,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label').eq('company_id',c).eq('is_active',true).or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}),
    db.from('website_categories').select('id,name,slug,parent_id,image_url,sort_order').eq('company_id',c).eq('is_active',true).order('sort_order'),
    db.from('website_banners').select('id,title,subtitle,image_url,mobile_image_url,button_text,button_url,sort_order,starts_at,ends_at').eq('company_id',c).eq('is_active',true).order('sort_order'),
    db.from('website_homepage_sections').select('id,section_type,title,settings,sort_order').eq('company_id',c).eq('is_active',true).order('sort_order'),
@@ -52,7 +52,7 @@ export async function GET(request){
   (images.data||[]).forEach(x=>{if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];imageListMap[x.product_id].push(x);if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;});
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
   const productData=(products.data||[]).map(p=>{const fallback=p.sku?.startsWith('MDH-')?`/catalog-products/${p.sku.toLowerCase()}.webp`:null;const productImages=imageListMap[p.id]?.length?imageListMap[p.id]:(fallback?[{image_url:fallback,alt_text:p.title,is_primary:true,sort_order:0}]:[]);return {...p,image_url:imageMap[p.id]||fallback,images:productImages,category_id:catMap[p.id]||null};});
-  const saleableProducts=filterAvailableProducts(productData,variants.data||[]);
+  const saleableProducts=filterAvailableProducts(productData,variants.data||[],{includeOutOfStock:true});
   const saleableProductIds=new Set(saleableProducts.map(product=>product.id));
   const visibleCategoryIds=new Set((mappings.data||[]).filter(mapping=>saleableProductIds.has(mapping.product_id)).map(mapping=>mapping.category_id));
   const visibleCategories=(categories.data||[]).filter(category=>visibleCategoryIds.has(category.id));
@@ -89,7 +89,7 @@ export async function POST(request){
   const requestedProductIds=[...new Set(normalizedItems.map(item=>item.product_id).filter(Boolean))];
   const {data:catalogProducts,error:catalogError}=await db.from('website_products').select('id,sku,is_active,price').eq('company_id',c).in('id',requestedProductIds);
   if(catalogError)return Response.json({error:'Unable to validate cart products.'},{status:500});
-  const allowedIds=new Set((catalogProducts||[]).filter(product=>product.is_active===true&&/^MDH-/i.test(String(product.sku||''))&&Number(product.price||0)>0).map(product=>product.id));
+  const allowedIds=new Set((catalogProducts||[]).filter(product=>product.is_active===true&&/^(MDH-|BAG-)/i.test(String(product.sku||''))&&Number(product.price||0)>0).map(product=>product.id));
   if(!normalizedItems.length||normalizedItems.some(item=>!item.product_id||!allowedIds.has(item.product_id)||!Number.isFinite(item.quantity)||item.quantity<=0))return Response.json({error:'Your cart contains a product that is no longer listed. Please refresh your cart and try again.'},{status:400});
   const {data,error}=await db.rpc('place_website_order',{p_company_id:c,p_name:address.name,p_phone:address.phone,p_email:address.email,p_address:address,p_items:normalizedItems,p_payment_method:requestedPayment,p_note:String(b.note||'').trim()||null,p_coupon_code:String(b.coupon_code||'').trim()||null});
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
