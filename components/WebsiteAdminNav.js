@@ -108,7 +108,7 @@ function NavigationList({ pathname, query, onNavigate, permissions }) {
   })).filter(group => group.items.length), [query, permissions]);
 
   const activeGroup = groups.find(group => group.items.some(([href]) => isItemActive(pathname, href)))?.label;
-  const [openGroups, setOpenGroups] = useState(() => new Set(activeGroup ? [activeGroup] : ['OVERVIEW', 'SALES & CUSTOMERS', 'PRODUCT CATALOG']));
+  const [openGroups, setOpenGroups] = useState(() => new Set(['PRODUCT CATALOG', ...(activeGroup ? [activeGroup] : ['OVERVIEW', 'SALES & CUSTOMERS'])]));
 
   useEffect(() => {
     if (activeGroup) setOpenGroups(current => new Set([...current, activeGroup]));
