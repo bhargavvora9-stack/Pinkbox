@@ -4,7 +4,28 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowDownAZ, ArrowDownWideNarrow, ArrowUpAZ, ArrowUpWideNarrow, Check, RotateCcw, Search, X } from 'lucide-react';
 
 const normalize = value => String(value ?? '').replace(/\s+/g, ' ').trim();
-const cellValue = (row, columnIndex) => normalize(row?.children?.[columnIndex]?.textContent);
+const cellAtColumn = (row, columnIndex) => {
+  let offset = 0;
+  for (const cell of Array.from(row?.children || [])) {
+    const span = Math.max(1, Number(cell.colSpan) || 1);
+    if (columnIndex >= offset && columnIndex < offset + span) return cell;
+    offset += span;
+  }
+  return null;
+};
+const cellValue = (row, columnIndex) => normalize(cellAtColumn(row, columnIndex)?.textContent);
+const leafHeaderCells = table => {
+  const headerRows = Array.from(table.querySelectorAll('thead tr'));
+  const row = headerRows[headerRows.length - 1];
+  if (!row) return [];
+  let offset = 0;
+  return Array.from(row.children).map(th => {
+    const columnIndex = offset;
+    const colSpan = Math.max(1, Number(th.colSpan) || 1);
+    offset += colSpan;
+    return { th, columnIndex, colSpan };
+  });
+};
 const compareText = (a, b) => normalize(a).localeCompare(normalize(b), undefined, { numeric: true, sensitivity: 'base' });
 const parseNumeric = value => {
   const cleaned = String(value ?? '').replace(/[₹$,%\s,]/g, '');
@@ -175,7 +196,7 @@ function applyTableView(table, tableKey, allFilters, allSorts) {
     }
   }
 
-  Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, columnIndex) => {
+  leafHeaderCells(table).forEach(({ th, columnIndex }) => {
     const button = th.querySelector('.pb-excel-filter-button');
     if (!button) return;
     const filtered = Object.prototype.hasOwnProperty.call(tableFilters, String(columnIndex));
@@ -184,7 +205,7 @@ function applyTableView(table, tableKey, allFilters, allSorts) {
     button.title = (th.dataset.pbExcelFilterLabel || normalize(th.textContent)) +
       (filtered ? ' — filter active' : '') +
       (sort?.columnIndex === columnIndex ? (sort.direction === 'asc' ? ' — ascending' : ' — descending') : '');
-  }));
+  });
 }
 
 export default function AdminExcelTableFilters() {
@@ -196,11 +217,32 @@ export default function AdminExcelTableFilters() {
   const [sorts, setSorts] = useState({});
   const filtersRef = useRef({});
   const sortsRef = useRef({});
+  const menuRef = useRef(null);
 
   useEffect(() => {
     filtersRef.current = filters;
     sortsRef.current = sorts;
   }, [filters, sorts]);
+
+  // Place the menu beside its filter icon when possible; otherwise open above it.
+  useEffect(() => {
+    if (!activeMenu || !menuRef.current || !activeMenu.anchorRect) return;
+    const menuRect = menuRef.current.getBoundingClientRect();
+    const anchor = activeMenu.anchorRect;
+    const margin = 10;
+    const gap = 7;
+    let top = anchor.bottom + gap;
+    if (top + menuRect.height > window.innerHeight - margin) {
+      const above = anchor.top - menuRect.height - gap;
+      top = above >= margin ? above : Math.max(margin, window.innerHeight - menuRect.height - margin);
+    }
+    const left = Math.max(margin, Math.min(anchor.left - 8, window.innerWidth - menuRect.width - margin));
+    setActiveMenu(current => {
+      if (!current) return current;
+      if (Math.abs(current.rect.top - top) < 1 && Math.abs(current.rect.left - left) < 1) return current;
+      return { ...current, rect: { top, left } };
+    });
+  }, [activeMenu?.tableKey, activeMenu?.colIndex]);
 
   const scanTables = () => {
     const tables = Array.from(document.querySelectorAll('.website-admin main table'));
@@ -213,8 +255,8 @@ export default function AdminExcelTableFilters() {
       if (bodyRows.some(row => row.dataset.pbExcelOriginalOrder === undefined)) {
         bodyRows.forEach((row, index) => { row.dataset.pbExcelOriginalOrder = String(index); });
       }
-      Array.from(table.querySelectorAll('thead tr')).forEach(headerRow => Array.from(headerRow.children).forEach((th, colIndex) => {
-        if (th.tagName !== 'TH') return;
+      leafHeaderCells(table).forEach(({ th, columnIndex: colIndex, colSpan }) => {
+        if (th.tagName !== 'TH' || colSpan !== 1) return;
         const original = th.dataset.pbExcelFilterLabel || normalize(th.textContent);
         if (!original || /^(actions|action)$/i.test(original)) return;
         th.dataset.pbExcelFilterLabel = original;
@@ -271,8 +313,9 @@ export default function AdminExcelTableFilters() {
               colIndex,
               label: original,
               numeric: isNumericColumn(values),
+              anchorRect: { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left },
               rect: {
-                top: Math.max(10, Math.min(rect.bottom + 6, window.innerHeight - 570)),
+                top: Math.max(10, Math.min(rect.bottom + 6, window.innerHeight - 20)),
                 left: Math.max(10, Math.min(rect.left - 8, window.innerWidth - 338))
               }
             });
@@ -280,7 +323,7 @@ export default function AdminExcelTableFilters() {
           th.appendChild(button);
         }
         button.title = 'Filter / Sort ' + original;
-      }));
+      });
 
       applyTableView(table, tableKey, filtersRef.current, sortsRef.current);
     });
@@ -328,7 +371,7 @@ export default function AdminExcelTableFilters() {
     const next = { ...filtersRef.current };
     const tableFilters = { ...(next[activeMenu.tableKey] || {}) };
     const columnKey = String(activeMenu.colIndex);
-    const allSelected = menuValues.length > 0 && menuValues.every(value => selected.has(value)) && selected.size === menuValues.length;
+    const allSelected = menuValues.length > 0 && menuValues.every(value => selected.has(value));
     if (allSelected) delete tableFilters[columnKey];
     else tableFilters[columnKey] = Array.from(selected);
     if (Object.keys(tableFilters).length) next[activeMenu.tableKey] = tableFilters;
@@ -337,6 +380,22 @@ export default function AdminExcelTableFilters() {
     setFilters(next);
     const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
     applyTableView(table, activeMenu.tableKey, next, sortsRef.current);
+    setActiveMenu(null);
+  };
+
+  const clearAllTableFilters = () => {
+    if (!activeMenu) return;
+    const key = activeMenu.tableKey;
+    const nextFilters = { ...filtersRef.current };
+    const nextSorts = { ...sortsRef.current };
+    delete nextFilters[key];
+    delete nextSorts[key];
+    filtersRef.current = nextFilters;
+    sortsRef.current = nextSorts;
+    setFilters(nextFilters);
+    setSorts(nextSorts);
+    const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
+    applyTableView(table, key, nextFilters, nextSorts);
     setActiveMenu(null);
   };
 
@@ -396,7 +455,7 @@ export default function AdminExcelTableFilters() {
     <>
       <style>{filterCss}</style>
       {activeMenu && (
-        <div className="pb-excel-filter-menu" style={{ top: activeMenu.rect.top, left: activeMenu.rect.left }} onClick={event => event.stopPropagation()}>
+        <div ref={menuRef} className="pb-excel-filter-menu" style={{ top: activeMenu.rect.top, left: activeMenu.rect.left }} onClick={event => event.stopPropagation()}>
           <div className="pb-filter-header">
             <div>
               <div className="pb-filter-kicker">PinkBox Admin · Table tools</div>
@@ -429,7 +488,10 @@ export default function AdminExcelTableFilters() {
               <input type="checkbox" checked={allVisibleSelected} onChange={selectAllVisible}/>
               <span>Select All</span>
             </label>
-            <button type="button" className="pb-filter-link" onClick={clearColumnFilter}>Clear Filter</button>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <button type="button" className="pb-filter-link" onClick={clearColumnFilter}>Clear this filter</button>
+              {(Object.keys(filters[activeMenu.tableKey] || {}).length > 0 || Boolean(sorts[activeMenu.tableKey])) && <button type="button" className="pb-filter-link" onClick={clearAllTableFilters}>Reset table</button>}
+            </div>
           </div>
 
           <div className="pb-filter-values">
@@ -445,7 +507,7 @@ export default function AdminExcelTableFilters() {
           </div>
 
           <div className="pb-filter-footer">
-            <span className="pb-filter-muted" style={{fontSize:11}}>{selected.size} selected</span>
+            <span className="pb-filter-muted" style={{fontSize:11}}>{menuValues.filter(value => selected.has(value)).length} of {menuValues.length} selected</span>
             <div style={{display:'flex',gap:7}}>
               <button type="button" onClick={() => setActiveMenu(null)} className="pb-filter-btn">Cancel</button>
               <button type="button" onClick={apply} className="pb-filter-btn pb-filter-btn-primary">OK</button>
