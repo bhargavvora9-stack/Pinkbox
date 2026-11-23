@@ -33,7 +33,7 @@ async function getProduct(slug) {
     .eq('company_id', settings.company_id)
     .eq('slug', slug)
     .eq('is_active', true)
-    .like('sku','MDH-%')
+    .or('sku.like.MDH-%,sku.like.BAG-%')
     .gt('price', 0)
     .maybeSingle();
 
@@ -45,7 +45,7 @@ async function getProduct(slug) {
       .eq('company_id', settings.company_id)
       .eq('slug', LEGACY_PRODUCT_SLUGS[slug])
       .eq('is_active', true)
-      .like('sku','MDH-%')
+      .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0)
       .maybeSingle();
     product = replacement;
