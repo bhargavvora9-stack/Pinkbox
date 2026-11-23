@@ -125,8 +125,8 @@ async function getStoreData() {
     variants: variantsByProductId.get(product.id) || [],
   }));
 
-  // Public listings include only active, priced products that checkout can currently sell.
-  // Stock remains managed separately through the Inventory ledger in Admin.
+  // Keep active, priced products visible in public browsing, including those with zero stock.
+  // Product cards and the database order function still block purchases when stock is unavailable.
   const saleableProducts = filterAvailableProducts(productData, variants.data || [], { includeOutOfStock: true });
 
   const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
