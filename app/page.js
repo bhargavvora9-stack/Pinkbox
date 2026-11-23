@@ -77,7 +77,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     settings,
     categories: visibleCategories,
     banners: activeBanners,
-    homepageSections: (homepageSections.data || []).filter((section) => section.is_active !== false),
+    homepageSections: homepageSections.data || [],
     coupons: (discounts.data || [])
       .filter((coupon) =>
         (!coupon.starts_at || coupon.starts_at <= now) &&
