@@ -98,6 +98,7 @@ export default async function CollectionPage({params}) {
   const {slug} = await params; const c = await getCollection(slug); if (!c || !c.products?.length) notFound();
   const isSanitary = c.category.slug === 'sanitary-pads';
   const isBabyDiapers = c.category.slug === 'baby-diapers';
+  const isBags = c.category.slug === 'bags';
   const guideLinks = isSanitary
     ? [
         ['/pages/sanitary-pads', 'Sanitary Pads Guide'],
@@ -118,7 +119,7 @@ export default async function CollectionPage({params}) {
   const collectionSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : c.category.name,
+    name: isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Personalized Cotton Tote Bags' : c.category.name,
     url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`),
     mainEntity: { '@type': 'ItemList', itemListElement: c.products.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: absoluteUrl(`/products/${encodeURIComponent(p.slug)}`), name: p.title })) }
   };
@@ -126,7 +127,7 @@ export default async function CollectionPage({params}) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
-      { '@type': 'ListItem', position: 2, name: isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : c.category.name, item: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`) }
+      { '@type': 'ListItem', position: 2, name: isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Personalized Cotton Tote Bags' : c.category.name, item: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`) }
     ]
   };
   return <main className="min-h-screen bg-white text-[#171717]">
