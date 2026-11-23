@@ -28,7 +28,7 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
   return ()=>{active=false};
  },[settings]);
  const currentSettings=siteSettings||settings||{};
- const phone=currentSettings.phone||'+91 73592 52000';
+ const phone=currentSettings.phone||'6358218366';
  const email=currentSettings.email||'care@sakhicare.in';
  const address=currentSettings.address||'Ahmedabad, Gujarat, India';
  const name=currentSettings.website_name||'Pink Box';
