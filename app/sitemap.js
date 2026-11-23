@@ -82,7 +82,7 @@ export default async function sitemap() {
 
   if (productsResult.error || categories.error || mappings.error) return urls;
   const productIds = (productsResult.data || []).map((product) => product.id);
-  const [{ data: variants, error: variantsError }, { data: productImageRows, error: productImagesError }] = await Promise.all([
+  const [{ data: variants, error: variantsError }, { data: productImageRows }] = await Promise.all([
     productIds.length
       ? db.from('website_product_variants')
         .select('product_id,stock_quantity,is_active')
