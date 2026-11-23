@@ -6,8 +6,8 @@ import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SHOP_TITLE = 'Shop Sanitary Pads & Baby Diapers Online | PinkBox';
-const SHOP_DESCRIPTION = 'Buy sanitary pads and 7 Soft baby diaper pants online at PinkBox. Compare product details, pack sizes and current prices, with delivery across India.';
+const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Tote Bags Online | PinkBox';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and personalized cotton tote bags online at PinkBox. Compare product details, sizes and current prices, with delivery across India.';
 
 export const metadata = {
   title: SHOP_TITLE,
@@ -33,7 +33,7 @@ async function getShopData() {
       .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
-      .like('sku','MDH-%')
+      .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_product_variants')
@@ -48,7 +48,7 @@ async function getShopData() {
     return { settings, products: [] };
   }
 
-  const visibleProducts = filterAvailableProducts(productsResult.data, variantsResult.data || []);
+  const visibleProducts = filterAvailableProducts(productsResult.data, variantsResult.data || [], { includeOutOfStock: true });
   if (!visibleProducts.length) return { settings, products: [] };
 
   const ids = visibleProducts.map((product) => product.id);
