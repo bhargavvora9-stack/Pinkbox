@@ -125,9 +125,9 @@ async function getStoreData() {
     variants: variantsByProductId.get(product.id) || [],
   }));
 
-  // Public listings include only active, priced products that checkout can currently sell.
-  // Stock remains managed separately through the Inventory ledger in Admin.
-  const saleableProducts = filterAvailableProducts(productData, variants.data || []);
+  // Keep active, priced products visible in public browsing, including those with zero stock.
+  // Product cards and the database order function still block purchases when stock is unavailable.
+  const saleableProducts = filterAvailableProducts(productData, variants.data || [], { includeOutOfStock: true });
 
   const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
   const categoryProductCounts = {};
@@ -184,7 +184,6 @@ export async function generateMetadata() {
   const s = data?.settings || null;
   const name = s?.website_name || 'PinkBox';
   const categoryNames = (data?.categories || []).map((category) => {
-    if (category.slug === 'bags') return 'Personalized Cotton Tote Bags';
     if (category.slug === 'sanitary-pads') return 'Sanitary Pads';
     if (category.slug === 'baby-diapers') return 'Baby Diapers';
     return category.name;

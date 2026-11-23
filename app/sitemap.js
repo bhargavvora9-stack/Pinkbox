@@ -33,7 +33,7 @@ export default async function sitemap() {
       .order('published_at', { ascending: false }),
     db
       .from('website_products')
-      .select('id,slug,is_active,updated_at,price,track_inventory,allow_backorder,stock_quantity')
+      .select('id,sku,slug,is_active,updated_at,price,track_inventory,allow_backorder,stock_quantity')
       .eq('company_id', settings.company_id)
       .eq('is_active', true)
       .gt('price', 0),
@@ -64,7 +64,7 @@ export default async function sitemap() {
     : { data: [], error: null };
   if (variantsError) return urls;
 
-  const saleableProducts = filterAvailableProducts(productsResult.data || [], variants || []);
+  const saleableProducts = filterAvailableProducts(productsResult.data || [], variants || [], { includeOutOfStock: true });
   const contentContext = {
     categories: categories.data || [],
     products: saleableProducts,

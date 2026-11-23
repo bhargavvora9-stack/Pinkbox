@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { runWebsiteAutomations } from '@/lib/website-automation';
 import { filterAvailableProducts } from '@/lib/product-availability';
+import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 
 async function getStore(){
  const db=createAdminClient();
@@ -51,11 +52,18 @@ export async function GET(request){
   (images.data||[]).forEach(x=>{if(!imageListMap[x.product_id])imageListMap[x.product_id]=[];imageListMap[x.product_id].push(x);if(!imageMap[x.product_id]||x.is_primary)imageMap[x.product_id]=x.image_url;});
   const catMap={};(mappings.data||[]).forEach(x=>{if(!catMap[x.product_id])catMap[x.product_id]=x.category_id});
   const productData=(products.data||[]).map(p=>{const fallback=p.sku?.startsWith('MDH-')?`/catalog-products/${p.sku.toLowerCase()}.webp`:null;const productImages=imageListMap[p.id]?.length?imageListMap[p.id]:(fallback?[{image_url:fallback,alt_text:p.title,is_primary:true,sort_order:0}]:[]);return {...p,image_url:imageMap[p.id]||fallback,images:productImages,category_id:catMap[p.id]||null};});
-  const saleableProducts=filterAvailableProducts(productData,variants.data||[]);
+  const saleableProducts=filterAvailableProducts(productData,variants.data||[],{includeOutOfStock:true});
+  const saleableProductIds=new Set(saleableProducts.map(product=>product.id));
+  const visibleCategoryIds=new Set((mappings.data||[]).filter(mapping=>saleableProductIds.has(mapping.product_id)).map(mapping=>mapping.category_id));
+  const visibleCategories=(categories.data||[]).filter(category=>visibleCategoryIds.has(category.id));
+  const contentContext={categories:categories.data||[],products:saleableProducts,mappings:mappings.data||[]};
+  const publicPages=(pages.data||[]).filter(page=>isContentLiveForAvailableCategory(page,contentContext,{keepUncategorized:true}));
+  const publicBlog=(blog.data||[]).filter(post=>isContentLiveForAvailableCategory(post,contentContext,{keepUncategorized:false}));
+  const publicReviews=(reviews.data||[]).filter(review=>saleableProductIds.has(review.product_id));
   const url=new URL(request.url),slug=url.searchParams.get('product');
   const selectedProduct=slug?saleableProducts.find(p=>p.slug===slug)||null:null;
   const productReviews=slug&&selectedProduct?(reviews.data||[]).filter(r=>r.product_id===selectedProduct.id):null;
-  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:onlinePaymentReady,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description,ga4_measurement_id:settings.ga4_measurement_id,meta_pixel_id:settings.meta_pixel_id},products:saleableProducts,categories:categories.data||[],banners:activeBanners,sections:sections.data||[],pages:pages.data||[],menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:blog.data||[],reviews:reviews.data||[],selectedProduct,productReviews});
+  return Response.json({settings:{website_name:settings.website_name,slug:settings.slug,logo_url:settings.logo_url,favicon_url:settings.favicon_url,whatsapp_number:settings.whatsapp_number,phone:settings.phone,email:settings.email,address:settings.address,gstin:settings.gstin,currency:settings.currency,timezone:settings.timezone,cod_enabled:settings.cod_enabled,online_payment_enabled:onlinePaymentReady,shipping_enabled:settings.shipping_enabled,free_shipping_threshold:settings.free_shipping_threshold,default_shipping_charge:settings.default_shipping_charge,meta_title:settings.meta_title,meta_description:settings.meta_description,ga4_measurement_id:settings.ga4_measurement_id,meta_pixel_id:settings.meta_pixel_id},products:saleableProducts,categories:visibleCategories,banners:activeBanners,sections:sections.data||[],pages:publicPages,menu:menu.data||null,theme:theme.data||null,footer:footer.data||null,blog:publicBlog,reviews:publicReviews,selectedProduct,productReviews});
  }catch(error){console.error('Storefront GET failed:',error);return Response.json({error:error instanceof Error?error.message:'Storefront is temporarily unavailable.'},{status:500})}
 }
 

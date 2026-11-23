@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Tote Bags Online | PinkBox';
-const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and personalized cotton tote bags online at PinkBox. Compare product details and current prices, with delivery across India.';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and personalized cotton tote bags online at PinkBox. Compare product details, sizes and current prices, with delivery across India.';
 
 export const metadata = {
   title: SHOP_TITLE,
@@ -48,7 +48,7 @@ async function getShopData() {
     return { settings, products: [] };
   }
 
-  const visibleProducts = filterAvailableProducts(productsResult.data, variantsResult.data || []);
+  const visibleProducts = filterAvailableProducts(productsResult.data, variantsResult.data || [], { includeOutOfStock: true });
   if (!visibleProducts.length) return { settings, products: [] };
 
   const ids = visibleProducts.map((product) => product.id);

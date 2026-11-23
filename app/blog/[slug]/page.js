@@ -20,7 +20,7 @@ async function getStore(){
 async function isPostLive(db, companyId, post){
  const [categories,products,mappings]=await Promise.all([
   db.from('website_categories').select('id,name,slug').eq('company_id',companyId).eq('is_active',true),
-  db.from('website_products').select('id,slug,is_active,price').eq('company_id',companyId).eq('is_active',true).gt('price',0),
+  db.from('website_products').select('id,slug,is_active,price').eq('company_id',companyId).eq('is_active',true).or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0),
   db.from('website_product_categories').select('product_id,category_id').eq('company_id',companyId),
  ]);
  if(categories.error||products.error||mappings.error) return false;
