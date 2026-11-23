@@ -122,230 +122,58 @@ function CouponStrip({ coupons = [] }) {
   );
 }
 
-function TrustBadges() {
+function TrustBadges({ section }) {
+  if (section && section.is_active === false) return null;
+  const configured = section?.settings?.items;
+  const items = Array.isArray(configured) && configured.length ? configured : TRUST.map((item) => item.label);
   return (
     <section className="border-y border-border bg-background">
-      <div className="container mx-auto grid grid-cols-2 gap-6 px-4 py-10 lg:grid-cols-4">
-        {TRUST.map(({ icon: Icon, label }) => (
-          <div key={label} className="flex items-center justify-center gap-3 text-center">
-            <Icon className="h-6 w-6 shrink-0 text-primary" />
-            <span className="text-sm font-medium text-foreground">{label}</span>
-          </div>
-        ))}
+      <div className="container mx-auto px-4 py-10">
+        {(section?.settings?.eyebrow || section?.title) && <div className="mb-5 text-center">{section?.settings?.eyebrow && <p className="text-xs font-semibold tracking-widest text-primary uppercase">{section.settings.eyebrow}</p>}{section?.title && <h2 className="mt-2 font-display text-xl font-semibold text-foreground">{section.title}</h2>}</div>}
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+          {items.map((item,index)=>{const Icon=TRUST[index%TRUST.length]?.icon||Award;const label=typeof item==='string'?item:item?.label||item?.title||'';return <div key={label||index} className="flex items-center justify-center gap-3 text-center"><Icon className="h-6 w-6 shrink-0 text-primary"/><span className="text-sm font-medium text-foreground">{label}</span></div>})}
+        </div>
       </div>
     </section>
   );
-}
-
-function ProductsSection({ categories = [] }) {
+}function ProductsSection({ categories = [], section }) {
+  if (section && section.is_active === false) return null;
   return (
     <section id="products" className="container mx-auto px-4 py-16 md:py-24">
-      <div className="max-w-2xl">
-        <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our range</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Explore our collections</h2>
-      </div>
-      {categories.length ? (
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
-            <article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft">
-              <Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block">
-                <div className="relative aspect-square overflow-hidden bg-muted">
-                  {category.image_url ? (
-                    <Image
-                      src={category.image_url}
-                      alt={category.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      unoptimized={shouldUnoptimizeImage(category.image_url)}
-                      className="h-full w-full object-contain p-3"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6">
-                      <span className="font-display text-2xl font-semibold text-primary">{category.name}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center justify-between gap-4 p-5">
-                  <div>
-                    <p className="text-xs font-semibold tracking-widest text-primary uppercase">PinkBox Collection</p>
-                    <h3 className="mt-2 font-display text-xl font-semibold text-foreground">{category.name}</h3>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    Explore
-                  </span>
-                </div>
-              </Link>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-12 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-          Collections will appear here soon.
-        </p>
-      )}
+      <div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow || 'Our range'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title || 'Explore our collections'}</h2>{section?.settings?.description && <p className="mt-4 text-muted-foreground">{section.settings.description}</p>}</div>
+      {categories.length ? <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{categories.map((category)=><article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft"><Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block"><div className="relative aspect-square overflow-hidden bg-muted">{category.image_url?<Image src={category.image_url} alt={category.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" unoptimized={shouldUnoptimizeImage(category.image_url)} className="h-full w-full object-contain p-3"/>:<div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6"><span className="font-display text-2xl font-semibold text-primary">{category.name}</span></div>}</div><div className="flex items-center justify-between gap-4 p-5"><div><p className="text-xs font-semibold tracking-widest text-primary uppercase">PinkBox Collection</p><h3 className="mt-2 font-display text-xl font-semibold text-foreground">{category.name}</h3></div><span className="shrink-0 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">Explore</span></div></Link></article>)}</div>:<p className="mt-12 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Collections will appear here soon.</p>}
     </section>
   );
-}
-
-function ProductFinder() {
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
-  const [isPending, setIsPending] = useState(false);
-
-  async function submit(value) {
-    const text = String(value || '').trim();
-    if (text.length < 3 || text.length > 500 || isPending) return;
-    setQuery(text);
-    setError('');
-    setResult(null);
-    setIsPending(true);
-    try {
-      const response = await fetch('/api/storefront/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: text }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Couldn’t get suggestions right now. Please try again.');
-      setResult(data);
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Couldn’t get suggestions right now. Please try again.');
-    } finally {
-      setIsPending(false);
-    }
+}function ProductFinder({ section }) {
+  if (section && section.is_active === false) return null;
+  const eyebrow=section?.settings?.eyebrow||'AI-powered product finder';
+  const title=section?.title||'Tell us what you need';
+  const description=section?.settings?.description||'Describe your flow, comfort or skin needs — we’ll suggest the right pads.';
+  const [query,setQuery]=useState(''),[result,setResult]=useState(null),[error,setError]=useState(''),[isPending,setIsPending]=useState(false);
+  async function submit(value){
+    const text=String(value||'').trim();if(text.length<3||text.length>500||isPending)return;
+    setQuery(text);setError('');setResult(null);setIsPending(true);
+    try{const response=await fetch('/api/storefront/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:text})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Couldn’t get suggestions right now. Please try again.');setResult(data)}
+    catch(requestError){setError(requestError instanceof Error?requestError.message:'Couldn’t get suggestions right now. Please try again.')}
+    finally{setIsPending(false)}
   }
-
-  return (
-    <section id="finder" className="bg-secondary/40 py-16 md:py-24">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">AI-powered product finder</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Tell us what you need</h2>
-          <p className="mt-3 text-muted-foreground">Describe your flow, comfort or skin needs — we’ll suggest the right pads.</p>
-        </div>
-        <form
-          className="mx-auto mt-8 max-w-2xl space-y-3"
-          onSubmit={(event) => { event.preventDefault(); submit(query); }}
-        >
-          <textarea
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="e.g. I have a heavy flow at night and sensitive skin"
-            maxLength={500}
-            rows={3}
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            {EXAMPLES.map((example) => (
-              <button
-                key={example}
-                type="button"
-                onClick={() => submit(example)}
-                disabled={isPending}
-                className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
-              >
-                {example}
-              </button>
-            ))}
-            <button
-              type="submit"
-              className="ml-auto inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              disabled={isPending || query.trim().length < 3}
-            >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              Find my match
-            </button>
-          </div>
-        </form>
-
-        {error && <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-destructive">{error}</p>}
-        {result && (
-          <div className="mt-10">
-            <p className="mx-auto max-w-2xl text-center text-foreground">{result.message}</p>
-            {result.products?.length > 0 && (
-              <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {result.products.map((product) => (
-                  <div key={product.id} className="space-y-2">
-                    <ZipReferenceProductCard product={product} />
-                    {result.reasons?.[product.slug] && (
-                      <p className="px-1 text-sm text-muted-foreground">{result.reasons[product.slug]}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function AboutStrip() {
-  const points = [
-    'Made in an ISO-certified, hygienic facility',
-    'Lab-tested for absorbency and skin safety',
-    'Sizes for day, night and heavy flow',
-    'Bulk supply for retailers, schools and NGOs',
-  ];
-  return (
-    <section className="bg-cream/60">
-      <div className="container mx-auto grid items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2">
-        <Image src={zipAboutImage} alt="Soft pink and cream sanitary napkin packs arranged with cotton flowers" width={1200} height={912} unoptimized loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft" />
-        <div>
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Our promise</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Hygiene is not a luxury — it&apos;s a right</h2>
-          <p className="mt-4 leading-relaxed text-muted-foreground">Pink Box started with one goal: make premium-quality period care affordable for every household in India. From raw cotton to the sealed pack, everything is checked so you never have to think twice.</p>
-          <ul className="mt-7 space-y-3">{points.map((point) => <li key={point} className="flex items-start gap-3 text-sm text-foreground"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground"><Check className="h-3 w-3" /></span>{point}</li>)}</ul>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Features() {
-  return (
-    <section id="why" className="container mx-auto px-4 py-16 md:py-24">
-      <div className="max-w-2xl">
-        <p className="text-xs font-semibold tracking-widest text-primary uppercase">Why Pink Box</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Built on comfort, tested for safety</h2>
-        <p className="mt-4 text-muted-foreground">Every pad goes through six quality checks before it reaches you.</p>
-      </div>
-      <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, text }) => (
-          <article key={title} className="group rounded-3xl border border-border bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-soft">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary transition-colors group-hover:bg-gradient-brand group-hover:text-primary-foreground"><Icon className="h-6 w-6" /></span>
-            <h3 className="mt-5 font-display text-xl font-semibold text-card-foreground">{title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Testimonials() {
-  return (
-    <section id="reviews" className="bg-secondary/40">
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Real voices</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Customer reviews</h2>
-          <p className="mt-3 text-muted-foreground">Only verified reviews from real customers will appear here.</p>
-        </div>
-        <div className="mt-12 rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-soft/50">
-          <MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50" />
-          <p className="mt-4 font-display text-xl font-semibold text-foreground">No reviews yet</p>
-          <div className="mt-3 flex items-center justify-center gap-1">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 text-muted-foreground/40" />)}</div>
-          <p className="mt-3 text-sm text-muted-foreground">Be the first to share your experience after your order arrives.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ContactForm() {
+  return <section id="finder" className="bg-secondary/40 py-16 md:py-24"><div className="container mx-auto px-4"><div className="mx-auto max-w-2xl text-center"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{eyebrow}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{title}</h2><p className="mt-3 text-muted-foreground">{description}</p></div><form className="mx-auto mt-8 max-w-2xl space-y-3" onSubmit={event=>{event.preventDefault();submit(query)}}><textarea value={query} onChange={event=>setQuery(event.target.value)} placeholder="e.g. I have a heavy flow at night and sensitive skin" maxLength={500} rows={3} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"/><div className="flex flex-wrap items-center gap-2">{EXAMPLES.map(example=><button key={example} type="button" onClick={()=>submit(example)} disabled={isPending} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">{example}</button>)}<button type="submit" className="ml-auto inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50" disabled={isPending||query.trim().length<3}>{isPending?<Loader2 className="h-4 w-4 animate-spin"/>:<Search className="h-4 w-4"/>}Find my match</button></div></form>{error&&<p className="mx-auto mt-6 max-w-2xl text-center text-sm text-destructive">{error}</p>}{result&&<div className="mt-10"><p className="mx-auto max-w-2xl text-center text-foreground">{result.message}</p>{result.products?.length>0&&<div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{result.products.map(product=><div key={product.id} className="space-y-2"><ZipReferenceProductCard product={product}/>{result.reasons?.[product.slug]&&<p className="px-1 text-sm text-muted-foreground">{result.reasons[product.slug]}</p>}</div>)}</div>}</div>}</div></section>;
+}function AboutStrip({ section }) {
+  if (section && section.is_active === false) return null;
+  const eyebrow=section?.settings?.eyebrow||'Our promise';
+  const title=section?.title||'Hygiene is not a luxury — it’s a right';
+  const description=section?.settings?.description||'Pink Box started with one goal: make premium-quality period care affordable for every household in India. From raw cotton to the sealed pack, everything is checked so you never have to think twice.';
+  const points=Array.isArray(section?.settings?.items)&&section.settings.items.length?section.settings.items:['Made in an ISO-certified, hygienic facility','Lab-tested for absorbency and skin safety','Sizes for day, night and heavy flow','Bulk supply for retailers, schools and NGOs'];
+  const image=section?.settings?.image_url||zipAboutImage;
+  return <section className="bg-cream/60"><div className="container mx-auto grid items-center gap-12 px-4 py-16 md:py-24 lg:grid-cols-2"><Image src={image} alt={section?.settings?.image_alt||'PinkBox sanitary care and cotton flowers'} width={1200} height={912} unoptimized loading="lazy" className="w-full rounded-[2rem] object-cover shadow-soft"/><div><p className="text-xs font-semibold tracking-widest text-primary uppercase">{eyebrow}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{title}</h2><p className="mt-4 leading-relaxed text-muted-foreground">{description}</p><ul className="mt-7 space-y-3">{points.map((point,index)=><li key={String(point)+index} className="flex items-start gap-3 text-sm text-foreground"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground"><Check className="h-3 w-3"/></span>{typeof point==='string'?point:point?.title}</li>)}</ul></div></div></section>;
+}function Features({ section }) {
+  if(section&&section.is_active===false)return null;
+  const items=Array.isArray(section?.settings?.items)&&section.settings.items.length?section.settings.items:FEATURES;
+  return <section id="why" className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Why Pink Box'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Built on comfort, tested for safety'}</h2><p className="mt-4 text-muted-foreground">{section?.settings?.description||'Every pad goes through six quality checks before it reaches you.'}</p></div><div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{items.map((item,index)=>{const Icon=FEATURES[index%FEATURES.length]?.icon||Leaf;const title=typeof item==='string'?item:item?.title||'';const text=typeof item==='string'?'':item?.text||item?.description||'';return <article key={title||index} className="group rounded-3xl border border-border bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-soft"><span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary transition-colors group-hover:bg-gradient-brand group-hover:text-primary-foreground"><Icon className="h-6 w-6"/></span><h3 className="mt-5 font-display text-xl font-semibold text-card-foreground">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p></article>})}</div></section>;
+}function Testimonials({ section }) {
+  if(section&&section.is_active===false)return null;
+  return <section id="reviews" className="bg-secondary/40"><div className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Real voices'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Customer reviews'}</h2><p className="mt-3 text-muted-foreground">{section?.settings?.description||'Only verified reviews from real customers will appear here.'}</p></div><div className="mt-12 rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-soft/50"><MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50"/><p className="mt-4 font-display text-xl font-semibold text-foreground">No reviews yet</p><div className="mt-3 flex items-center justify-center gap-1">{Array.from({length:5}).map((_,i)=><Star key={i} className="h-4 w-4 text-muted-foreground/40"/>)}</div><p className="mt-3 text-sm text-muted-foreground">Be the first to share your experience after your order arrives.</p></div></div></section>;
+}function ContactForm() {
   const [type, setType] = useState('contact');
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', message: '' });
   const [busy, setBusy] = useState(false);
