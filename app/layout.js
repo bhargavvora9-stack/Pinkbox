@@ -2,19 +2,21 @@ import './globals.css';
 import StorefrontAnalytics from '@/components/StorefrontAnalytics';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { getSiteUrl } from '@/lib/seo';
+import { getSiteUrl, limitMetaText } from '@/lib/seo';
 import { Fraunces, Manrope } from 'next/font/google';
 
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 const defaultTitle = 'Sanitary Pads & Baby Diapers Online | PinkBox';
-const defaultDescription = 'Shop sanitary pads, sanitary napkins and baby diapers online at PinkBox. Compare 320mm and everyday hygiene products, check current prices and order for delivery across India.';
+const defaultDescription = 'Shop sanitary pads, sanitary napkins, baby diapers and cotton tote bags online at PinkBox. Browse everyday essentials and bag designs across India.';
 const defaultKeywords = [
   'sanitary pads online',
   'sanitary napkins online',
   'baby diapers online',
   '320mm sanitary pads',
+  'cotton tote bags',
+  'personalized tote bags',
   'menstrual care products',
   'PinkBox',
 ];
@@ -34,8 +36,8 @@ export async function generateMetadata() {
     // Use safe site-level metadata if the store settings are temporarily unavailable.
   }
 
-  const title = settings?.meta_title || defaultTitle;
-  const description = settings?.meta_description || defaultDescription;
+  const title = limitMetaText(settings?.meta_title || defaultTitle, 60);
+  const description = limitMetaText(settings?.meta_description || defaultDescription, 160);
   const siteName = settings?.website_name || 'PinkBox';
 
   return {

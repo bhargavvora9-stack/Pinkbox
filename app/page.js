@@ -2,7 +2,7 @@ import PinkBoxHome from '../components/PinkBoxHome';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, limitMetaText, safeJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -100,9 +100,9 @@ export async function generateMetadata() {
   }).filter(Boolean);
   const categoryLabel = categoryNames.join(' & ');
   const title = s?.meta_title || (categoryLabel ? `${categoryLabel} | ${name}` : `${name} | Online Store`);
-  const description = s?.meta_description || (categoryLabel
+  const description = limitMetaText(s?.meta_description || (categoryLabel
     ? `Explore ${categoryLabel.toLowerCase()} currently available at ${name}. Review the details on each product page before ordering.`
-    : `Explore current products and collections at ${name}.`);
+    : `Explore current products and collections at ${name}.`), 160);
   return {
     title,
     description,

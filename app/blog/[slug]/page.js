@@ -4,7 +4,7 @@ import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 import Image from 'next/image';
 import {createAdminClient} from '@/lib/supabase-admin';
 import {notFound} from 'next/navigation';
-import { absoluteUrl, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, limitMetaText, safeJsonLd } from '@/lib/seo';
 import { sanitizeCmsHtml } from '@/lib/sanitize-html';
 import { isContentLiveForAvailableCategory } from '@/lib/available-content';
 
@@ -55,8 +55,8 @@ export async function generateMetadata({params}){
  const {data:post}=await db.from('website_blog_posts').select('title,excerpt,published_at,updated_at,slug,cover_image_url,seo_title,seo_description,seo_keywords,content').eq('company_id',settings.company_id).eq('slug',slug).eq('is_published',true).maybeSingle();
  const live=post ? await isPostLive(db,settings.company_id,post) : false;
  const image=post?.cover_image_url||post?.featured_image_url;
- const title=post?.seo_title||post?.title;
- const description=post?.seo_description||post?.excerpt||undefined;
+ const title=limitMetaText(post?.seo_title||post?.title, 60);
+ const description=limitMetaText(post?.seo_description||post?.excerpt||'', 160) || undefined;
  return post&&live?{
   title,
   description,

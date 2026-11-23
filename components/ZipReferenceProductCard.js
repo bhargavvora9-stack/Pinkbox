@@ -56,7 +56,7 @@ export default function ZipReferenceProductCard({product}){
     <div className="aspect-square overflow-hidden bg-muted">
      {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
-    <div className="p-4"><h3 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
+    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
    </Link>
    <div className="px-4 pb-4">
     <button type="button" onClick={addToCart} disabled={busy||!available} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
