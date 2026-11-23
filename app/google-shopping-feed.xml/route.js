@@ -37,7 +37,7 @@ export async function GET() {
     .select('id,sku,title,slug,short_description,description,brand,price,stock_quantity,track_inventory,allow_backorder,is_active')
     .eq('company_id', settings.company_id)
     .eq('is_active', true)
-    .or('sku.like.MDH-%,sku.like.BAG-%')
+    .like('sku','MDH-%')
     .gt('price', 0)
     .order('created_at', { ascending: false });
 
