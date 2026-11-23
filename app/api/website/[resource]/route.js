@@ -71,7 +71,12 @@ export async function GET(request,{params}){
   }
   const table=tableFor(resource); if(!table)return jsonError('Unknown website resource.',404);
   let query=supabase.from(table).select('*').eq('company_id',companyId);
-  if(resource==='settings')query=query.maybeSingle(); else if(['products','orders','subscribers'].includes(resource))query=query.order('created_at',{ascending:false}).limit(SAFE_LIMIT); else if(resource==='images')query=query.order('product_id').order('is_primary',{ascending:false}).order('sort_order').limit(SAFE_LIMIT); else query=query.order('sort_order',{ascending:true}).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
+  if(resource==='settings')query=query.maybeSingle();
+  else if(['products','orders','subscribers','discounts','bulk-enquiries'].includes(resource))query=query.order('created_at',{ascending:false}).limit(SAFE_LIMIT);
+  else if(resource==='pages')query=query.order('updated_at',{ascending:false}).limit(SAFE_LIMIT);
+  else if(resource==='navigation')query=query.order('location',{ascending:true}).order('name',{ascending:true}).limit(SAFE_LIMIT);
+  else if(resource==='images')query=query.order('product_id').order('is_primary',{ascending:false}).order('sort_order').limit(SAFE_LIMIT);
+  else query=query.order('sort_order',{ascending:true}).order('created_at',{ascending:false}).limit(SAFE_LIMIT);
   const {data,error:dbError}=await query; if(dbError)return jsonError(dbError.message,500); return Response.json({data:data||null});
 }
 

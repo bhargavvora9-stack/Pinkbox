@@ -23,7 +23,7 @@ export async function GET() {
     const companyId = data.company_id;
     const publicSettings = { ...data };
     delete publicSettings.company_id;
-    const [menuResult, themeResult] = await Promise.all([
+    const [menuResult, themeResult, footerResult] = await Promise.all([
       db.from('website_menus')
         .select('id,location,name,items')
         .eq('company_id', companyId)
@@ -34,16 +34,21 @@ export async function GET() {
         .select('settings')
         .eq('company_id', companyId)
         .maybeSingle(),
+      db.from('website_footer_settings')
+        .select('columns,social_links,copyright_text')
+        .eq('company_id', companyId)
+        .maybeSingle(),
     ]);
 
-    if (menuResult.error || themeResult.error) {
-      console.error('Storefront header config could not be loaded:', menuResult.error || themeResult.error);
+    if (menuResult.error || themeResult.error || footerResult.error) {
+      console.error('Storefront configuration could not be loaded:', menuResult.error || themeResult.error || footerResult.error);
     }
 
     return Response.json({
       settings: publicSettings,
       headerMenu: menuResult.data?.[0] || null,
       theme: themeResult.data?.settings || {},
+      footer: footerResult.data || null,
     }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
