@@ -9,7 +9,7 @@ const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', dis
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 const defaultTitle = 'Sanitary Pads & Baby Diapers Online | PinkBox';
-const defaultDescription = 'Shop sanitary pads, sanitary napkins and baby diapers online at PinkBox. Compare 320mm and everyday hygiene products, check current prices and order for delivery across India.';
+const defaultDescription = 'Shop sanitary pads, baby diapers and cotton tote bags online at PinkBox. Explore everyday hygiene essentials and personalized bags with delivery across India.';
 const defaultKeywords = [
   'sanitary pads online',
   'sanitary napkins online',
