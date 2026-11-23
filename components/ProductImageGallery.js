@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+const shouldUnoptimizeImage = (src) => {
+  if (typeof src !== 'string') return true;
+  return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
+};
+
 export default function ProductImageGallery({ images = [], title = '' }) {
   const availableImages = images.filter((image) => image?.image_url);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -49,7 +54,7 @@ export default function ProductImageGallery({ images = [], title = '' }) {
                   fill
                   sizes="120px"
                   className="object-contain p-1"
-                  unoptimized
+                  unoptimized={shouldUnoptimizeImage(image.image_url)}
                 />
               </button>
             );
