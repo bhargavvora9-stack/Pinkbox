@@ -24,7 +24,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
   // The homepage only renders collection tiles, hero banners and coupon offers.
   // Fetch only the IDs needed to decide which collections have products; avoid
   // loading full product descriptions, variants, image rows, blog bodies and reviews.
-  const [products, categories, banners, mappings, discounts] = await Promise.all([
+  const [products, categories, banners, mappings, discounts, homepageSections] = await Promise.all([
     db.from('website_products')
       .select('id')
       .eq('company_id', companyId)
@@ -48,9 +48,13 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .select('id,name,code,discount_type,value,minimum_order_amount,starts_at,ends_at,usage_limit,usage_count,is_active')
       .eq('company_id', companyId)
       .eq('is_active', true),
+    db.from('website_homepage_sections')
+      .select('id,section_type,title,settings,sort_order,is_active')
+      .eq('company_id', companyId)
+      .order('sort_order'),
   ]);
 
-  const results = { products, categories, banners, mappings, discounts };
+  const results = { products, categories, banners, mappings, discounts, homepageSections };
   const failed = Object.values(results).find((result) => result?.error);
   if (failed) throw new Error(failed.error.message);
 
@@ -73,6 +77,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     settings,
     categories: visibleCategories,
     banners: activeBanners,
+    homepageSections: (homepageSections.data || []).filter((section) => section.is_active !== false),
     coupons: (discounts.data || [])
       .filter((coupon) =>
         (!coupon.starts_at || coupon.starts_at <= now) &&
