@@ -25,7 +25,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (!active || !data) return;
-        setSiteSettings({ ...(data.settings || {}), ...(settings || {}) });
+        setSiteSettings({ ...(settings || {}), ...(data.settings || {}) });
         const savedItems = data.headerMenu?.items;
         setNavItems(Array.isArray(savedItems) && savedItems.length
           ? savedItems.filter((item) => item && item.is_active !== false && (item.href || item.url))
