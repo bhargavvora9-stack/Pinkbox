@@ -34,6 +34,15 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/products/maxi-care-3x-320mm-sanitary-pads',
+        destination: '/pages/320mm-sanitary-pads',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
