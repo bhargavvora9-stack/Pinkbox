@@ -16,36 +16,122 @@ const isNumericColumn = values => {
   return nonEmpty.length > 0 && nonEmpty.every(value => Number.isFinite(parseNumeric(value)));
 };
 
-const filterCss = [
-  '.pb-excel-filter-button{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;padding:0;border:1px solid transparent;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;line-height:1;opacity:.9}',
-  '.pb-excel-filter-button:hover{border-color:#c8c8c8;background:#eaf2fb;color:#1f2937;opacity:1}',
-  '.pb-excel-filter-button.pb-excel-filter-active,.pb-excel-filter-button.pb-excel-sort-active{border-color:#8aaee0;background:#dceafa;color:#174ea6;opacity:1}',
-  '.pb-excel-filter-menu{position:fixed;z-index:99999;width:304px;max-width:calc(100vw - 16px);max-height:min(520px,calc(100vh - 16px));overflow-y:auto;border:1px solid #b8b8b8;border-radius:3px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.22);color:#222;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.35}',
-  '.pb-excel-filter-menu *{box-sizing:border-box}',
-  '.pb-excel-filter-menu button{font:inherit;color:#222}',
-  '.pb-excel-filter-menu .pb-filter-muted{color:#666}',
-  '.pb-excel-filter-menu .pb-filter-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f6f6f6;border-bottom:1px solid #dedede}',
-  '.pb-excel-filter-menu .pb-filter-section{padding:9px 11px;border-bottom:1px solid #dedede}',
-  '.pb-excel-filter-menu .pb-filter-search{position:relative}',
-  '.pb-excel-filter-menu .pb-filter-input{display:block;width:100%;height:34px;padding:6px 9px 6px 30px;border:1px solid #a6a6a6;border-radius:2px;background:#fff;color:#222;outline:none}',
-  '.pb-excel-filter-menu .pb-filter-input:focus{border-color:#217346;box-shadow:0 0 0 1px #217346}',
-  '.pb-excel-filter-menu .pb-filter-menu-action{display:flex;width:100%;align-items:center;gap:9px;padding:7px 9px;border:0;background:transparent;text-align:left;cursor:pointer}',
-  '.pb-excel-filter-menu .pb-filter-menu-action:hover{background:#eaf2fb}',
-  '.pb-excel-filter-menu .pb-filter-rule{height:1px;margin:4px 0;background:#e2e2e2}',
-  '.pb-excel-filter-menu .pb-filter-list-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#fafafa;border-bottom:1px solid #ededed}',
-  '.pb-excel-filter-menu .pb-filter-link{padding:3px 4px;border:0;background:transparent;color:#1a5fb4;cursor:pointer}',
-  '.pb-excel-filter-menu .pb-filter-link:hover{text-decoration:underline}',
-  '.pb-excel-filter-menu .pb-filter-values{max-height:165px;overflow-y:auto;padding:4px}',
-  '.pb-excel-filter-menu .pb-filter-value{display:flex;width:100%;align-items:center;gap:8px;padding:6px 7px;border:1px solid transparent;border-radius:2px;background:#fff;text-align:left;cursor:pointer}',
-  '.pb-excel-filter-menu .pb-filter-value:hover{background:#eaf2fb;border-color:#d4e4f8}',
-  '.pb-excel-filter-menu .pb-filter-check{display:inline-flex;width:15px;height:15px;flex-shrink:0;align-items:center;justify-content:center;border:1px solid #777;border-radius:2px;background:#fff;color:#fff}',
-  '.pb-excel-filter-menu .pb-filter-check.is-checked{border-color:#217346;background:#217346}',
-  '.pb-excel-filter-menu .pb-filter-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;background:#f6f6f6;border-top:1px solid #dedede}',
-  '.pb-excel-filter-menu .pb-filter-btn{min-height:29px;padding:5px 13px;border:1px solid #b6b6b6;border-radius:2px;background:#fff;cursor:pointer}',
-  '.pb-excel-filter-menu .pb-filter-btn:hover{background:#f1f1f1}',
-  '.pb-excel-filter-menu .pb-filter-btn-primary{border-color:#185c37;background:#217346;color:#fff}',
-  '.pb-excel-filter-menu .pb-filter-btn-primary:hover{background:#185c37}'
-].join('\n');
+const filterCss = `
+.pb-excel-filter-button{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;padding:0;border:1px solid #f3d4df;border-radius:8px;
+  background:#fff7fa;color:#c0266f;cursor:pointer;opacity:1;
+  transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease;
+}
+.pb-excel-filter-button svg{width:13px;height:13px;display:block}
+.pb-excel-filter-button:hover{
+  border-color:#e9a9c2;background:#fce7f3;color:#9d174d;
+  box-shadow:0 2px 7px rgba(190,24,93,.10);
+}
+.pb-excel-filter-button.pb-excel-filter-active,
+.pb-excel-filter-button.pb-excel-sort-active{
+  border-color:#db2777;background:#fce7f3;color:#9d174d;
+  box-shadow:0 0 0 3px rgba(219,39,119,.10);
+}
+.pb-excel-filter-menu{
+  position:fixed;z-index:99999;width:328px;max-width:calc(100vw - 20px);
+  max-height:min(560px,calc(100vh - 20px));overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid #f0d2de;border-radius:18px;
+  background:#fff;box-shadow:0 20px 55px rgba(52,22,39,.18),0 3px 12px rgba(52,22,39,.06);
+  color:#332633;font-family:var(--font-manrope,Manrope),ui-sans-serif,system-ui,sans-serif;
+  font-size:12px;line-height:1.45;isolation:isolate;scrollbar-width:thin;scrollbar-color:#e8bfd0 transparent;
+}
+.pb-excel-filter-menu *{box-sizing:border-box}
+.pb-excel-filter-menu button{font-family:inherit}
+.pb-excel-filter-menu .pb-filter-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 15px;background:linear-gradient(135deg,#fff3f8 0%,#fffaf8 100%);
+  border-bottom:1px solid #f3e4ea;
+}
+.pb-excel-filter-menu .pb-filter-kicker{
+  color:#be185d;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+}
+.pb-excel-filter-menu .pb-filter-title{
+  margin-top:3px;color:#352432;font-size:14px;font-weight:800;line-height:1.3;
+}
+.pb-excel-filter-menu .pb-filter-subtitle{margin-top:3px;color:#8b7280;font-size:10px;font-weight:500}
+.pb-excel-filter-menu .pb-filter-close{
+  display:inline-flex;width:30px;height:30px;flex-shrink:0;align-items:center;justify-content:center;
+  border:1px solid #f0d8e2;border-radius:9px;background:#fff;color:#8b6478;cursor:pointer;
+  transition:all .16s ease;
+}
+.pb-excel-filter-menu .pb-filter-close:hover{border-color:#e8b1c8;background:#fce7f3;color:#9d174d}
+.pb-excel-filter-menu .pb-filter-section{padding:11px 13px;border-bottom:1px solid #f4edf0}
+.pb-excel-filter-menu .pb-filter-search{position:relative}
+.pb-excel-filter-menu .pb-filter-input{
+  display:block;width:100%;height:39px;padding:8px 10px 8px 34px;
+  border:1px solid #eadde4;border-radius:11px;background:#fff;color:#352432;
+  font:500 12px/1.4 var(--font-manrope,Manrope),ui-sans-serif,system-ui,sans-serif;
+  outline:none;transition:border-color .16s ease,box-shadow .16s ease;
+}
+.pb-excel-filter-menu .pb-filter-input::placeholder{color:#a6929d}
+.pb-excel-filter-menu .pb-filter-input:focus{
+  border-color:#e879a7;box-shadow:0 0 0 3px rgba(219,39,119,.10);
+}
+.pb-excel-filter-menu .pb-filter-menu-action{
+  display:flex;width:100%;min-height:37px;align-items:center;gap:10px;
+  padding:8px 10px;border:1px solid transparent;border-radius:10px;background:transparent;
+  color:#574253;text-align:left;font-size:12px;font-weight:650;cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,color .14s ease;
+}
+.pb-excel-filter-menu .pb-filter-menu-action svg{flex-shrink:0;color:#c0266f}
+.pb-excel-filter-menu .pb-filter-menu-action:hover{border-color:#f5dce6;background:#fff4f8;color:#9d174d}
+.pb-excel-filter-menu .pb-filter-menu-action:focus-visible,
+.pb-excel-filter-menu .pb-filter-value:focus-visible,
+.pb-excel-filter-menu button:focus-visible{outline:2px solid #e879a7;outline-offset:2px}
+.pb-excel-filter-menu .pb-filter-rule{height:1px;margin:7px 2px;background:#f1e6eb}
+.pb-excel-filter-menu .pb-filter-muted{color:#927f8a}
+.pb-excel-filter-menu .pb-filter-list-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 14px;background:#fff9fb;border-bottom:1px solid #f3e8ed;
+  color:#594657;font-size:11px;font-weight:700;
+}
+.pb-excel-filter-menu .pb-filter-list-head input[type="checkbox"]{width:14px;height:14px;margin:0;accent-color:#db2777}
+.pb-excel-filter-menu .pb-filter-link{
+  padding:4px 5px;border:0;border-radius:6px;background:transparent;color:#be185d;
+  font:700 10px/1.2 var(--font-manrope,Manrope),ui-sans-serif,system-ui,sans-serif;cursor:pointer;
+}
+.pb-excel-filter-menu .pb-filter-link:hover{background:#fce7f3;color:#9d174d}
+.pb-excel-filter-menu .pb-filter-values{max-height:190px;overflow-y:auto;padding:6px}
+.pb-excel-filter-menu .pb-filter-value{
+  display:flex;width:100%;min-height:34px;align-items:center;gap:9px;
+  padding:7px 9px;border:1px solid transparent;border-radius:9px;background:#fff;
+  color:#493646;text-align:left;font-size:11px;font-weight:550;cursor:pointer;
+  transition:background .13s ease,border-color .13s ease;
+}
+.pb-excel-filter-menu .pb-filter-value:hover{border-color:#f4dce6;background:#fff5f9}
+.pb-excel-filter-menu .pb-filter-check{
+  display:inline-flex;width:16px;height:16px;flex-shrink:0;align-items:center;justify-content:center;
+  border:1px solid #d8c5ce;border-radius:5px;background:#fff;color:#fff;
+}
+.pb-excel-filter-menu .pb-filter-check.is-checked{border-color:#db2777;background:#db2777}
+.pb-excel-filter-menu .pb-filter-footer{
+  position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 13px;border-top:1px solid #f0e4e9;background:rgba(255,250,252,.97);
+  backdrop-filter:blur(10px);
+}
+.pb-excel-filter-menu .pb-filter-btn{
+  min-height:34px;padding:7px 13px;border:1px solid #eadde4;border-radius:10px;
+  background:#fff;color:#695565;font:700 11px/1.2 var(--font-manrope,Manrope),ui-sans-serif,system-ui,sans-serif;
+  cursor:pointer;transition:all .15s ease;
+}
+.pb-excel-filter-menu .pb-filter-btn:hover{border-color:#e8b1c8;background:#fff4f8;color:#9d174d}
+.pb-excel-filter-menu .pb-filter-btn-primary{
+  min-width:68px;border-color:#db2777;background:#db2777;color:#fff;
+  box-shadow:0 3px 8px rgba(219,39,119,.16);
+}
+.pb-excel-filter-menu .pb-filter-btn-primary:hover{border-color:#be185d;background:#be185d;color:#fff}
+@media(max-width:480px){
+  .pb-excel-filter-menu{width:calc(100vw - 20px);max-height:calc(100vh - 20px);border-radius:16px}
+  .pb-excel-filter-menu .pb-filter-header{padding:12px}
+}
+`;
 
 function applyTableView(table, tableKey, allFilters, allSorts) {
   if (!table) return;
@@ -139,7 +225,7 @@ export default function AdminExcelTableFilters() {
         }
         if (!th.dataset.pbExcelFilterPaddingApplied) {
           th.dataset.pbExcelFilterOldPaddingRight = th.style.paddingRight || '';
-          th.style.paddingRight = '30px';
+          th.style.paddingRight = '39px';
           th.dataset.pbExcelFilterPaddingApplied = '1';
         }
 
@@ -149,7 +235,7 @@ export default function AdminExcelTableFilters() {
           button.type = 'button';
           button.className = 'pb-excel-filter-button';
           button.setAttribute('aria-label', 'Filter ' + original);
-          button.innerHTML = '<span aria-hidden="true">▼</span>';
+          button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7.2v5.1l-3.6 1.9v-7L4 5z"/></svg>';
           button.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
@@ -186,8 +272,8 @@ export default function AdminExcelTableFilters() {
               label: original,
               numeric: isNumericColumn(values),
               rect: {
-                top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 445)),
-                left: Math.max(8, Math.min(rect.left - 8, window.innerWidth - 316))
+                top: Math.max(10, Math.min(rect.bottom + 6, window.innerHeight - 570)),
+                left: Math.max(10, Math.min(rect.left - 8, window.innerWidth - 338))
               }
             });
           });
@@ -313,10 +399,11 @@ export default function AdminExcelTableFilters() {
         <div className="pb-excel-filter-menu" style={{ top: activeMenu.rect.top, left: activeMenu.rect.left }} onClick={event => event.stopPropagation()}>
           <div className="pb-filter-header">
             <div>
-              <div style={{fontWeight:600,color:'#222'}}>Sort / Filter: {activeMenu.label}</div>
-              <div className="pb-filter-muted" style={{fontSize:11,marginTop:2}}>Excel-style column controls</div>
+              <div className="pb-filter-kicker">PinkBox Admin · Table tools</div>
+              <div className="pb-filter-title">Sort &amp; Filter · {activeMenu.label}</div>
+              <div className="pb-filter-subtitle">Arrange values or narrow this column</div>
             </div>
-            <button type="button" aria-label="Close" onClick={() => setActiveMenu(null)} className="pb-filter-btn"><X size={14}/></button>
+            <button type="button" aria-label="Close" onClick={() => setActiveMenu(null)} className="pb-filter-close"><X size={15}/></button>
           </div>
 
           <div className="pb-filter-section">
