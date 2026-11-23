@@ -14,6 +14,11 @@ import {
   Sparkles, Star, Truck, Wind
 } from 'lucide-react';
 
+const shouldUnoptimizeImage = (src) => {
+  if (typeof src !== 'string') return true;
+  return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
+};
+
 const EXAMPLES = [
   'Heavy flow, overnight protection',
   'Sensitive skin, rash-free',
@@ -81,7 +86,7 @@ function Hero({ banner }) {
         </div>
         <div className="relative">
           <div className="absolute -top-8 -right-6 h-40 w-40 rounded-full bg-accent/50 blur-3xl" aria-hidden />
-          <Image src={image} alt={title} width={1280} height={1280} unoptimized className="relative w-full rounded-[2rem] object-cover shadow-soft" />
+          <Image src={image} alt={title} width={1280} height={1280} priority sizes="(max-width: 1024px) 100vw, 50vw" unoptimized={shouldUnoptimizeImage(image)} className="relative w-full rounded-[2rem] object-cover shadow-soft" />
           <div className="absolute bottom-5 left-5 rounded-2xl bg-background/90 px-5 py-3 shadow-soft backdrop-blur">
             <p className="font-display text-2xl font-semibold text-foreground">12 hrs</p>
             <p className="text-xs text-muted-foreground">of dry, worry-free protection</p>
@@ -151,7 +156,7 @@ function ProductsSection({ categories = [] }) {
                       alt={category.name}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      unoptimized
+                      unoptimized={shouldUnoptimizeImage(category.image_url)}
                       className="h-full w-full object-contain p-3"
                     />
                   ) : (
@@ -182,7 +187,7 @@ function ProductsSection({ categories = [] }) {
   );
 }
 
-function ProductFinder({ products = [] }) {
+function ProductFinder() {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -457,7 +462,6 @@ function Newsletter() {
 
 export default function PinkBoxHome({ initialData }) {
   const data = initialData || {};
-  const products = data.products || [];
   const banners = (data.banners || []).filter((banner) => banner?.is_active !== false);
   const coupons = data.coupons || [];
   const settings = data.settings || {};
@@ -469,7 +473,7 @@ export default function PinkBoxHome({ initialData }) {
         <CouponStrip coupons={coupons} />
         <TrustBadges />
         <ProductsSection categories={data.categories || []} />
-        <ProductFinder products={products} />
+        <ProductFinder />
         <AboutStrip />
         <Features />
         <Testimonials />
