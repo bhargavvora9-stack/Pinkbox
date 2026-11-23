@@ -79,6 +79,8 @@ export default function PinkBoxHomepageBuilder(){
       settings.items = draft.section_type === 'features'
         ? lines.map(line => { const parts = line.split('|'); return { title: (parts.shift() || '').trim(), text: parts.join('|').trim() }; })
         : lines;
+    } else if (Array.isArray(source.items)) {
+      settings.items = [];
     }
     return { ...draft, settings };
   };
