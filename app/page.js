@@ -26,7 +26,7 @@ async function getStoreData() {
       .select('id,sku,title,slug,short_description,brand,price,compare_at_price,gst_percent,stock_quantity,low_stock_threshold,track_inventory,allow_backorder,featured,is_active,cod_override,online_payment_override,shipping_charge_override')
       .eq('company_id', companyId)
       .eq('is_active', true)
-      .like('sku', 'MDH-%')
+      .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0)
       .order('created_at', { ascending: false }),
     db.from('website_categories')
@@ -127,7 +127,7 @@ async function getStoreData() {
 
   // Public listings include only active, priced products that checkout can currently sell.
   // Stock remains managed separately through the Inventory ledger in Admin.
-  const saleableProducts = filterAvailableProducts(productData, variants.data || []);
+  const saleableProducts = filterAvailableProducts(productData, variants.data || [], { includeOutOfStock: true });
 
   const saleableProductIds = new Set(saleableProducts.map((product) => product.id));
   const categoryProductCounts = {};
