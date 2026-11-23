@@ -173,114 +173,78 @@ function TrustBadges({ section }) {
 }function Testimonials({ section }) {
   if(section&&section.is_active===false)return null;
   return <section id="reviews" className="bg-secondary/40"><div className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Real voices'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Customer reviews'}</h2><p className="mt-3 text-muted-foreground">{section?.settings?.description||'Only verified reviews from real customers will appear here.'}</p></div><div className="mt-12 rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-soft/50"><MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50"/><p className="mt-4 font-display text-xl font-semibold text-foreground">No reviews yet</p><div className="mt-3 flex items-center justify-center gap-1">{Array.from({length:5}).map((_,i)=><Star key={i} className="h-4 w-4 text-muted-foreground/40"/>)}</div><p className="mt-3 text-sm text-muted-foreground">Be the first to share your experience after your order arrives.</p></div></div></section>;
-}function ContactForm() {
+}function ContactForm({ section }) {
   const [type, setType] = useState('contact');
-  const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', message: '' });
+  const [form, setForm] = useState({ name:'', phone:'', email:'', city:'', message:'' });
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   async function submit(event) {
-    event.preventDefault();
-    setBusy(true);
-    setStatus('');
+    event.preventDefault(); setBusy(true); setStatus('');
     try {
-      const response = await fetch('/api/storefront/bulk-enquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          email: form.email,
-          city: form.city,
-          lead_type: type,
-          organisation_type: type === 'dealer' ? 'Dealer / distributor partnership' : type === 'bulk' ? 'School / NGO bulk order' : 'General enquiry',
-          source: 'Homepage contact form',
-          message: form.message,
-        }),
-      });
+      const response = await fetch('/api/storefront/bulk-enquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name:form.name,phone:form.phone,email:form.email,city:form.city,lead_type:type,
+        organisation_type:type==='dealer'?'Dealer / distributor partnership':type==='bulk'?'School / NGO bulk order':'General enquiry',
+        source:'Homepage contact form',message:form.message,
+      })});
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Your enquiry could not be sent. Please try again.');
-      setForm({ name: '', phone: '', email: '', city: '', message: '' });
+      if(!response.ok) throw new Error(data.error || 'Your enquiry could not be sent. Please try again.');
+      setForm({name:'',phone:'',email:'',city:'',message:''});
       setStatus(data.message || 'Thank you. Our team will contact you shortly.');
-    } catch (error) {
+    } catch(error) {
       setStatus(error instanceof Error ? error.message : 'Your enquiry could not be sent. Please try again.');
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
+  if(section && section.is_active === false) return null;
   return (
     <section id="contact" className="bg-secondary/40 py-16 md:py-24">
       <div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <div>
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Let&apos;s connect</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Care for every home, shop and community</h2>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-muted-foreground">Send us a general question, become a retail partner, or ask about bulk supply for a school or NGO.</p>
-          <div className="mt-7 space-y-3 text-sm text-foreground">
-            <p className="flex items-center gap-3"><Building2 className="text-primary" /> Retail and distributor partnerships</p>
-            <p className="flex items-center gap-3"><HeartHandshake className="text-primary" /> School, NGO and institutional orders</p>
-          </div>
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow || 'Let’s connect'}</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title || 'Care for every home, shop and community'}</h2>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-muted-foreground">{section?.settings?.description || 'Send us a general question, become a retail partner, or ask about bulk supply for a school or NGO.'}</p>
+          <div className="mt-7 space-y-3 text-sm text-foreground"><p className="flex items-center gap-3"><Building2 className="text-primary"/>Retail and distributor partnerships</p><p className="flex items-center gap-3"><HeartHandshake className="text-primary"/>School, NGO and institutional orders</p></div>
         </div>
         <form className="grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-soft sm:grid-cols-2" onSubmit={submit}>
-          <div className="sm:col-span-2">
-            <label htmlFor="enquiry-type" className="text-sm font-medium">I am interested in</label>
-            <select id="enquiry-type" value={type} onChange={(event) => setType(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-              <option value="contact">General enquiry</option><option value="dealer">Dealer / distributor partnership</option><option value="bulk">School / NGO bulk order</option>
-            </select>
-          </div>
-          <div><label htmlFor="lead-name" className="text-sm font-medium">Name</label><input id="lead-name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></div>
-          <div><label htmlFor="lead-phone" className="text-sm font-medium">Phone</label><input id="lead-phone" required inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></div>
-          <div><label htmlFor="lead-email" className="text-sm font-medium">Email</label><input id="lead-email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></div>
-          <div><label htmlFor="lead-city" className="text-sm font-medium">City</label><input id="lead-city" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></div>
-          <div className="sm:col-span-2"><label htmlFor="lead-message" className="text-sm font-medium">Message</label><textarea id="lead-message" rows={4} value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} className="mt-1 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-          <div className="sm:col-span-2"><button type="submit" disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"><Send className="h-4 w-4" />{busy ? 'Sending…' : 'Send enquiry'}</button>{status && <p role="status" className="mt-3 text-sm text-muted-foreground">{status}</p>}</div>
+          <div className="sm:col-span-2"><label htmlFor="enquiry-type" className="text-sm font-medium">I am interested in</label><select id="enquiry-type" value={type} onChange={event=>setType(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="contact">General enquiry</option><option value="dealer">Dealer / distributor partnership</option><option value="bulk">School / NGO bulk order</option></select></div>
+          <div><label htmlFor="lead-name" className="text-sm font-medium">Name</label><input id="lead-name" required minLength={2} value={form.name} onChange={event=>setForm({...form,name:event.target.value})} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div>
+          <div><label htmlFor="lead-phone" className="text-sm font-medium">Phone</label><input id="lead-phone" required inputMode="tel" value={form.phone} onChange={event=>setForm({...form,phone:event.target.value})} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div>
+          <div><label htmlFor="lead-email" className="text-sm font-medium">Email</label><input id="lead-email" type="email" value={form.email} onChange={event=>setForm({...form,email:event.target.value})} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div>
+          <div><label htmlFor="lead-city" className="text-sm font-medium">City</label><input id="lead-city" value={form.city} onChange={event=>setForm({...form,city:event.target.value})} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div>
+          <div className="sm:col-span-2"><label htmlFor="lead-message" className="text-sm font-medium">Message</label><textarea id="lead-message" rows={4} value={form.message} onChange={event=>setForm({...form,message:event.target.value})} className="mt-1 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+          <div className="sm:col-span-2"><button type="submit" disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"><Send className="h-4 w-4"/>{busy?'Sending…':'Send enquiry'}</button>{status && <p role="status" className="mt-3 text-sm text-muted-foreground">{status}</p>}</div>
         </form>
       </div>
     </section>
   );
 }
-
-function Newsletter() {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState('');
+function Newsletter({ section }) {
+  const [email,setEmail] = useState('');
+  const [phone,setPhone] = useState('');
+  const [whatsappOptIn,setWhatsappOptIn] = useState(false);
+  const [busy,setBusy] = useState(false);
+  const [status,setStatus] = useState('');
   async function submit(event) {
-    event.preventDefault();
-    setBusy(true);
-    setStatus('');
+    event.preventDefault(); setBusy(true); setStatus('');
     try {
-      const response = await fetch('/api/storefront/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone: whatsappOptIn ? phone : '', whatsapp_opt_in: whatsappOptIn }),
-      });
+      const response = await fetch('/api/storefront/newsletter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,phone:whatsappOptIn?phone:'',whatsapp_opt_in:whatsappOptIn})});
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'We could not subscribe you. Please try again.');
-      setEmail('');
-      setPhone('');
-      setWhatsappOptIn(false);
-      setStatus(data.message || 'Thanks! You are on the Pink Box list.');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'We could not subscribe you. Please try again.');
-    } finally {
-      setBusy(false);
-    }
+      if(!response.ok) throw new Error(data.error || 'We could not subscribe you. Please try again.');
+      setEmail('');setPhone('');setWhatsappOptIn(false);setStatus(data.message || 'Thanks! You are on the Pink Box list.');
+    } catch(error) {
+      setStatus(error instanceof Error?error.message:'We could not subscribe you. Please try again.');
+    } finally {setBusy(false);}
   }
+  if(section && section.is_active === false) return null;
   return (
     <section className="container mx-auto px-4 py-16 md:py-20">
       <div className="rounded-[2rem] bg-gradient-brand px-6 py-14 text-center text-primary-foreground shadow-soft md:px-16">
-        <Mail className="mx-auto h-8 w-8 opacity-90" />
-        <h2 className="mt-4 font-display text-3xl font-semibold md:text-4xl">Get exclusive offers on your first order</h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm opacity-90 md:text-base">Join our list for period care tips, new launches and subscriber-only offers. No spam, ever.</p>
+        <Mail className="mx-auto h-8 w-8 opacity-90"/>
+        <h2 className="mt-4 font-display text-3xl font-semibold md:text-4xl">{section?.title || 'Get exclusive offers on your first order'}</h2>
+        <p className="mx-auto mt-3 max-w-lg text-sm opacity-90 md:text-base">{section?.settings?.description || 'Join our list for period care tips, new launches and subscriber-only offers. No spam, ever.'}</p>
         <form className="mx-auto mt-8 max-w-md" onSubmit={submit}>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input type="email" required aria-label="Email address" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email" className="h-12 flex-1 rounded-full bg-background px-5 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-            <button type="submit" disabled={busy} className="h-12 rounded-full bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90">{busy ? 'Joining…' : 'Subscribe'}</button>
-          </div>
-          <label className="mt-4 flex cursor-pointer items-start justify-center gap-2 text-xs opacity-90">
-            <input type="checkbox" className="mt-0.5" checked={whatsappOptIn} onChange={(event) => { const checked = event.target.checked; setWhatsappOptIn(checked); if (!checked) setPhone(''); }} />Send me occasional WhatsApp offers too
-          </label>
-          {whatsappOptIn && <input type="tel" required aria-label="WhatsApp number" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="WhatsApp number with country code" className="mt-3 h-12 w-full rounded-full bg-background px-5 text-sm text-foreground outline-none placeholder:text-muted-foreground" />}
+          <div className="flex flex-col gap-3 sm:flex-row"><input type="email" required aria-label="Email address" value={email} onChange={event=>setEmail(event.target.value)} placeholder="Enter your email" className="h-12 flex-1 rounded-full bg-background px-5 text-sm text-foreground outline-none placeholder:text-muted-foreground"/><button type="submit" disabled={busy} className="h-12 rounded-full bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90">{busy?'Joining…':'Subscribe'}</button></div>
+          <label className="mt-4 flex cursor-pointer items-start justify-center gap-2 text-xs opacity-90"><input type="checkbox" className="mt-0.5" checked={whatsappOptIn} onChange={event=>{const checked=event.target.checked;setWhatsappOptIn(checked);if(!checked)setPhone('')}}/>Send me occasional WhatsApp offers too</label>
+          {whatsappOptIn && <input type="tel" required aria-label="WhatsApp number" value={phone} onChange={event=>setPhone(event.target.value)} placeholder="WhatsApp number with country code" className="mt-3 h-12 w-full rounded-full bg-background px-5 text-sm text-foreground outline-none placeholder:text-muted-foreground"/>}
           {status && <p role="status" className="mt-3 text-xs opacity-90">{status}</p>}
         </form>
       </div>
@@ -293,20 +257,22 @@ export default function PinkBoxHome({ initialData }) {
   const banners = (data.banners || []).filter((banner) => banner?.is_active !== false);
   const coupons = data.coupons || [];
   const settings = data.settings || {};
+  const sectionMap = Object.fromEntries((data.homepageSections || []).map((item) => [item.section_type, item]));
+  const section = (type) => sectionMap[type] || null;
   return (
     <div className="min-h-screen bg-background">
       <ZipReferenceHeader settings={settings} />
       <main>
         <Hero banner={banners} />
         <CouponStrip coupons={coupons} />
-        <TrustBadges />
-        <ProductsSection categories={data.categories || []} />
-        <ProductFinder />
-        <AboutStrip />
-        <Features />
-        <Testimonials />
-        <ContactForm />
-        <Newsletter />
+        <TrustBadges section={section('trust')} />
+        <ProductsSection categories={data.categories || []} section={section('collections')} />
+        <ProductFinder section={section('product-finder')} />
+        <AboutStrip section={section('about')} />
+        <Features section={section('features')} />
+        <Testimonials section={section('reviews')} />
+        <ContactForm section={section('contact')} />
+        <Newsletter section={section('newsletter')} />
       </main>
       <ZipReferenceFooter settings={settings} />
     </div>
