@@ -8,7 +8,7 @@ export async function GET() {
     const db = createAdminClient();
     const { data, error } = await db
       .from('website_settings')
-      .select('website_name,logo_url,phone,email,address,whatsapp_number,instagram_url,facebook_url,youtube_url,announcement_text,free_shipping_threshold,default_shipping_charge')
+      .select('company_id,website_name,logo_url,phone,email,address,whatsapp_number,instagram_url,facebook_url,youtube_url,announcement_text,free_shipping_threshold,default_shipping_charge')
       .eq('slug', 'pinkbox')
       .eq('status', 'active')
       .maybeSingle();
