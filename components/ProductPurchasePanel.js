@@ -50,6 +50,9 @@ export default function ProductPurchasePanel({ product, description = '' }) {
   const [status, setStatus] = useState('');
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pincode, setPincode] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState('');
+  const [checkingDelivery, setCheckingDelivery] = useState(false);
 
   useEffect(() => {
     setQuantity(1);
@@ -67,6 +70,26 @@ export default function ProductPurchasePanel({ product, description = '' }) {
     const parsed = Math.max(1, Number.parseInt(value, 10) || 1);
     const capped = max > 0 && !product.allow_backorder ? Math.min(parsed, max) : parsed;
     setQuantity(capped);
+  }
+
+  async function checkDelivery(event) {
+    event.preventDefault();
+    const code = pincode.trim();
+    if (!/^[1-9][0-9]{5}$/.test(code)) { setDeliveryStatus('Enter a valid 6-digit PIN code.'); return; }
+    setCheckingDelivery(true);
+    setDeliveryStatus('');
+    try {
+      const response = await fetch('/api/storefront/shipping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pincode: code, subtotal: effectivePrice * quantity, items: [{ product_id: product.id, variant_id: selectedVariant?.id || null, quantity }] }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not calculate delivery charges.');
+      setDeliveryStatus('Estimated shipping: ' + money(data.shipping) + '. Standard delivery usually takes 3–7 business days after dispatch; courier serviceability may vary.');
+    } catch (error) {
+      setDeliveryStatus(error instanceof Error ? error.message : 'Could not calculate delivery charges.');
+    } finally { setCheckingDelivery(false); }
   }
 
   function addToCart({ buyNow = false } = {}) {
@@ -137,13 +160,25 @@ export default function ProductPurchasePanel({ product, description = '' }) {
   }
 
   return (
-    <div className="mt-4 flex flex-col">
+    <div className="mt-4 flex flex-col pb-24 md:pb-0">
       <p className="text-2xl font-semibold text-foreground">{money(effectivePrice)}</p>
 
       {!canBuy && (
         <span className="mt-4 w-fit rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
           Out of stock
         </span>
+      )}
+
+      {canBuy && (
+        <form onSubmit={checkDelivery} className="mt-6 rounded-xl border border-border bg-card p-4">
+          <label htmlFor="delivery-pincode" className="block text-sm font-semibold text-foreground">Check delivery charges</label>
+          <div className="mt-2 flex gap-2">
+            <input id="delivery-pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} value={pincode} onChange={(event) => { setPincode(event.target.value.replace(/\\D/g, '').slice(0, 6)); setDeliveryStatus(''); }} placeholder="Enter 6-digit PIN code" className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground" />
+            <button type="submit" disabled={checkingDelivery} className="h-10 rounded-md bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-60">{checkingDelivery ? 'Checking…' : 'Check'}</button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">Shipping charges are calculated using PinkBox’s current shipping rules. Delivery dates depend on courier serviceability.</p>
+          {deliveryStatus && <p className="mt-2 text-sm text-muted-foreground" role="status">{deliveryStatus}</p>}
+        </form>
       )}
 
       {description && (
@@ -269,13 +304,16 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       {status && (
         <div role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>{status}</span>
-          {added && (
-            <Link href="/cart" className="font-semibold text-primary underline underline-offset-4">
-              View cart
-            </Link>
-          )}
+          {added && <Link href="/cart" className="font-semibold text-primary underline underline-offset-4">View cart</Link>}
         </div>
       )}
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_1fr] gap-2 border-t border-border bg-background/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
+        <div className="flex min-w-0 flex-col justify-center pl-1"><span className="text-[11px] text-muted-foreground">Price</span><span className="truncate text-sm font-bold text-foreground">{money(effectivePrice)}</span></div>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => addToCart()} disabled={!canBuy || busy} className="h-11 rounded-md border border-primary px-2 text-xs font-semibold text-primary disabled:opacity-50">{busy ? 'Please wait…' : 'Add to Cart'}</button>
+          <button type="button" onClick={() => addToCart({ buyNow: true })} disabled={!canBuy || busy} className="h-11 rounded-md bg-primary px-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">Buy Now</button>
+        </div>
+      </div>
     </div>
   );
 }
