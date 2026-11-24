@@ -17,6 +17,12 @@ export default function ZipReferenceProductCard({product}){
  const canSellVariant=(variant)=>product.track_inventory===false||product.allow_backorder===true||Number(variant?.stock_quantity||0)>0;
  const preferredVariant=variants.find(canSellVariant)||variants[0]||null;
  const stockTracked=product.track_inventory!==false;
+ const offerPrice=Number(preferredVariant?.price)>0?Number(preferredVariant.price):Number(product.price||0);
+ const listPrice=Number(preferredVariant?.compare_at_price)>offerPrice?Number(preferredVariant.compare_at_price):Number(product.compare_at_price||0);
+ const packText=[preferredVariant?.title,product.title].filter(Boolean).join(' ');
+ const packMatch=packText.match(/\\b(\\d{1,3})\\s*(?:pcs?|pieces|pads?|counts?)\\b/i);
+ const packCount=packMatch?Number(packMatch[1]):0;
+ const perPiece=packCount>0?offerPrice/packCount:0;
  const available=variants.length>0
   ? Boolean(preferredVariant&&canSellVariant(preferredVariant))
   : (!stockTracked||product.allow_backorder||Number(product.stock_quantity||0)>0);
@@ -65,7 +71,7 @@ export default function ZipReferenceProductCard({product}){
     <div className="aspect-square overflow-hidden bg-muted">
      {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
-    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
+    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
    </Link>
    <div className="grid grid-cols-2 gap-2 px-4 pb-4">
     <button type="button" onClick={(event)=>addToCart(event,false)} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-md border border-primary bg-background px-2 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
