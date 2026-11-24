@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ZipReferenceHeader from '@/components/ZipReferenceHeader';
@@ -42,6 +42,7 @@ export default function CartPage() {
   const [quoteLoading, setQuoteLoading] = useState(false);
 
   const [form, setForm] = useState(blankForm);
+  const checkoutStartedRef = useRef(false);
 
   useEffect(() => {
     setItems(readCart());
@@ -167,6 +168,17 @@ export default function CartPage() {
     : 'Free shipping is available on all orders.';
   const analyticsMerchandiseValue = Math.max(0, Number(quote.subtotal || localSubtotal) - Number(quote.discount || 0));
 
+  useEffect(() => {
+    if (!hydrated || !items.length || (!codAllowed && !onlineEnabled) || checkoutStartedRef.current) return;
+    checkoutStartedRef.current = true;
+    trackGa4Event('begin_checkout', {
+      currency: 'INR',
+      value: analyticsMerchandiseValue,
+      ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
+      items: toAnalyticsItems(items),
+    });
+  }, [hydrated, items, codAllowed, onlineEnabled, analyticsMerchandiseValue, form.coupon_code]);
+
   const updateQty = (id, q) =>
     setItems((a) => a.map((x) => {
       if (x.id !== id) return x;
@@ -222,13 +234,6 @@ export default function CartPage() {
         throw Error(quote.coupon.message || 'Please remove or correct the coupon code.');
       }
       if (!['COD', 'ONLINE'].includes(payment)) throw Error('Please select a payment method.');
-
-      trackGa4Event('begin_checkout', {
-        currency: 'INR',
-        value: analyticsMerchandiseValue,
-        ...(form.coupon_code ? { coupon: form.coupon_code } : {}),
-        items: toAnalyticsItems(items),
-      });
 
       const orderRes = await fetch('/api/storefront', {
         method: 'POST',
