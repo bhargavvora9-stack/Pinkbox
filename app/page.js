@@ -24,13 +24,28 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
   // The homepage only renders collection tiles, hero banners and coupon offers.
   // Fetch only the IDs needed to decide which collections have products; avoid
   // loading full product descriptions, variants, image rows, blog bodies and reviews.
-  const [products, categories, banners, mappings, discounts, homepageSections] = await Promise.all([
+  const [products, featuredProductRows, homepageReviews, categories, banners, mappings, discounts, homepageSections] = await Promise.all([
     db.from('website_products')
       .select('id')
       .eq('company_id', companyId)
       .eq('is_active', true)
       .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0),
+    db.from('website_products')
+      .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .or('sku.like.MDH-%,sku.like.BAG-%')
+      .gt('price', 0)
+      .order('featured', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(8),
+    db.from('website_product_reviews')
+      .select('id,product_id,customer_name,rating,title,review_text,created_at')
+      .eq('company_id', companyId)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false })
+      .limit(6),
     db.from('website_categories')
       .select('id,name,slug,image_url,sort_order')
       .eq('company_id', companyId)
@@ -54,7 +69,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .order('sort_order'),
   ]);
 
-  const results = { products, categories, banners, mappings, discounts, homepageSections };
+  const results = { products, featuredProductRows, homepageReviews, categories, banners, mappings, discounts, homepageSections };
   const failed = Object.values(results).find((result) => result?.error);
   if (failed) throw new Error(failed.error.message);
 
@@ -73,9 +88,37 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     (category) => Number(categoryProductCounts[category.id] || 0) > 0
   );
 
+  const featuredIds = (featuredProductRows.data || []).map((product) => product.id);
+  const [featuredVariantsResult, featuredImagesResult] = featuredIds.length
+    ? await Promise.all([
+        db.from('website_product_variants').select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active').eq('company_id', companyId).in('product_id', featuredIds).eq('is_active', true),
+        db.from('website_product_images').select('product_id,image_url,alt_text,is_primary,sort_order').eq('company_id', companyId).in('product_id', featuredIds).order('sort_order'),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
+  if (featuredVariantsResult.error || featuredImagesResult.error) throw new Error(featuredVariantsResult.error?.message || featuredImagesResult.error?.message);
+  const variantsByProduct = new Map();
+  for (const variant of featuredVariantsResult.data || []) {
+    const rows = variantsByProduct.get(variant.product_id) || [];
+    rows.push(variant);
+    variantsByProduct.set(variant.product_id, rows);
+  }
+  const imagesByProduct = new Map();
+  for (const image of featuredImagesResult.data || []) {
+    const rows = imagesByProduct.get(image.product_id) || [];
+    rows.push(image);
+    imagesByProduct.set(image.product_id, rows);
+  }
+  const homepageFeaturedProducts = (featuredProductRows.data || []).slice(0, 4).map((product) => {
+    const productImages = (imagesByProduct.get(product.id) || []).sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0));
+    const fallback = `/catalog-products/${String(product.sku || '').toLowerCase()}.webp`;
+    return { ...product, variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
+  });
+
   return {
     settings,
     categories: visibleCategories,
+    featuredProducts: homepageFeaturedProducts,
+    reviews: homepageReviews.data || [],
     banners: activeBanners,
     homepageSections: homepageSections.data || [],
     coupons: (discounts.data || [])
