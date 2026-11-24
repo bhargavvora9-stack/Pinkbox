@@ -35,10 +35,10 @@ const FEATURES = [
 ];
 
 const TRUST = [
-  { icon: Award, label: 'ISO certified unit' },
-  { icon: FlaskConical, label: 'Lab tested quality' },
   { icon: PackageCheck, label: 'Discreet packaging' },
-  { icon: HeartHandshake, label: 'Bulk & retail supply' },
+  { icon: Truck, label: 'Shipping across India' },
+  { icon: HeartHandshake, label: 'Retail & bulk enquiries' },
+  { icon: BadgeCheck, label: 'Product details upfront' },
 ];
 
 function Hero({ banner }) {
@@ -70,7 +70,7 @@ function Hero({ banner }) {
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">{description}</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a href={buttonHref} className="inline-flex items-center justify-center rounded-full bg-gradient-brand px-7 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5">{buttonText}</a>
-            <a href="#why" className="inline-flex items-center justify-center rounded-full border border-border bg-background px-7 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary">Why Pink Box</a>
+            <a href="#why" className="inline-flex items-center justify-center rounded-full border border-border bg-background px-7 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary">Why PinkBox</a>
             {banners.length > 1 && (
               <div className="flex items-center gap-2">
                 <button type="button" aria-label="Previous slide" onClick={() => setIndex((v) => (v - 1 + banners.length) % banners.length)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary"><ChevronLeft className="h-4 w-4" /></button>
@@ -147,7 +147,26 @@ function TrustBadges({ section }) {
       {categories.length ? <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{categories.map((category)=><article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft"><Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block"><div className="relative aspect-square overflow-hidden bg-muted">{category.image_url?<Image src={category.image_url} alt={category.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" unoptimized={shouldUnoptimizeImage(category.image_url)} className="h-full w-full object-contain p-3"/>:<div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6"><span className="font-display text-2xl font-semibold text-primary">{category.name}</span></div>}</div><div className="flex items-center justify-between gap-4 p-5"><div><p className="text-xs font-semibold tracking-widest text-primary uppercase">PinkBox Collection</p><h3 className="mt-2 font-display text-xl font-semibold text-foreground">{category.name}</h3></div><span className="shrink-0 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">Explore</span></div></Link></article>)}</div>:<p className="mt-12 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Collections will appear here soon.</p>}
     </section>
   );
-}function ProductFinder({ section }) {
+}function FeaturedProducts({ products = [] }) {
+  if (!products.length) return null;
+  return (
+    <section id="featured-products" className="container mx-auto px-4 py-14 md:py-20">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Picked for you</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Featured Products</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Explore selected PinkBox products, pack details and current prices. Choose a product to see all available options.</p>
+        </div>
+        <Link href="/shop" className="text-sm font-semibold text-primary underline underline-offset-4">View all products</Link>
+      </div>
+      <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {products.map((product) => <ZipReferenceProductCard key={product.id} product={product} />)}
+      </div>
+    </section>
+  );
+}
+
+function ProductFinder({ section }) {
   const eyebrow=section?.settings?.eyebrow||'AI-powered product finder';
   const title=section?.title||'Tell us what you need';
   const description=section?.settings?.description||'Describe your flow, comfort or skin needs — we’ll suggest the right pads.';
@@ -171,11 +190,45 @@ function TrustBadges({ section }) {
 }function Features({ section }) {
   if(section&&section.is_active===false)return null;
   const items=Array.isArray(section?.settings?.items)&&section.settings.items.length?section.settings.items:FEATURES;
-  return <section id="why" className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Why Pink Box'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Built on comfort, tested for safety'}</h2><p className="mt-4 text-muted-foreground">{section?.settings?.description||'Every pad goes through six quality checks before it reaches you.'}</p></div><div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{items.map((item,index)=>{const Icon=FEATURES[index%FEATURES.length]?.icon||Leaf;const title=typeof item==='string'?item:item?.title||'';const text=typeof item==='string'?'':item?.text||item?.description||'';return <article key={title||index} className="group rounded-3xl border border-border bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-soft"><span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary transition-colors group-hover:bg-gradient-brand group-hover:text-primary-foreground"><Icon className="h-6 w-6"/></span><h3 className="mt-5 font-display text-xl font-semibold text-card-foreground">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p></article>})}</div></section>;
-}function Testimonials({ section }) {
-  if(section&&section.is_active===false)return null;
-  return <section id="reviews" className="bg-secondary/40"><div className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Real voices'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Customer reviews'}</h2><p className="mt-3 text-muted-foreground">{section?.settings?.description||'Only verified reviews from real customers will appear here.'}</p></div><div className="mt-12 rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-soft/50"><MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50"/><p className="mt-4 font-display text-xl font-semibold text-foreground">No reviews yet</p><div className="mt-3 flex items-center justify-center gap-1">{Array.from({length:5}).map((_,i)=><Star key={i} className="h-4 w-4 text-muted-foreground/40"/>)}</div><p className="mt-3 text-sm text-muted-foreground">Be the first to share your experience after your order arrives.</p></div></div></section>;
-}function ContactForm({ section }) {
+  return <section id="why" className="container mx-auto px-4 py-16 md:py-24"><div className="max-w-2xl"><p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow||'Why PinkBox'}</p><h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title||'Built on comfort, tested for safety'}</h2><p className="mt-4 text-muted-foreground">{section?.settings?.description||'Every pad goes through six quality checks before it reaches you.'}</p></div><div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{items.map((item,index)=>{const Icon=FEATURES[index%FEATURES.length]?.icon||Leaf;const title=typeof item==='string'?item:item?.title||'';const text=typeof item==='string'?'':item?.text||item?.description||'';return <article key={title||index} className="group rounded-3xl border border-border bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-soft"><span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary transition-colors group-hover:bg-gradient-brand group-hover:text-primary-foreground"><Icon className="h-6 w-6"/></span><h3 className="mt-5 font-display text-xl font-semibold text-card-foreground">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p></article>})}</div></section>;
+}function Testimonials({ section, reviews = [] }) {
+  if (section && section.is_active === false) return null;
+  const visibleReviews = reviews.filter((review) => review?.review_text).slice(0, 3);
+  return (
+    <section id="reviews" className="bg-secondary/40">
+      <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">{section?.settings?.eyebrow || 'Real voices'}</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{section?.title || 'Customer reviews'}</h2>
+          <p className="mt-3 text-muted-foreground">Feedback shared by customers about their PinkBox orders.</p>
+        </div>
+        {visibleReviews.length ? (
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {visibleReviews.map((review) => (
+              <article key={review.id} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center gap-1" aria-label={Number(review.rating || 0) + ' out of 5 stars'}>
+                  {Array.from({ length: 5 }).map((_, index) => <Star key={index} className={'h-4 w-4 ' + (index < Number(review.rating || 0) ? 'fill-primary text-primary' : 'text-muted-foreground/30')} />)}
+                </div>
+                {review.title && <h3 className="mt-4 font-semibold text-foreground">{review.title}</h3>}
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{review.review_text}</p>
+                <p className="mt-5 text-sm font-semibold text-foreground">{review.customer_name || 'PinkBox customer'}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 rounded-3xl border border-dashed border-border bg-card p-8 text-center">
+            <MessageSquareHeart className="mx-auto h-9 w-9 text-primary/50" />
+            <p className="mt-4 font-display text-xl font-semibold text-foreground">Customer feedback is being collected</p>
+            <p className="mt-2 text-sm text-muted-foreground">Have purchased from PinkBox? Open a product page and share your honest experience. Approved reviews will appear here.</p>
+            <Link href="/shop" className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">Explore products</Link>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+function ContactForm({ section }) {
   const [type, setType] = useState('contact');
   const [form, setForm] = useState({ name:'', phone:'', email:'', city:'', message:'' });
   const [busy, setBusy] = useState(false);
@@ -270,7 +323,7 @@ export default function PinkBoxHome({ initialData }) {
     'product-finder': <ProductFinder section={section('product-finder')}/>,
     about: <AboutStrip section={section('about')}/>,
     features: <Features section={section('features')}/>,
-    reviews: <Testimonials section={section('reviews')}/>,
+    reviews: <Testimonials section={section('reviews')} reviews={data.reviews || []}/>,
     contact: <ContactForm section={section('contact')}/>,
     newsletter: <Newsletter section={section('newsletter')}/>,
   };
@@ -280,6 +333,7 @@ export default function PinkBoxHome({ initialData }) {
       <main>
         <Hero banner={banners}/>
         <CouponStrip coupons={coupons}/>
+        <FeaturedProducts products={data.featuredProducts || []}/>
         {orderedSections.map((row,index)=><Fragment key={row.id||row.section_type||index}>{sectionNodes[row.section_type]||null}</Fragment>)}
       </main>
       <ZipReferenceFooter settings={settings}/>
