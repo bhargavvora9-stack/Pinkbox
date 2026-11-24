@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, X } from 'lucide-react';
 import Image from 'next/image';
@@ -21,6 +22,7 @@ const readCart = () => {
 
 export default function ZipReferenceCartDrawer({ settings = {} }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [items, setItems] = useState([]);
 
   const threshold = Math.max(0, Number(settings.free_shipping_threshold || 499));
@@ -33,6 +35,10 @@ export default function ZipReferenceCartDrawer({ settings = {} }) {
   const progress = threshold > 0 ? Math.min(100, (totalPrice / threshold) * 100) : 100;
 
   const syncCart = () => setItems(readCart());
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     syncCart();
@@ -108,9 +114,9 @@ export default function ZipReferenceCartDrawer({ settings = {} }) {
         )}
       </button>
 
-      {isOpen && (
+      {isMounted && isOpen && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex justify-end overflow-hidden"
+          className="fixed inset-0 z-[1000] flex justify-end overflow-hidden"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setIsOpen(false);
@@ -291,7 +297,8 @@ export default function ZipReferenceCartDrawer({ settings = {} }) {
               )}
             </div>
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
