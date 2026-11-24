@@ -173,7 +173,7 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         <form onSubmit={checkDelivery} className="mt-6 rounded-xl border border-border bg-card p-4">
           <label htmlFor="delivery-pincode" className="block text-sm font-semibold text-foreground">Check delivery charges</label>
           <div className="mt-2 flex gap-2">
-            <input id="delivery-pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} value={pincode} onChange={(event) => { setPincode(event.target.value.replace(/\\D/g, '').slice(0, 6)); setDeliveryStatus(''); }} placeholder="Enter 6-digit PIN code" className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground" />
+            <input id="delivery-pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} value={pincode} onChange={(event) => { setPincode(event.target.value.replace(/\D/g, '').slice(0, 6)); setDeliveryStatus(''); }} placeholder="Enter 6-digit PIN code" className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground" />
             <button type="submit" disabled={checkingDelivery} className="h-10 rounded-md bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-60">{checkingDelivery ? 'Checking…' : 'Check'}</button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">Shipping charges are calculated using PinkBox’s current shipping rules. Delivery dates depend on courier serviceability.</p>
