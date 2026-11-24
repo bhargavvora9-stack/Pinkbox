@@ -20,7 +20,7 @@ export default function ZipReferenceProductCard({product}){
  const offerPrice=Number(preferredVariant?.price)>0?Number(preferredVariant.price):Number(product.price||0);
  const listPrice=Number(preferredVariant?.compare_at_price)>offerPrice?Number(preferredVariant.compare_at_price):Number(product.compare_at_price||0);
  const packText=[preferredVariant?.title,product.title].filter(Boolean).join(' ');
- const packMatch=packText.match(/\\b(\\d{1,3})\\s*(?:pcs?|pieces|pads?|counts?)\\b/i);
+ const packMatch=packText.match(/\b(\d{1,3})\s*(?:pcs?|pieces|pads?|counts?)\b/i);
  const packCount=packMatch?Number(packMatch[1]):0;
  const perPiece=packCount>0?offerPrice/packCount:0;
  const available=variants.length>0
