@@ -46,7 +46,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
     : announcementSetting?.enabled === false ? '' : String(announcementSetting?.text || '').trim();
   const announcement = String(currentSettings.announcement_text || '').trim() || themeAnnouncement;
   const ticker = announcement ? [announcement] : TICKER;
-  const displayName = String(currentSettings.website_name || 'PinkBox').replace(/([a-z])([A-Z])/g, '$1 $2');
+  const displayName = String(currentSettings.website_name || 'PinkBox');
   const logoUrl = currentSettings.logo_url || '';
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -74,6 +74,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
           </nav>
           <div className="flex items-center gap-1">
             <a href={'tel:' + phoneHref} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary lg:inline-flex"><Phone className="h-4 w-4" />{phone}</a>
+            <Link href="/shop" className="hidden h-10 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 md:inline-flex">Shop Now</Link>
             <ZipReferenceCartDrawer settings={currentSettings} />
             <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground md:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>

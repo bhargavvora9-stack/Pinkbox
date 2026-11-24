@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
-import { Flower2, Mail, MapPin, Phone } from 'lucide-react';
+import { Flower2, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
 
 const LINKS = [
  {title:'Shop',items:[{label:'All Products',href:'/shop'},{label:'Sanitary Pads',href:'/collections/sanitary-pads'},{label:'Baby Diapers',href:'/collections/baby-diapers'},{label:'Tote Bags',href:'/collections/bags'},{label:'Your Cart',href:'/cart'},{label:'Track Order',href:'/track-order'},{label:'Bulk Orders',href:'/#contact'}]},
@@ -29,9 +29,12 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  },[settings]);
  const currentSettings=siteSettings||settings||{};
  const phone=currentSettings.phone||'6358218366';
- const email=currentSettings.email||'care@sakhicare.in';
- const address=currentSettings.address||'Ahmedabad, Gujarat, India';
- const name=currentSettings.website_name||'Pink Box';
+ const email=currentSettings.email||'24caresurat@gmail.com';
+ const address=currentSettings.address||'Surat, Gujarat, India';
+ const name=currentSettings.website_name||'PinkBox';
+ const whatsappRaw=String(currentSettings.whatsapp_number||currentSettings.phone||'6358218366').replace(/\D/g,'');
+ const whatsappNumber=whatsappRaw.length===10?'91'+whatsappRaw:whatsappRaw;
+ const whatsappUrl=whatsappNumber?'https://wa.me/'+whatsappNumber+'?text='+encodeURIComponent('Hello PinkBox, I need help with an order.') : null;
  const configuredSocial=footerData?.social_links||{};
  const socialLinks=[
   {url:configuredSocial.Instagram||configuredSocial.instagram||currentSettings.instagram_url,label:'Instagram'},
@@ -44,7 +47,7 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
   <footer className="border-t border-border bg-secondary/40">
    <div className="container mx-auto grid gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-5">
     <div className="lg:col-span-2">
-     <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-brand text-primary-foreground"><Flower2 className="h-5 w-5"/></span><span className="font-display text-xl font-semibold text-foreground">Pink <span className="text-primary">Box</span></span></div>
+     <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-brand text-primary-foreground"><Flower2 className="h-5 w-5"/></span><span className="font-display text-xl font-semibold text-foreground">PinkBox</span></div>
      <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">Dermatologically safe, ultra-soft sanitary napkins made for everyday confidence. Trusted by families, schools and retailers across India.</p>
      <div className="mt-5 space-y-2 text-sm text-muted-foreground">
       <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary"/>{phone}</p>
@@ -58,6 +61,7 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
     {footerColumns.map((col,index)=><div key={col.id||col.title||index}><h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">{col.title}</h2><ul className="mt-4 space-y-2.5">{(col.items||[]).map((item,itemIndex)=><li key={item.id||item.label||itemIndex}><Link href={item.href||item.url||'/'} className="text-sm text-muted-foreground transition-colors hover:text-primary">{item.label||item.title||'Link'}</Link></li>)}</ul></div>)}
    </div>
    <div className="border-t border-border"><div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row"><p>{copyright}</p><p>Made with care for every woman.</p></div></div>
+   {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Chat with PinkBox on WhatsApp" title="Chat with PinkBox on WhatsApp" className="fixed bottom-24 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:bottom-6"><MessageCircle className="h-7 w-7" /></a>}
   </footer>
  );
 }

@@ -29,7 +29,7 @@ export default function NewsletterSignup() {
   }
 
   return (
-    <div className="w-full max-w-xl">
+    <form onSubmit={submit} className="w-full max-w-xl">
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="email"
@@ -40,6 +40,7 @@ export default function NewsletterSignup() {
           className="min-w-0 flex-1 rounded-full border border-white/30 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/65"
         />
         <button
+          type="submit"
           disabled={busy}
           className="rounded-full bg-white px-5 py-3 text-sm font-bold text-[#b85e7a] disabled:opacity-60"
         >
@@ -47,6 +48,6 @@ export default function NewsletterSignup() {
         </button>
       </div>
       {status && <p className="mt-3 text-xs font-semibold text-white/90">{status}</p>}
-    </div>
+    </form>
   );
 }
