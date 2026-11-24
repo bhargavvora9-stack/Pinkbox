@@ -9,7 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Award, BadgeCheck, Building2, Check, ChevronLeft, ChevronRight,
-  Copy, Droplets, Feather, FlaskConical, HeartHandshake, Leaf, Loader2, Tag,
+  Copy, Droplets, Feather, HeartHandshake, Leaf, Loader2, Tag,
   Mail, MessageSquareHeart, PackageCheck, Search, Send, ShieldCheck,
   Sparkles, Star, Truck, Wind
 } from 'lucide-react';
@@ -55,7 +55,7 @@ function Hero({ banner }) {
   const description = active?.subtitle || 'Ultra-soft cotton sanitary napkins with 12-hour leak protection, anti-bacterial core and a breathable back sheet — designed for Indian skin and Indian weather.';
   const image = active?.image_url || zipHeroImage;
   const buttonText = active?.button_text || 'Shop Now';
-  const buttonHref = active?.button_url || '#products';
+  const buttonHref = active?.button_url || '/shop';
 
   return (
     <section id="top" className="relative overflow-hidden bg-gradient-soft">
