@@ -32,7 +32,7 @@ export default function ZipReferenceFooter({settings=EMPTY_SETTINGS}){
  const email=currentSettings.email||'24caresurat@gmail.com';
  const address=currentSettings.address||'Surat, Gujarat, India';
  const name=currentSettings.website_name||'PinkBox';
- const whatsappRaw=String(currentSettings.whatsapp_number||currentSettings.phone||'6358218366').replace(/\\D/g,'');
+ const whatsappRaw=String(currentSettings.whatsapp_number||currentSettings.phone||'6358218366').replace(/\D/g,'');
  const whatsappNumber=whatsappRaw.length===10?'91'+whatsappRaw:whatsappRaw;
  const whatsappUrl=whatsappNumber?'https://wa.me/'+whatsappNumber+'?text='+encodeURIComponent('Hello PinkBox, I need help with an order.') : null;
  const configuredSocial=footerData?.social_links||{};
