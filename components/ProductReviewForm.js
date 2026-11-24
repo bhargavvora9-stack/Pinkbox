@@ -47,7 +47,7 @@ export default function ProductReviewForm({ productId, hasReviews = false }) {
   }
 
   return (
-    <div className="shrink-0">
+    <div className="w-full min-w-0 max-w-full sm:w-auto">
       <button
         type="button"
         onClick={() => {
@@ -63,7 +63,7 @@ export default function ProductReviewForm({ productId, hasReviews = false }) {
       {success && <p className="mt-3 text-sm text-muted-foreground" role="status">{success}</p>}
 
       {showForm && (
-        <form onSubmit={submit} className="mt-6 w-full space-y-4 rounded-lg border border-border bg-card p-6 sm:min-w-[320px]">
+        <form onSubmit={submit} className="mt-6 w-full min-w-0 max-w-full space-y-4 rounded-lg border border-border bg-card p-6 sm:min-w-[320px]">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="review-name" className="sr-only">Your name</label>
@@ -132,7 +132,7 @@ export default function ProductReviewForm({ productId, hasReviews = false }) {
       )}
 
       {!hasReviews && !showForm && !success && (
-        <div className="mt-6 rounded-lg border border-dashed border-border py-10 text-center">
+        <div className="mt-6 w-full max-w-full rounded-lg border border-dashed border-border py-10 text-center">
           <p className="text-sm text-muted-foreground">
             Bought this product? Your review helps other shoppers decide.
           </p>
