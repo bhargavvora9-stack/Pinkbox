@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
@@ -9,6 +10,7 @@ const shouldUnoptimizeImage = (src) => {
   return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
 };
 export default function ZipReferenceProductCard({product}){
+ const router=useRouter();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
  const variants=Array.isArray(product.variants)?product.variants.filter((variant)=>variant?.is_active!==false):[];
@@ -18,12 +20,13 @@ export default function ZipReferenceProductCard({product}){
  const available=variants.length>0
   ? Boolean(preferredVariant&&canSellVariant(preferredVariant))
   : (!stockTracked||product.allow_backorder||Number(product.stock_quantity||0)>0);
- async function addToCart(event){
+ async function addToCart(event,buyNow=false){
   event.preventDefault();event.stopPropagation();
   if(!available||busy)return;
   setBusy(true);setMessage('');
   try{
-   const current=JSON.parse(localStorage.getItem('pinkbox_cart')||'[]');
+   const stored=JSON.parse(localStorage.getItem('pinkbox_cart')||'[]');
+   const current=Array.isArray(stored)?stored:[];
    const cartId=preferredVariant?product.id+':'+preferredVariant.id:product.id;
    const existing=current.find((item)=>item.id===cartId);
    const quantity=Number(existing?.quantity||0)+1;
@@ -42,10 +45,16 @@ export default function ZipReferenceProductCard({product}){
     image_url:cartImage,
     quantity:1,
     personalization:null,
+    quantity_limit:max>0&&!product.allow_backorder?max:null,
+    allow_backorder:Boolean(product.allow_backorder),
    };
    const next=existing?current.map((entry)=>entry.id===cartId?{...entry,...item,quantity}:entry):[...current,item];
    localStorage.setItem('pinkbox_cart',JSON.stringify(next));
    window.dispatchEvent(new Event('pinkbox-cart-updated'));
+   if(buyNow){
+    router.push('/checkout');
+    return;
+   }
    setMessage('Added to cart');
   }catch(error){setMessage(error instanceof Error?error.message:'Unable to add to cart');}
   finally{setBusy(false);}
@@ -58,9 +67,12 @@ export default function ZipReferenceProductCard({product}){
     </div>
     <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><p className="mt-2 text-lg font-bold text-foreground">{money(product.price)}</p></div>
    </Link>
-   <div className="px-4 pb-4">
-    <button type="button" onClick={addToCart} disabled={busy||!available} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50">
+   <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+    <button type="button" onClick={(event)=>addToCart(event,false)} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-md border border-primary bg-background px-2 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
      {busy&&<Loader2 className="h-4 w-4 animate-spin"/>}{busy?'Adding…':available?'Add to Cart':'Out of stock'}
+    </button>
+    <button type="button" onClick={(event)=>addToCart(event,true)} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-md bg-primary px-2 py-2 text-xs font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
+     {busy&&<Loader2 className="h-4 w-4 animate-spin"/>}{busy?'Please wait…':'Buy Now'}
     </button>
     {message&&<p className="mt-2 text-center text-xs text-muted-foreground" role="status">{message}</p>}
    </div>
