@@ -53,12 +53,15 @@ export async function POST(request) {
 
     if (b.action === 'create') {
       if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
+      const trackingToken = typeof b.tracking_token === 'string' ? b.tracking_token.trim() : '';
+      if (!trackingToken) return Response.json({ error: 'Order access token is required.' }, { status: 400 });
 
       const { data: order, error } = await db
         .from('website_orders')
         .select('id, order_number, total_amount, payment_method, payment_status, razorpay_order_id, order_status')
         .eq('id', b.order_id)
         .eq('company_id', c)
+        .eq('tracking_token', trackingToken)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order is not set up for online payment.' }, { status: 400 });
@@ -126,11 +129,14 @@ export async function POST(request) {
 
     if (b.action === 'cancel') {
       if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
+      const trackingToken = typeof b.tracking_token === 'string' ? b.tracking_token.trim() : '';
+      if (!trackingToken) return Response.json({ error: 'Order access token is required.' }, { status: 400 });
       const { data: order, error } = await db
         .from('website_orders')
         .select('id, company_id, payment_method, payment_status, order_status')
         .eq('id', b.order_id)
         .eq('company_id', c)
+        .eq('tracking_token', trackingToken)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
@@ -144,8 +150,8 @@ export async function POST(request) {
     }
 
     if (b.action === 'verify') {
-      const { order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
-      if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      const { order_id, tracking_token, razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
+      if (!order_id || !tracking_token || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return Response.json({ error: 'Missing payment verification details.' }, { status: 400 });
       }
       const { keyId, keySecret } = await getRazorpayCreds(db, c);
@@ -156,6 +162,7 @@ export async function POST(request) {
         .select('id, company_id, total_amount, razorpay_order_id, payment_method, payment_status, order_status')
         .eq('id', order_id)
         .eq('company_id', c)
+        .eq('tracking_token', String(tracking_token).trim())
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
