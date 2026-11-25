@@ -18,7 +18,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https:",
       "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://connect.facebook.net",
-      "frame-src 'self' https://checkout.razorpay.com https://*.razorpay.com",
+      "frame-src 'self' https://checkout.razorpay.com https://*.razorpay.com https://www.instagram.com",
       "media-src 'self' blob: https:",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
