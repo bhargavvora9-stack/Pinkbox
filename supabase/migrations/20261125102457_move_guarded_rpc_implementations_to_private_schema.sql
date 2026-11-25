@@ -1,5 +1,6 @@
--- Move guarded privileged implementations into the private schema.
--- Public RPCs remain SECURITY INVOKER wrappers with the caller's auth.uid().
+-- Keep only thin SECURITY INVOKER wrappers in the exposed public schema.
+-- The private SECURITY DEFINER implementations are permission-checked and
+-- not directly exposed through the Supabase Data API.
 
 CREATE OR REPLACE FUNCTION private.get_website_dashboard_stats_internal(
   p_company_id uuid,

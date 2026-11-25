@@ -1,6 +1,4 @@
--- Restrict product image direct uploads to the Images module and
--- remove SVG from the public website-images bucket allow-list.
-
+-- No SVG objects currently exist in website-images. Stop accepting SVG uploads.
 UPDATE storage.buckets
 SET allowed_mime_types = array_remove(
   coalesce(allowed_mime_types, ARRAY[]::text[]),
@@ -8,6 +6,8 @@ SET allowed_mime_types = array_remove(
 )
 WHERE id='website-images';
 
+-- Direct Storage writes to the legacy product-images bucket must obey the
+-- same images module permission as the website upload API.
 DROP POLICY IF EXISTS "product_images_admin_insert" ON storage.objects;
 CREATE POLICY "product_images_admin_insert"
 ON storage.objects

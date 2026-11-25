@@ -1,6 +1,5 @@
--- Isolate dashboard, analytics and report reads from raw table access.
--- This migration was applied to the live PinkBox Supabase project first.
-
+-- Dashboard and analytics return aggregates only. The caller must have the
+-- matching module permission; privileged reads never expose raw table rows.
 ALTER FUNCTION public.get_website_dashboard_stats(uuid) SECURITY DEFINER;
 ALTER FUNCTION public.get_website_dashboard_stats(uuid) SET search_path = '';
 
@@ -111,9 +110,13 @@ begin
 end;
 $function$;
 
+-- Product/category and product/collection linking performs strict company
+-- and module checks before doing any writes. It must be able to validate the
+-- product row without granting full product-table SELECT access to these roles.
 ALTER FUNCTION public.replace_website_product_links(uuid,uuid,text,uuid[]) SECURITY DEFINER;
 ALTER FUNCTION public.replace_website_product_links(uuid,uuid,text,uuid[]) SET search_path = '';
 
+-- Restrict the raw SELECT policies to the matching data module.
 DROP POLICY IF EXISTS "website_orders_module_select" ON public.website_orders;
 CREATE POLICY "website_orders_module_select"
 ON public.website_orders
