@@ -22,7 +22,7 @@ function splitIntoFeatures(value) {
 
   for (const sentence of sentences) {
     const commaParts = sentence.split(/,\s*/);
-    const parts = commaParts.length >= 3
+    const parts = commaParts.length >= 2
       ? commaParts.flatMap((part, index) => index === commaParts.length - 1
         ? part.split(/\s+and\s+/i)
         : [part])
