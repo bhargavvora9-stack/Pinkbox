@@ -5,6 +5,41 @@ import { filterAvailableProducts } from '@/lib/product-availability';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Next.js writes sitemap values directly into XML, so escape dynamic URLs
+// before returning them from this metadata route.
+function escapeXmlText(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function finalizeSitemapEntries(entries) {
+  return entries.map((entry) => {
+    const result = {
+      ...entry,
+      url: escapeXmlText(entry.url),
+    };
+
+    if (Array.isArray(entry.images)) {
+      result.images = entry.images.map(escapeXmlText);
+    }
+
+    if (entry.lastModified) {
+      const lastModified = new Date(entry.lastModified);
+      if (Number.isNaN(lastModified.getTime())) {
+        delete result.lastModified;
+      } else {
+        result.lastModified = lastModified.toISOString();
+      }
+    }
+
+    return result;
+  });
+}
+
 function normalizeImageUrl(value, base) {
   const raw = typeof value === 'string' ? value.trim() : '';
   if (!raw) return null;
@@ -55,7 +90,7 @@ export default async function sitemap() {
     { url: `${base}/shop` },
     { url: `${base}/blog` },
   ];
-  if (settingsError || !settings) return urls;
+  if (settingsError || !settings) return finalizeSitemapEntries(urls);
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -209,5 +244,5 @@ export default async function sitemap() {
     }
   }
 
-  return urls;
+  return finalizeSitemapEntries(urls);
 }
