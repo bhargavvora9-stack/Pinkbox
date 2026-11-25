@@ -14,26 +14,26 @@ import {
 } from 'lucide-react';
 
 function splitIntoFeatures(value) {
-  const source = String(value || '').replace(/\\s+/g, ' ').trim();
+  const source = String(value || '').replace(/\s+/g, ' ').trim();
   if (!source) return [];
 
-  const sentences = source.split(/(?<=[.!?])\\s+/).filter(Boolean);
+  const sentences = source.split(/(?<=[.!?])\s+/).filter(Boolean);
   const features = [];
 
   for (const sentence of sentences) {
-    const commaParts = sentence.split(/,\\s*/);
+    const commaParts = sentence.split(/,\s*/);
     const parts = commaParts.length >= 3
       ? commaParts.flatMap((part, index) => index === commaParts.length - 1
-        ? part.split(/\\s+and\\s+/i)
+        ? part.split(/\s+and\s+/i)
         : [part])
       : [sentence];
 
     for (let part of parts) {
       part = part
-        .replace(/^\\s*(?:and|also)\\s+/i, '')
-        .replace(/\\s+as (?:the )?(?:key )?features? of the .+$/i, '')
-        .replace(/\\s+as listed features?\\s*$/i, '')
-        .replace(/[.;,]+\\s*$/g, '')
+        .replace(/^\s*(?:and|also)\s+/i, '')
+        .replace(/\s+as (?:the )?(?:key )?features? of the .+$/i, '')
+        .replace(/\s+as listed features?\s*$/i, '')
+        .replace(/[.;,]+\s*$/g, '')
         .trim();
       if (part.length > 2 && !features.some((item) => item.toLowerCase() === part.toLowerCase())) {
         features.push(part);
