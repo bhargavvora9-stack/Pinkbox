@@ -14,7 +14,7 @@ export default async function AdminInvoicePage({params}){
  if(!profile||profile.active===false||!['super_admin','admin'].includes(profile.role)||!profile.company_id)redirect('/login?error=not_admin');
  const {data:settings}=await supabase.from('website_settings').select('company_id,website_name,logo_url,phone,email,address,gstin,currency').eq('company_id',profile.company_id).eq('slug','pinkbox').eq('status','active').maybeSingle();
  if(!settings)return notFound();
- const {data:order}=await supabase.from('website_orders').select('*').eq('company_id',profile.company_id).eq('id',id).maybeSingle();
+ const {data:order}=await supabase.from('website_orders').select('id,order_number,created_at,payment_method,payment_status,customer_name,customer_phone,customer_email,shipping_address,billing_address,subtotal,discount_amount,shipping_amount,tax_amount,total_amount,notes').eq('company_id',profile.company_id).eq('id',id).maybeSingle();
  if(!order)return notFound();
  const {data:items}=await supabase.from('website_order_items').select('*').eq('company_id',profile.company_id).eq('order_id',order.id).order('id');
  return <main className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6"><InvoiceDocument settings={settings} order={order} items={items||[]} backHref="/admin/invoices"/></main>;
