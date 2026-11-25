@@ -65,8 +65,8 @@ export async function POST(request) {
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order is not set up for online payment.' }, { status: 400 });
-      if (['cancelled', 'delivered', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
-        return Response.json({ error: 'This order cannot accept a new payment.' }, { status: 409 });
+      if (String(order.order_status || '').toLowerCase() !== 'pending') {
+        return Response.json({ error: 'This order is no longer awaiting payment.' }, { status: 409 });
       }
       if (order.payment_status === 'paid') return Response.json({ error: 'This order is already paid.' }, { status: 400 });
 
@@ -212,8 +212,8 @@ export async function POST(request) {
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
       if (order.razorpay_order_id !== razorpay_order_id) return Response.json({ error: 'Order mismatch.' }, { status: 400 });
       if (order.payment_status === 'paid') return Response.json({ ok: true, already_paid: true });
-      if (['cancelled', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
-        return Response.json({ error: 'This order cannot be paid.' }, { status: 409 });
+      if (String(order.order_status || '').toLowerCase() !== 'pending') {
+        return Response.json({ error: 'This order is no longer awaiting payment.' }, { status: 409 });
       }
 
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
