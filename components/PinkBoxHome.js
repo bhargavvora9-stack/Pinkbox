@@ -228,6 +228,36 @@ function ProductFinder({ section }) {
     </section>
   );
 }
+function BrandReelSection() {
+  const reelUrl = 'https://www.instagram.com/reel/De9YTwLtSmB/';
+  return (
+    <section className="bg-secondary/40 py-16 md:py-24" aria-labelledby="brand-reel-heading">
+      <div className="container mx-auto grid items-center gap-10 px-4 lg:grid-cols-2">
+        <div>
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">From 24 CARE</p>
+          <h2 id="brand-reel-heading" className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">See more from our brand</h2>
+          <p className="mt-4 max-w-xl leading-relaxed text-muted-foreground">
+            Explore this video from the official 24 CARE Instagram profile. The original video stays on Instagram, with its source and creator attribution intact.
+          </p>
+          <a href={reelUrl} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            Watch on Instagram
+          </a>
+        </div>
+        <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-background shadow-soft">
+          <iframe
+            src="https://www.instagram.com/reel/De9YTwLtSmB/embed"
+            title="24 CARE Instagram Reel"
+            className="block h-[620px] w-full"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allow="encrypted-media; picture-in-picture; clipboard-write"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ContactForm({ section }) {
   const [type, setType] = useState('contact');
   const [form, setForm] = useState({ name:'', phone:'', email:'', city:'', message:'' });
@@ -335,6 +365,7 @@ export default function PinkBoxHome({ initialData }) {
         <CouponStrip coupons={coupons}/>
         <FeaturedProducts products={data.featuredProducts || []}/>
         {orderedSections.map((row,index)=><Fragment key={row.id||row.section_type||index}>{sectionNodes[row.section_type]||null}</Fragment>)}
+        <BrandReelSection />
       </main>
       <ZipReferenceFooter settings={settings}/>
     </div>
