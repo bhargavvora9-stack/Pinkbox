@@ -2,7 +2,7 @@ import PinkBoxHome from '../components/PinkBoxHome';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { absoluteUrl, limitMetaText, safeJsonLd } from '@/lib/seo';
+import { absoluteUrl, limitMetaText, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,7 +32,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0),
     db.from('website_products')
-      .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+      .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
       .eq('company_id', companyId)
       .eq('is_active', true)
       .or('sku.like.MDH-%,sku.like.BAG-%')
@@ -111,7 +111,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
   const homepageFeaturedProducts = (featuredProductRows.data || []).slice(0, 4).map((product) => {
     const productImages = (imagesByProduct.get(product.id) || []).sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0));
     const fallback = `/catalog-products/${String(product.sku || '').toLowerCase()}.webp`;
-    return { ...product, variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
+    return { ...product, short_description: sanitizePublicProductText(product.short_description), description: sanitizePublicProductText(product.description), variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
   });
 
   return {
