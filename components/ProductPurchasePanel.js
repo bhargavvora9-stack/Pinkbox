@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
 import { Loader2, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
+import ProductFeatureList from './ProductFeatureList';
 
 const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
   minimumFractionDigits: 2,
@@ -192,9 +193,10 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       )}
 
       {description && (
-        <p className="mt-6 whitespace-pre-line leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+        <section className="mt-6" aria-label="Product features">
+          <h2 className="text-base font-semibold text-foreground">Key Features</h2>
+          <ProductFeatureList description={description} />
+        </section>
       )}
 
       {variants.length > 1 && (
