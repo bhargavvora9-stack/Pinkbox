@@ -72,7 +72,7 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid webhook JSON.' }, { status: 400 });
     }
 
-    if (!['payment.captured', 'order.paid'].includes(String(event?.event || ''))) {
+    if (!['payment.failed', 'payment.captured', 'order.paid'].includes(String(event?.event || ''))) {
       return Response.json({ ok: true, ignored: true });
     }
 
@@ -82,7 +82,9 @@ export async function POST(request) {
     if (!razorpayOrderId || !razorpayPaymentId) {
       return Response.json({ error: 'Captured payment details are missing.' }, { status: 400 });
     }
-    if (String(payment?.status || '').toLowerCase() !== 'captured') {
+    const isFailedEvent = String(event?.event || '') === 'payment.failed';
+    const expectedPaymentStatus = isFailedEvent ? 'failed' : 'captured';
+    if (String(payment?.status || '').toLowerCase() !== expectedPaymentStatus) {
       return Response.json({ ok: true, ignored: true });
     }
 
@@ -109,6 +111,34 @@ export async function POST(request) {
     ) {
       console.error('Razorpay webhook amount mismatch for order:', order.id);
       return Response.json({ error: 'Captured payment does not match the order amount.' }, { status: 400 });
+    }
+
+    if (isFailedEvent) {
+      if (['cancelled', 'returned', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
+        return Response.json({ ok: true, ignored: true });
+      }
+
+      // A failed attempt is not an order cancellation. Keep the order pending
+      // so the customer can retry payment, but make the payment state truthful.
+      // The conditional update prevents a late failure webhook from downgrading
+      // an order that has already been paid.
+      const { data: failedUpdate, error: failedUpdateError } = await db
+        .from('website_orders')
+        .update({ payment_status: 'failed', updated_at: new Date().toISOString() })
+        .eq('company_id', settings.company_id)
+        .eq('id', order.id)
+        .eq('payment_method', 'ONLINE')
+        .eq('order_status', 'pending')
+        .neq('payment_status', 'paid')
+        .select('id')
+        .maybeSingle();
+
+      if (failedUpdateError) {
+        console.error('Razorpay failed-payment update failed:', failedUpdateError.message);
+        return Response.json({ error: 'Unable to record the failed payment attempt.' }, { status: 500 });
+      }
+
+      return Response.json({ ok: true, payment_failed: true, updated: Boolean(failedUpdate) });
     }
 
     if (['cancelled', 'returned', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
