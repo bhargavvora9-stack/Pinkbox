@@ -19,11 +19,11 @@ export default async function CustomerInvoicePage({params,searchParams}){
  if(!settings)return notFound();
  let order=null;
  if(user?.email){
-  const r=await db.from('website_orders').select('*').eq('id',id).eq('company_id',settings.company_id).eq('customer_email',user.email).maybeSingle();
+  const r=await db.from('website_orders').select('id,company_id,order_number,customer_name,customer_phone,customer_email,shipping_address,billing_address,subtotal,discount_amount,shipping_amount,tax_amount,total_amount,payment_method,payment_status,created_at,notes').eq('id',id).eq('company_id',settings.company_id).eq('customer_email',user.email).maybeSingle();
   order=r.data||null;
  }
  if(!order&&token){
-  const r=await db.from('website_orders').select('*').eq('id',id).eq('company_id',settings.company_id).eq('tracking_token',token).maybeSingle();
+  const r=await db.from('website_orders').select('id,company_id,order_number,customer_name,customer_phone,customer_email,shipping_address,billing_address,subtotal,discount_amount,shipping_amount,tax_amount,total_amount,payment_method,payment_status,created_at,notes').eq('id',id).eq('company_id',settings.company_id).eq('tracking_token',token).maybeSingle();
   order=r.data||null;
  }
  if(!order){

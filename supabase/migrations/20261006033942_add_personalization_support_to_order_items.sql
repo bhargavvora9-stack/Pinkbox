@@ -16,7 +16,7 @@ as $$
 declare
  v_order_id uuid; v_customer_id uuid; v_order_no text;
  v_subtotal numeric:=0; v_shipping numeric:=0; v_discount numeric:=0; v_total numeric:=0;
- v_item jsonb; v_product public.website_products%rowtype; v_qty numeric; v_line numeric;
+ v_item jsonb; v_product public.website_products%rowtype; v_qty numeric; v_line numeric; v_personalization text;
  v_before numeric; v_after numeric; v_coupon public.website_discounts%rowtype;
  v_code text:=upper(trim(coalesce(p_coupon_code,'')));
  v_agg_qty numeric; v_has_default_shipping boolean:=false; v_selected text:=upper(coalesce(p_payment_method,'COD'));
@@ -66,9 +66,11 @@ begin
  insert into public.website_orders(company_id,order_number,customer_id,customer_name,customer_phone,customer_email,shipping_address,billing_address,subtotal,discount_amount,shipping_amount,tax_amount,total_amount,payment_method,payment_status,order_status,notes,created_at,updated_at) values(p_company_id,v_order_no,v_customer_id,trim(p_name),trim(p_phone),nullif(trim(coalesce(p_email,'')),''),p_address,p_address,v_subtotal,v_discount,v_shipping,0,v_total,v_selected,'pending','pending',nullif(trim(coalesce(p_note,'')),''),now(),now()) returning id into v_order_id;
  for v_item in select value from jsonb_array_elements(p_items) loop
   v_qty:=(v_item->>'quantity')::numeric;
+  v_personalization:=nullif(trim(coalesce(v_item->>'personalization','')),'');
+  if v_personalization is not null and length(v_personalization)>120 then v_personalization:=left(v_personalization,120); end if;
   select * into v_product from public.website_products where company_id=p_company_id and id=(v_item->>'product_id')::uuid for update;
   v_line:=round(coalesce(v_product.price,0)*v_qty,2);
-  insert into public.website_order_items(company_id,order_id,product_id,product_name,sku,quantity,unit_price,discount_amount,tax_amount,line_total) values(p_company_id,v_order_id,v_product.id,v_product.title,v_product.sku,v_qty,v_product.price,0,0,v_line);
+  insert into public.website_order_items(company_id,order_id,product_id,product_name,sku,quantity,unit_price,discount_amount,tax_amount,line_total,variant_title) values(p_company_id,v_order_id,v_product.id,v_product.title,v_product.sku,v_qty,v_product.price,0,0,v_line,case when v_personalization is not null then 'Name: '||v_personalization else null end);
   if v_product.track_inventory then v_before:=coalesce(v_product.stock_quantity,0); v_after:=greatest(v_before-v_qty,0); update public.website_products set stock_quantity=v_after,updated_at=now() where id=v_product.id and company_id=p_company_id; insert into public.website_inventory_transactions(company_id,product_id,change_quantity,quantity_before,quantity_after,reason,reference_type,reference_id,created_at) values(p_company_id,v_product.id,-v_qty,v_before,v_after,'Website order '||v_order_no,'website_order',v_order_id,now()); end if;
  end loop;
  insert into public.website_order_status_history(company_id,order_id,status,note,created_at) values(p_company_id,v_order_id,'pending','Order placed from PinkBox website',now());

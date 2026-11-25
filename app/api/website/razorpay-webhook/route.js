@@ -48,48 +48,94 @@ export async function POST(request) {
     const razorpayPaymentId = paymentEntity?.id || null;
 
     if ((event === 'payment.captured' || event === 'order.paid') && razorpayOrderId) {
-      const { data: order } = await db
+      const { data: order, error: orderLookupError } = await db
         .from('website_orders')
-        .select('id, company_id, payment_status')
+        .select('id, company_id, payment_status, total_amount, razorpay_order_id')
         .eq('company_id', settings.company_id)
         .eq('razorpay_order_id', razorpayOrderId)
         .maybeSingle();
+
+      if (orderLookupError) {
+        console.error('Webhook order lookup failed:', orderLookupError.message);
+        return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
+      }
+
       if (order && order.payment_status !== 'paid') {
-        const { error } = await db.rpc('finalize_website_online_payment', {
+        const expectedAmountPaise = Math.round(Number(order.total_amount) * 100);
+        const paymentMatches =
+          Boolean(paymentEntity?.id) &&
+          paymentEntity?.order_id === order.razorpay_order_id &&
+          paymentEntity?.status === 'captured' &&
+          paymentEntity?.currency === 'INR' &&
+          Number.isSafeInteger(expectedAmountPaise) &&
+          expectedAmountPaise >= 100 &&
+          Number(paymentEntity?.amount) === expectedAmountPaise;
+
+        const paidOrderMatches = event !== 'order.paid' || (
+          orderEntity?.id === order.razorpay_order_id &&
+          orderEntity?.status === 'paid' &&
+          orderEntity?.currency === 'INR' &&
+          Number(orderEntity?.amount) === expectedAmountPaise &&
+          Number(orderEntity?.amount_paid) === expectedAmountPaise &&
+          Number(orderEntity?.amount_due) === 0
+        );
+
+        if (!paymentMatches || !paidOrderMatches) {
+          console.error('Razorpay captured webhook does not match the PinkBox order:', {
+            orderId: order.id,
+            razorpayOrderId,
+            event,
+            paymentStatus: paymentEntity?.status,
+            paymentCurrency: paymentEntity?.currency,
+            paymentAmount: paymentEntity?.amount,
+          });
+          return Response.json({ error: 'Captured payment does not match this order.' }, { status: 400 });
+        }
+
+        const { data: finalized, error: finalizeError } = await db.rpc('finalize_website_online_payment', {
           p_order_id: order.id,
-          p_razorpay_payment_id: razorpayPaymentId,
+          p_razorpay_payment_id: paymentEntity.id,
           p_razorpay_signature: null,
         });
-        if (error) {
-          console.error('Webhook payment finalization failed:', error.message);
+
+        if (finalizeError) {
+          console.error('Webhook payment finalization failed:', finalizeError.message);
           return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
         }
-        try {
-          const { data: confirmedOrder } = await db.from('website_orders').select('*').eq('id', order.id).maybeSingle();
-          await runWebsiteAutomations({ companyId: order.company_id, trigger: 'confirmed', order: confirmedOrder || { id: order.id, order_status: 'confirmed' } });
-        } catch (automationError) {
-          console.error('Webhook confirmation automation failed:', automationError);
+
+        // The finalizer locks the order and is idempotent. Only the first
+        // successful transition should trigger confirmation automations.
+        if (!finalized?.already_paid) {
+          try {
+            const { data: confirmedOrder } = await db
+              .from('website_orders')
+              .select('*')
+              .eq('company_id', order.company_id)
+              .eq('id', order.id)
+              .maybeSingle();
+
+            await runWebsiteAutomations({
+              companyId: order.company_id,
+              trigger: 'confirmed',
+              order: confirmedOrder || {
+                id: order.id,
+                order_status: 'confirmed',
+                payment_status: 'paid',
+              },
+            });
+          } catch (automationError) {
+            console.error('Webhook confirmation automation failed:', automationError);
+          }
         }
       }
     }
 
-    if (event === 'payment.failed' && razorpayOrderId) {
-      const { data: order } = await db
-        .from('website_orders')
-        .select('id, payment_status, order_status')
-        .eq('company_id', settings.company_id)
-        .eq('razorpay_order_id', razorpayOrderId)
-        .maybeSingle();
-      if (order && order.payment_status !== 'paid' && order.order_status === 'pending') {
-        const { error } = await db.rpc('cancel_website_online_order', {
-          p_order_id: order.id,
-          p_reason: 'Razorpay payment failed',
-        });
-        if (error) {
-          console.error('Webhook payment cancellation failed:', error.message);
-          return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
-        }
-      }
+    if (event === 'payment.failed') {
+      // This is an individual payment-attempt failure, not a terminal order
+      // state. Razorpay may send payment.captured later after a customer retry.
+      // Keep the order pending; the checkout dismissal handler or admin can
+      // explicitly cancel it once the customer has abandoned the payment flow.
+      console.info('Razorpay payment attempt failed; order remains pending for retry.');
     }
 
     return Response.json({ ok: true });

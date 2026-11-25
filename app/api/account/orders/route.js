@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase-admin';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const escapeLikePattern = (value) => String(value || '').replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+
 async function authClient() {
   const jar = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
@@ -32,7 +34,7 @@ export async function GET() {
       .from('website_orders')
       .select('id,order_number,total_amount,order_status,payment_status,created_at,shipping_address')
       .eq('company_id', settings.company_id)
-      .ilike('customer_email', user.email)
+      .ilike('customer_email', escapeLikePattern(user.email))
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) return Response.json({ error: 'Unable to load orders.' }, { status: 500 });

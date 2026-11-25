@@ -1,10 +1,9 @@
--- Restore only stock that checkout actually deducted; do not create stock for untracked or backordered quantities.
-CREATE OR REPLACE FUNCTION public.restore_website_order_stock_on_terminal_status()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+create or replace function public.restore_website_order_stock_on_terminal_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $function$
 declare
   v_item record;
   v_before numeric;

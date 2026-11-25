@@ -1,0 +1,1 @@
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types) values ('website-images','website-images',true,5242880,array['image/jpeg','image/png','image/webp','image/gif','image/svg+xml']) on conflict (id) do update set public=true,file_size_limit=5242880,allowed_mime_types=excluded.allowed_mime_types;

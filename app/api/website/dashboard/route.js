@@ -1,4 +1,5 @@
 import { getWebsiteAdminContext, jsonError } from '@/lib/website-admin';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 const TERMINAL_INVALID = new Set(['cancelled', 'returned', 'refunded']);
 const INDIA_OFFSET_MS = 330 * 60 * 1000;
@@ -12,18 +13,21 @@ function startOfIndiaDay() {
 export async function GET(request) {
   const ctx = await getWebsiteAdminContext(request);
   if (ctx.error) return jsonError(ctx.error === 'UNAUTHENTICATED' ? 'Please login.' : 'Access denied.', ctx.error === 'UNAUTHENTICATED' ? 401 : 403);
-  const { supabase, companyId } = ctx;
+  const { companyId } = ctx;
+  // This endpoint has already passed the caller's dashboard:view check above.
+  // Use the server-only client so dashboard summaries do not require broad table SELECT grants.
+  const db = createAdminClient();
   const startOfToday = startOfIndiaDay();
 
   const [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, settingsRes, b2bRes] = await Promise.all([
-    supabase.from('website_orders').select('total_amount,order_status').eq('company_id', companyId),
-    supabase.from('website_products').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('is_active', true),
-    supabase.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
-    supabase.from('website_orders').select('id,order_number,total_amount,order_status,payment_status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(8),
-    supabase.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
-    supabase.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
-    supabase.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
-    supabase.from('website_bulk_enquiries').select('id,status').eq('company_id', companyId),
+    db.from('website_orders').select('total_amount,order_status').eq('company_id', companyId),
+    db.from('website_products').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('is_active', true),
+    db.from('customers').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    db.from('website_orders').select('id,order_number,total_amount,order_status,payment_status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(8),
+    db.from('website_products').select('id,title,sku,stock_quantity,low_stock_threshold').eq('company_id', companyId).eq('is_active', true).eq('track_inventory', true),
+    db.from('website_orders').select('total_amount,payment_method,order_status,created_at').eq('company_id', companyId).gte('created_at', startOfToday.toISOString()),
+    db.from('website_settings').select('website_name,whatsapp_number').eq('company_id', companyId).maybeSingle(),
+    db.from('website_bulk_enquiries').select('id,status').eq('company_id', companyId),
   ]);
 
   const errs = [ordersRes, productsRes, customersRes, recentRes, lowStockRes, todayRes, b2bRes].map(x => x.error).filter(Boolean);

@@ -53,17 +53,20 @@ export async function POST(request) {
 
     if (b.action === 'create') {
       if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
+      const trackingToken = typeof b.tracking_token === 'string' ? b.tracking_token.trim() : '';
+      if (!trackingToken) return Response.json({ error: 'Order access token is required.' }, { status: 400 });
 
       const { data: order, error } = await db
         .from('website_orders')
         .select('id, order_number, total_amount, payment_method, payment_status, razorpay_order_id, order_status')
         .eq('id', b.order_id)
         .eq('company_id', c)
+        .eq('tracking_token', trackingToken)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order is not set up for online payment.' }, { status: 400 });
-      if (['cancelled', 'delivered', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
-        return Response.json({ error: 'This order cannot accept a new payment.' }, { status: 409 });
+      if (String(order.order_status || '').toLowerCase() !== 'pending') {
+        return Response.json({ error: 'This order is no longer awaiting payment.' }, { status: 409 });
       }
       if (order.payment_status === 'paid') return Response.json({ error: 'This order is already paid.' }, { status: 400 });
 
@@ -126,15 +129,62 @@ export async function POST(request) {
 
     if (b.action === 'cancel') {
       if (!b.order_id) return Response.json({ error: 'order_id is required.' }, { status: 400 });
+      const trackingToken = typeof b.tracking_token === 'string' ? b.tracking_token.trim() : '';
+      if (!trackingToken) return Response.json({ error: 'Order access token is required.' }, { status: 400 });
       const { data: order, error } = await db
         .from('website_orders')
-        .select('id, company_id, payment_method, payment_status, order_status')
+        .select('id, company_id, payment_method, payment_status, order_status, total_amount, razorpay_order_id')
         .eq('id', b.order_id)
         .eq('company_id', c)
+        .eq('tracking_token', trackingToken)
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
       if (order.payment_status === 'paid') return Response.json({ error: 'This payment is already completed.' }, { status: 409 });
+
+      if (order.razorpay_order_id) {
+        const { keyId, keySecret } = await getRazorpayCreds(db, c);
+        if (!keyId || !keySecret) {
+          return Response.json({ error: 'Unable to confirm the Razorpay payment state. The order remains pending.' }, { status: 503 });
+        }
+
+        const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+        const remoteRes = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(order.razorpay_order_id)}`, {
+          method: 'GET',
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        const remoteOrder = await remoteRes.json().catch(() => null);
+        if (!remoteRes.ok || !remoteOrder) {
+          console.error('Unable to confirm Razorpay order before cancellation:', remoteOrder);
+          return Response.json({ error: 'Unable to confirm payment state with Razorpay. Your order remains pending.' }, { status: 502 });
+        }
+
+        const expectedAmountPaise = Math.round(Number(order.total_amount) * 100);
+        const remoteMatches =
+          remoteOrder.id === order.razorpay_order_id &&
+          remoteOrder.currency === 'INR' &&
+          Number(remoteOrder.amount) === expectedAmountPaise;
+
+        if (!remoteMatches) {
+          console.error('Razorpay order does not match local order during cancellation:', {
+            orderId: order.id,
+            razorpayOrderId: order.razorpay_order_id,
+          });
+          return Response.json({ error: 'Payment reference could not be verified. Your order remains pending.' }, { status: 409 });
+        }
+
+        if (
+          remoteOrder.status !== 'created' ||
+          Number(remoteOrder.attempts) !== 0 ||
+          Number(remoteOrder.amount_paid) !== 0
+        ) {
+          return Response.json({
+            error: 'A payment attempt has started. Your order remains pending while payment status is confirmed. Please check order status before placing another order.',
+            pending: true,
+          }, { status: 409 });
+        }
+      }
+
       const { data: cancelled, error: cancelError } = await db.rpc('cancel_website_online_order', {
         p_order_id: order.id,
         p_reason: 'Customer closed the Razorpay payment window',
@@ -144,8 +194,8 @@ export async function POST(request) {
     }
 
     if (b.action === 'verify') {
-      const { order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
-      if (!order_id || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      const { order_id, tracking_token, razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
+      if (!order_id || !tracking_token || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return Response.json({ error: 'Missing payment verification details.' }, { status: 400 });
       }
       const { keyId, keySecret } = await getRazorpayCreds(db, c);
@@ -156,13 +206,14 @@ export async function POST(request) {
         .select('id, company_id, total_amount, razorpay_order_id, payment_method, payment_status, order_status')
         .eq('id', order_id)
         .eq('company_id', c)
+        .eq('tracking_token', String(tracking_token).trim())
         .maybeSingle();
       if (error || !order) return Response.json({ error: 'Order not found.' }, { status: 404 });
       if (order.payment_method !== 'ONLINE') return Response.json({ error: 'This order does not use online payment.' }, { status: 400 });
       if (order.razorpay_order_id !== razorpay_order_id) return Response.json({ error: 'Order mismatch.' }, { status: 400 });
       if (order.payment_status === 'paid') return Response.json({ ok: true, already_paid: true });
-      if (['cancelled', 'refunded'].includes(String(order.order_status || '').toLowerCase())) {
-        return Response.json({ error: 'This order cannot be paid.' }, { status: 409 });
+      if (String(order.order_status || '').toLowerCase() !== 'pending') {
+        return Response.json({ error: 'This order is no longer awaiting payment.' }, { status: 409 });
       }
 
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');

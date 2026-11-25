@@ -1,0 +1,1 @@
+revoke execute on function private.is_super_admin() from public, anon, authenticated; revoke execute on function private.my_company_id() from public, anon, authenticated; grant execute on function private.is_super_admin() to authenticated; grant execute on function private.my_company_id() to authenticated;

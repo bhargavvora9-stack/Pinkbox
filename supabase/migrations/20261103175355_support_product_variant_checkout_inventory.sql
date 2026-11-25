@@ -1,15 +1,21 @@
--- Add first-class variant stock movements and make checkout use the selected variant's price and stock.
 alter table public.website_inventory_transactions
   add column if not exists variant_id uuid references public.website_product_variants(id) on delete set null;
 
 create index if not exists website_inventory_transactions_company_variant_created_idx
   on public.website_inventory_transactions(company_id, variant_id, created_at desc);
 
-CREATE OR REPLACE FUNCTION public.calculate_website_shipping(p_company_id uuid, p_subtotal numeric, p_discount numeric, p_state text DEFAULT NULL::text, p_pincode text DEFAULT NULL::text, p_items jsonb DEFAULT '[]'::jsonb)
- RETURNS numeric
- LANGUAGE plpgsql
- SET search_path TO 'public'
-AS $function$
+create or replace function public.calculate_website_shipping(
+  p_company_id uuid,
+  p_subtotal numeric,
+  p_discount numeric,
+  p_state text default null,
+  p_pincode text default null,
+  p_items jsonb default '[]'::jsonb
+)
+returns numeric
+language plpgsql
+set search_path = public
+as $function$
 declare
   v_shipping numeric := 0;
   v_default numeric := 0;
@@ -105,13 +111,22 @@ begin
 end;
 $function$;
 
-
-CREATE OR REPLACE FUNCTION public.place_website_order(p_company_id uuid, p_name text, p_phone text, p_email text, p_address jsonb, p_items jsonb, p_payment_method text DEFAULT 'COD'::text, p_note text DEFAULT NULL::text, p_coupon_code text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+create or replace function public.place_website_order(
+  p_company_id uuid,
+  p_name text,
+  p_phone text,
+  p_email text,
+  p_address jsonb,
+  p_items jsonb,
+  p_payment_method text default 'COD',
+  p_note text default null,
+  p_coupon_code text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $function$
 declare
   v_order_id uuid;
   v_customer_id uuid;
@@ -309,5 +324,81 @@ begin
     'discount_amount',v_discount,'shipping_amount',v_shipping,
     'total_amount',v_total,'item_count',jsonb_array_length(p_items)
   );
+end;
+$function$;
+
+create or replace function public.restore_website_order_stock_on_terminal_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $function$
+declare
+  v_item record;
+  v_before numeric;
+  v_after numeric;
+  v_restored boolean;
+begin
+  if tg_op <> 'UPDATE' then return new; end if;
+  if lower(coalesce(new.order_status,'')) not in ('cancelled','returned','refunded') then return new; end if;
+  if lower(coalesce(old.order_status,'')) in ('cancelled','returned','refunded') then return new; end if;
+
+  for v_item in
+    select oi.product_id,oi.variant_id,sum(oi.quantity) as quantity
+    from public.website_order_items oi
+    where oi.company_id=new.company_id and oi.order_id=new.id and oi.product_id is not null
+    group by oi.product_id,oi.variant_id
+  loop
+    select exists(
+      select 1 from public.website_inventory_transactions it
+      where it.company_id=new.company_id
+        and it.product_id=v_item.product_id
+        and it.variant_id is not distinct from v_item.variant_id
+        and it.reference_type='website_order_restock'
+        and it.reference_id=new.id
+    ) into v_restored;
+
+    if not v_restored then
+      if v_item.variant_id is not null then
+        select stock_quantity into v_before
+        from public.website_product_variants
+        where company_id=new.company_id and id=v_item.variant_id and product_id=v_item.product_id
+        for update;
+        if found then
+          v_after:=coalesce(v_before,0)+coalesce(v_item.quantity,0);
+          update public.website_product_variants
+          set stock_quantity=v_after,updated_at=now()
+          where company_id=new.company_id and id=v_item.variant_id and product_id=v_item.product_id;
+          insert into public.website_inventory_transactions(
+            company_id,product_id,variant_id,change_quantity,quantity_before,quantity_after,
+            reason,reference_type,reference_id,created_at
+          ) values(
+            new.company_id,v_item.product_id,v_item.variant_id,coalesce(v_item.quantity,0),v_before,v_after,
+            'Restored for website order '||new.order_number||' ('||lower(new.order_status)||')',
+            'website_order_restock',new.id,now()
+          );
+        end if;
+      else
+        select stock_quantity into v_before
+        from public.website_products
+        where company_id=new.company_id and id=v_item.product_id
+        for update;
+        if found then
+          v_after:=coalesce(v_before,0)+coalesce(v_item.quantity,0);
+          update public.website_products set stock_quantity=v_after,updated_at=now()
+          where company_id=new.company_id and id=v_item.product_id;
+          insert into public.website_inventory_transactions(
+            company_id,product_id,variant_id,change_quantity,quantity_before,quantity_after,
+            reason,reference_type,reference_id,created_at
+          ) values(
+            new.company_id,v_item.product_id,null,coalesce(v_item.quantity,0),v_before,v_after,
+            'Restored for website order '||new.order_number||' ('||lower(new.order_status)||')',
+            'website_order_restock',new.id,now()
+          );
+        end if;
+      end if;
+    end if;
+  end loop;
+  return new;
 end;
 $function$;

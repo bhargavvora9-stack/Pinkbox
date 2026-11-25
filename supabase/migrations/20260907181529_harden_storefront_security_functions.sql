@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.place_website_order(uuid,text,text,text,jsonb,jsonb,text,text,text) FROM anon, authenticated; ALTER FUNCTION public.my_company_id() SET search_path = public, auth, extensions; ALTER FUNCTION public.is_super_admin() SET search_path = public, auth, extensions; ALTER FUNCTION public.handle_new_user() SET search_path = public, auth, extensions;
