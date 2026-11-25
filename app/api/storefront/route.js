@@ -79,10 +79,16 @@ export async function POST(request){
   if(error)return Response.json({error:error.message.replace(/^.*ERROR:\s*/,'')},{status:400});
   if(data?.order_id&&b.session_id)await db.from('website_abandoned_carts').update({status:'recovered',recovered_order_id:data.order_id,updated_at:new Date().toISOString()}).eq('company_id',c).eq('session_id',String(b.session_id));
   if(data?.order_id){
-   try{
-    const {data:createdOrder}=await db.from('website_orders').select('*').eq('company_id',c).eq('id',data.order_id).maybeSingle();
-    await runWebsiteAutomations({companyId:c,trigger:'order_created',order:createdOrder||{id:data.order_id,order_status:'pending',customer_email:address.email,customer_phone:address.phone,order_number:data.order_number}});
+   const {data:createdOrder,error:createdOrderError}=await db.from('website_orders')
+    .select('id,tracking_token,order_number,customer_name,customer_phone,customer_email,order_status')
+    .eq('company_id',c).eq('id',data.order_id).maybeSingle();
+   if(createdOrderError){
+    console.error('Created order lookup failed:',createdOrderError.message);
+   }else{
     data.tracking_token=createdOrder?.tracking_token||null;
+   }
+   try{
+    await runWebsiteAutomations({companyId:c,trigger:'order_created',order:createdOrder||{id:data.order_id,order_status:'pending',customer_email:address.email,customer_phone:address.phone,order_number:data.order_number}});
    }catch(e){console.error('Order-created automation failed:',e)}
    try{
     const {data:moves,error:movesError}=await db.from('website_inventory_transactions')
