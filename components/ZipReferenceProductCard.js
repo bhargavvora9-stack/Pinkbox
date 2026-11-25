@@ -9,7 +9,7 @@ const shouldUnoptimizeImage = (src) => {
   if (typeof src !== 'string') return true;
   return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
 };
-export default function ZipReferenceProductCard({product}){
+export default function ZipReferenceProductCard({product, priority = false}){
  const router=useRouter();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
@@ -69,7 +69,7 @@ export default function ZipReferenceProductCard({product}){
   <article className="group overflow-hidden rounded-xl border bg-card text-card-foreground shadow transition-shadow hover:shadow-md">
    <Link href={'/products/'+product.slug}>
     <div className="aspect-square overflow-hidden bg-muted">
-     {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" loading="lazy"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
+     {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) calc((100vw - 3rem) / 2), (max-width: 1279px) calc((100vw - 4rem) / 3), 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" preload={priority || undefined} fetchPriority={priority ? "high" : "auto"} loading={priority ? undefined : "lazy"} decoding="async"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
     <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description||product.description||''}</p><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
    </Link>
