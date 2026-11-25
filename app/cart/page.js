@@ -298,10 +298,11 @@ export default function CartPage() {
                   reject(Error('Payment window closed. The unpaid order was cancelled.'));
                   return;
                 }
-                reject(Error('Payment window closed. Please check your order status before placing another order.'));
               } catch (cancelError) {
-                reject(cancelError);
+                console.warn('Payment status could not be confirmed on dismissal:', cancelError);
               }
+              reject(Error('Payment was not completed. Opening your saved order so you can safely retry.'));
+              window.location.assign(trackingUrl);
             },
           },
           theme: { color: '#d8899d' },
