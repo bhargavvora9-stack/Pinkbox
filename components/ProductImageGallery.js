@@ -32,6 +32,7 @@ export default function ProductImageGallery({ images = [], title = '' }) {
           sizes="(max-width: 768px) 100vw, 50vw"
           className="h-full w-full object-contain p-3"
           preload={selectedIndex === 0}
+          fetchPriority={selectedIndex === 0 ? 'high' : 'auto'}
           unoptimized={shouldUnoptimizeImage(selectedImage.image_url)}
         />
       </div>
