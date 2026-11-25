@@ -186,12 +186,12 @@ export default function CartPage() {
     return Boolean(window.Razorpay);
   }
 
-  async function cancelOnlineOrder(orderId) {
+  async function cancelOnlineOrder(orderId, trackingToken) {
     try {
       await fetch('/api/storefront/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel', order_id: orderId }),
+        body: JSON.stringify({ action: 'cancel', order_id: orderId, tracking_token: trackingToken }),
       });
     } catch {}
   }
@@ -247,14 +247,14 @@ export default function CartPage() {
       try {
         if (!(await loadRazorpay())) throw Error('Online payment could not be loaded.');
       } catch (loadError) {
-        await cancelOnlineOrder(order.order_id);
+        await cancelOnlineOrder(order.order_id, order.tracking_token);
         throw Error(`${loadError.message} Please choose Cash on Delivery.`);
       }
 
       const pr = await fetch('/api/storefront/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', order_id: order.order_id }),
+        body: JSON.stringify({ action: 'create', order_id: order.order_id, tracking_token: order.tracking_token }),
       });
       const pd = await pr.json();
       if (!pr.ok) throw Error(pd?.error || 'Unable to start online payment.');
@@ -276,6 +276,7 @@ export default function CartPage() {
                 body: JSON.stringify({
                   action: 'verify',
                   order_id: order.order_id,
+                  tracking_token: order.tracking_token,
                   razorpay_order_id: r.razorpay_order_id,
                   razorpay_payment_id: r.razorpay_payment_id,
                   razorpay_signature: r.razorpay_signature,
@@ -290,7 +291,7 @@ export default function CartPage() {
           },
           modal: {
             ondismiss: async () => {
-              await cancelOnlineOrder(order.order_id);
+              await cancelOnlineOrder(order.order_id, order.tracking_token);
               reject(Error('Payment window closed. The unpaid order was cancelled.'));
             },
           },
