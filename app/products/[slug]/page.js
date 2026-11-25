@@ -27,7 +27,7 @@ const getProduct = cache(async function getProduct(slug) {
     .maybeSingle();
   if (!settings) return null;
 
-  const productFields = 'id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label';
+  const productFields = 'id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,seo_title,seo_description,seo_keywords,is_active,cod_override,online_payment_override,shipping_charge_override,requires_personalization,personalization_label';
   const { data: matchedProduct } = await db
     .from('website_products')
     .select(productFields)
@@ -138,10 +138,11 @@ export default async function ProductPage({ params }) {
   // The raw catalogue record contains internal supplier notes and saved SEO text
   // with stale prices. Do not serialize those fields into the client component payload.
   const publicShortDescription = sanitizePublicProductText(fetchedProduct.short_description);
-  const publicProduct = { ...fetchedProduct, short_description: publicShortDescription };
+  const publicDescription = sanitizePublicProductText(fetchedProduct.description);
+  const publicProduct = { ...fetchedProduct, short_description: publicShortDescription, description: publicDescription };
   const p = {
     ...publicProduct,
-    description: publicShortDescription,
+    description: publicDescription || publicShortDescription,
     seo_description: buildProductMetaDescription(publicProduct),
   };
 
@@ -219,7 +220,7 @@ export default async function ProductPage({ params }) {
                 image_url: p.images[0]?.image_url || null,
                 variants: p.variants,
               }}
-              description={p.short_description || ''}
+              description={p.description || p.short_description || ''}
             />
           </section>
         </div>
