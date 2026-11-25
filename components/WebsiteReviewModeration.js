@@ -29,6 +29,9 @@ function ReviewCard({ review, approved, busy, onApprove, onRemove }) {
         <span className="font-medium text-foreground">{review.customer_name || 'Customer'}</span>
         <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">{productName}</span>
         <span className="text-xs text-muted-foreground">{date}</span>
+        {review.is_verified_purchase
+          ? <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Verified purchase</span>
+          : <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">Not purchase-verified</span>}
         {approved && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Live</span>}
       </div>
       {review.title && <p className="mt-2 font-medium text-foreground">{review.title}</p>}

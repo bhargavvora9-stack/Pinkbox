@@ -66,7 +66,7 @@ const getProduct = cache(async function getProduct(slug) {
       .eq('is_active', true)
       .order('created_at'),
     db.from('website_product_reviews')
-      .select('id,customer_name,rating,title,review_text,created_at')
+      .select('id,customer_name,rating,title,review_text,created_at,is_verified_purchase')
       .eq('company_id', settings.company_id)
       .eq('product_id', product.id)
       .eq('is_approved', true)
@@ -251,7 +251,7 @@ export default async function ProductPage({ params }) {
                 </p>
               )}
             </div>
-            <ProductReviewForm productId={p.id} hasReviews={p.reviews.length > 0} />
+            <ProductReviewForm productId={p.id} productSlug={p.slug} />
           </div>
 
           {p.reviews.length > 0 && (
@@ -272,13 +272,18 @@ export default async function ProductPage({ params }) {
                     {review.title && <h3 className="font-semibold text-foreground">{review.title}</h3>}
                   </div>
                   <p className="mt-3 leading-relaxed text-muted-foreground">{review.review_text}</p>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    — {review.customer_name}, {new Date(review.created_at).toLocaleDateString('en-IN', {
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <span>— {review.customer_name}, {new Date(review.created_at).toLocaleDateString('en-IN', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
-                    })}
-                  </p>
+                    })}</span>
+                    {review.is_verified_purchase && (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                        Verified purchase
+                      </span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
