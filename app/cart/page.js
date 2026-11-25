@@ -187,13 +187,14 @@ export default function CartPage() {
   }
 
   async function cancelOnlineOrder(orderId, trackingToken) {
-    try {
-      await fetch('/api/storefront/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel', order_id: orderId, tracking_token: trackingToken }),
-      });
-    } catch {}
+    const response = await fetch('/api/storefront/payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cancel', order_id: orderId, tracking_token: trackingToken }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw Error(result?.error || 'Unable to confirm payment status. Please check your order before retrying.');
+    return result;
   }
 
   async function submit(e) {
@@ -291,8 +292,16 @@ export default function CartPage() {
           },
           modal: {
             ondismiss: async () => {
-              await cancelOnlineOrder(order.order_id, order.tracking_token);
-              reject(Error('Payment window closed. The unpaid order was cancelled.'));
+              try {
+                const cancelResult = await cancelOnlineOrder(order.order_id, order.tracking_token);
+                if (cancelResult?.cancelled) {
+                  reject(Error('Payment window closed. The unpaid order was cancelled.'));
+                  return;
+                }
+                reject(Error('Payment window closed. Please check your order status before placing another order.'));
+              } catch (cancelError) {
+                reject(cancelError);
+              }
             },
           },
           theme: { color: '#d8899d' },
