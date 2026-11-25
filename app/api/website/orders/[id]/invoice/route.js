@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
   const { supabase, companyId } = ctx;
 
   const [orderRes, itemsRes, settingsRes] = await Promise.all([
-    supabase.from('website_orders').select('*').eq('company_id', companyId).eq('id', id).maybeSingle(),
+    supabase.from('website_orders').select('id,company_id,order_number,customer_name,customer_phone,customer_email,shipping_address,subtotal,discount_amount,shipping_amount,tax_amount,total_amount,payment_method,payment_status,order_status,created_at,notes').eq('company_id', companyId).eq('id', id).maybeSingle(),
     supabase.from('website_order_items').select('*').eq('company_id', companyId).eq('order_id', id).order('id'),
     supabase.from('website_settings').select('website_name,phone,email,address,gstin,logo_url').eq('company_id', companyId).maybeSingle(),
   ]);
