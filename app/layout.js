@@ -4,6 +4,7 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { getSiteUrl, limitMetaText } from '@/lib/seo';
 import { Fraunces, Manrope } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
@@ -64,7 +65,7 @@ export async function generateMetadata() {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
-      <body><StorefrontAnalytics />{children}<ExitIntentPopup /></body>
+      <body><StorefrontAnalytics />{children}<ExitIntentPopup /><Analytics /></body>
     </html>
   );
 }
