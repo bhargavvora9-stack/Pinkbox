@@ -1,9 +1,15 @@
-CREATE OR REPLACE FUNCTION public.adjust_website_variant_stock(p_company_id uuid, p_variant_id uuid, p_change numeric, p_reason text DEFAULT NULL::text, p_user_id uuid DEFAULT NULL::uuid)
- RETURNS website_inventory_transactions
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+create or replace function public.adjust_website_variant_stock(
+  p_company_id uuid,
+  p_variant_id uuid,
+  p_change numeric,
+  p_reason text default null,
+  p_user_id uuid default null
+)
+returns public.website_inventory_transactions
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   v_variant public.website_product_variants;
   v_track_inventory boolean;
@@ -71,4 +77,7 @@ begin
 
   return v_txn;
 end;
-$function$;
+$$;
+
+revoke all on function public.adjust_website_variant_stock(uuid, uuid, numeric, text, uuid) from public, anon;
+grant execute on function public.adjust_website_variant_stock(uuid, uuid, numeric, text, uuid) to authenticated;
