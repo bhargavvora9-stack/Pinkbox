@@ -191,7 +191,7 @@ export async function POST(request) {
     const reviewText = String(body.review_text || '').trim().slice(0, 3000);
 
     if (!productId) return json({ error: 'Product is required.' }, 400);
-    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return json({ error: 'Rating must be between 1 and 5.' }, 400);
     }
     if (!reviewText || reviewText.length < 10) {

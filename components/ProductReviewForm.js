@@ -10,6 +10,7 @@ export default function ProductReviewForm({ productId }) {
     authenticated: false,
     eligible: false,
     alreadyReviewed: false,
+    emailVerified: false,
     message: '',
   });
   const [showForm, setShowForm] = useState(false);
@@ -34,6 +35,7 @@ export default function ProductReviewForm({ productId }) {
         authenticated: Boolean(result.authenticated),
         eligible: Boolean(result.eligible),
         alreadyReviewed: Boolean(result.alreadyReviewed),
+        emailVerified: Boolean(result.emailVerified),
         customerName: result.customerName || '',
         message: result.message || '',
       });
@@ -43,6 +45,7 @@ export default function ProductReviewForm({ productId }) {
         authenticated: false,
         eligible: false,
         alreadyReviewed: false,
+        emailVerified: false,
         message: requestError instanceof Error
           ? requestError.message
           : 'Unable to check review eligibility. Please refresh the page.',

@@ -251,7 +251,7 @@ export default async function ProductPage({ params }) {
                 </p>
               )}
             </div>
-            <ProductReviewForm productId={p.id} productSlug={p.slug} />
+            <ProductReviewForm productId={p.id} />
           </div>
 
           {p.reviews.length > 0 && (
