@@ -13,18 +13,22 @@ export async function GET(request){
  const r=new URL(request.url).searchParams.get('resource'),ctx=await getWebsiteAdminContext(request);
  if(ctx.error)return jsonError(ctx.error==='UNAUTHENTICATED'?'Please login.':'Access denied.',ctx.error==='UNAUTHENTICATED'?401:403);
  const{supabase,companyId}=ctx;
+ // The request is already authorized for the requested Phase 6 resource above.
+ // Privileged reads below are server-only and are always constrained to this user's company.
  if(r==='analytics'){
   try{return Response.json({data:await getAnalytics(supabase,companyId)});}catch(e){return jsonError(e.message,500);}
  }
  if(r==='reports'){
   const summary=await getAnalytics(supabase,companyId).catch(e=>null);
-  const[o,i,p]=await Promise.all([supabase.from('website_orders').select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(5000),supabase.from('website_order_items').select('*').eq('company_id',companyId).order('id').limit(20000),supabase.from('website_products').select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(2000)]);
+  const admin=createAdminClient();
+  const[o,i,p]=await Promise.all([admin.from('website_orders').select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(5000),admin.from('website_order_items').select('*').eq('company_id',companyId).order('id').limit(20000),admin.from('website_products').select('*').eq('company_id',companyId).order('created_at',{ascending:false}).limit(2000)]);
   if(o.error||i.error||p.error)return jsonError((o.error||i.error||p.error).message,500);
   return Response.json({data:{summary,orders:o.data||[],items:i.data||[],products:p.data||[]}});
  }
  if(r==='health'){
   const tables=['website_settings','website_products','website_categories','website_orders','website_order_items','customers','website_product_reviews','website_discounts'];
-  const checks=await Promise.all(tables.map(async t=>{const{count,error}=await supabase.from(t).select('id',{count:'exact',head:true}).eq('company_id',companyId);return{table:t,ok:!error,count:count||0,error:error?.message||null}}));
+  const admin=createAdminClient();
+  const checks=await Promise.all(tables.map(async t=>{const{count,error}=await admin.from(t).select('id',{count:'exact',head:true}).eq('company_id',companyId);return{table:t,ok:!error,count:count||0,error:error?.message||null}}));
   const status=checks.every(c=>c.ok)?'healthy':checks.some(c=>c.ok)?'degraded':'down';
   return Response.json({data:{status,checks,checkedAt:new Date().toISOString()}});
  }
