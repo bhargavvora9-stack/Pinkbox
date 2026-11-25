@@ -11,7 +11,6 @@ const TYPES = new Map([
   ['image/png','png'],
   ['image/webp','webp'],
   ['image/gif','gif'],
-  ['image/svg+xml','svg'],
 ]);
 
 export async function POST(request){
@@ -23,7 +22,7 @@ export async function POST(request){
   const folder=cleanString(form?.get('folder'),60).replace(/[^a-zA-Z0-9_-]/g,'-')||'general';
   if(!file||typeof file.arrayBuffer!=='function')return jsonError('Image file is required.');
   const ext=TYPES.get(file.type);
-  if(!ext)return jsonError('Unsupported image type. Use JPG, PNG, WEBP, GIF or SVG.');
+  if(!ext)return jsonError('Unsupported image type. Use JPG, PNG, WEBP or GIF.');
   if(file.size>MAX_BYTES)return jsonError('Image must be 5 MB or smaller.');
 
   // The route is protected by getWebsiteAdminContext(request), then the trusted
