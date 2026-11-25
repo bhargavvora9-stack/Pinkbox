@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import ProductFeatureList from './ProductFeatureList';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const shouldUnoptimizeImage = (src) => {
   if (typeof src !== 'string') return true;
@@ -71,7 +72,7 @@ export default function ZipReferenceProductCard({product, priority = false}){
     <div className="aspect-square overflow-hidden bg-muted">
      {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) calc((100vw - 3rem) / 2), (max-width: 1279px) calc((100vw - 4rem) / 3), 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" preload={priority || undefined} fetchPriority={priority ? "high" : "auto"} loading={priority ? undefined : "lazy"} decoding="async"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
-    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{product.description||product.short_description||''}</p><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
+    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><ProductFeatureList description={product.description||product.short_description||''} compact maxItems={3} /><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
    </Link>
    <div className="grid grid-cols-2 gap-2 px-4 pb-4">
     <button type="button" onClick={(event)=>addToCart(event,false)} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-md border border-primary bg-background px-2 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
