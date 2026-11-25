@@ -86,9 +86,12 @@ export async function POST(request) {
     const before=sanitizeOrder(result?.before);
     const data=sanitizeOrder(result?.data);
     if(!data)return jsonError('Order status update returned no order.',500);
-    await audit(supabase,{companyId,userId:user.id,action:'order.status',entityType:'website_order',entityId:b.id,oldData:before,newData:data});
-    try{await runWebsiteAutomations({companyId,trigger:data.order_status,order:data});}catch(e){console.error('Order automation failed:',e)}
-    return Response.json({data});
+    const changed=result?.changed===true || before?.order_status!==data.order_status;
+    if(changed){
+      await audit(supabase,{companyId,userId:user.id,action:'order.status',entityType:'website_order',entityId:b.id,oldData:before,newData:data});
+      try{await runWebsiteAutomations({companyId,trigger:data.order_status,order:data});}catch(e){console.error('Order automation failed:',e)}
+    }
+    return Response.json({data,changed});
   }
   const resource=b.resource,table=tables[resource]; if(!table)return jsonError('Unknown Phase 3 resource.',404); delete b.resource; delete b.id;
   const payload={...b,company_id:companyId};
