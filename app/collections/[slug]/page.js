@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import Link from 'next/link';
 import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 import { notFound } from 'next/navigation';
@@ -9,28 +10,55 @@ import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function getCollection(slug) {
+const getCollection = cache(async function getCollection(slug) {
   const db = createAdminClient();
   const { data: settings } = await db.from('website_settings').select('company_id,website_name').eq('slug','pinkbox').eq('status','active').maybeSingle();
   if (!settings) return null;
   const { data: category } = await db.from('website_categories').select('id,name,slug,description,seo_title,seo_description,seo_keywords,image_url').eq('company_id',settings.company_id).eq('slug',slug).eq('is_active',true).maybeSingle();
   if (!category) return null;
-  const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
-  const ids = (mappings || []).map(x => x.product_id);
-  const { data: products, error: productsError } = ids.length ? await db.from('website_products')
-    .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
-    .eq('company_id',settings.company_id).in('id',ids).eq('is_active',true)
-    .or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
-  if (productsError) throw new Error(productsError.message);
-  const { data: variants, error: variantsError } = ids.length ? await db.from('website_product_variants')
-    .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
-    .eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
-  if (variantsError) throw new Error(variantsError.message);
-  const availableProducts = filterAvailableProducts(products || [], variants || [], { includeOutOfStock: true });
-  const { data: images, error: imagesError } = ids.length ? await db.from('website_product_images')
-    .select('product_id,image_url,alt_text,is_primary,sort_order')
-    .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[],error:null};
-  if (imagesError) throw new Error(imagesError.message);
+  const { data: mappings } = await db.from('website_product_categories')
+    .select('product_id')
+    .eq('company_id', settings.company_id)
+    .eq('category_id', category.id);
+  const ids = (mappings || []).map((row) => row.product_id);
+
+  // These product, inventory and image lookups depend only on the mapped IDs,
+  // so fetch them together instead of serialising three database round trips.
+  const [productsResult, variantsResult, imagesResult] = ids.length
+    ? await Promise.all([
+        db.from('website_products')
+          .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+          .eq('company_id', settings.company_id)
+          .in('id', ids)
+          .eq('is_active', true)
+          .or('sku.like.MDH-%,sku.like.BAG-%')
+          .gt('price', 0)
+          .order('created_at', { ascending: false }),
+        db.from('website_product_variants')
+          .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
+          .eq('company_id', settings.company_id)
+          .in('product_id', ids)
+          .eq('is_active', true),
+        db.from('website_product_images')
+          .select('product_id,image_url,alt_text,is_primary,sort_order')
+          .eq('company_id', settings.company_id)
+          .in('product_id', ids)
+          .order('sort_order'),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+  if (variantsResult.error) throw new Error(variantsResult.error.message);
+  if (imagesResult.error) throw new Error(imagesResult.error.message);
+
+  const products = productsResult.data || [];
+  const variants = variantsResult.data || [];
+  const images = imagesResult.data || [];
+  const availableProducts = filterAvailableProducts(products, variants, { includeOutOfStock: true });
   const imageMap = {};
   (images || []).forEach((image) => {
     const productImages = imageMap[image.product_id] || [];
@@ -63,7 +91,7 @@ async function getCollection(slug) {
     };
   });
   return {category, products:collectionProducts};
-}
+});
 
 export async function generateMetadata({params}) {
   const {slug} = await params; const c = await getCollection(slug);
