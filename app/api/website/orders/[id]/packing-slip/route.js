@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
   const { supabase, companyId } = ctx;
 
   const [orderRes, itemsRes, settingsRes] = await Promise.all([
-    supabase.from('website_orders').select('*').eq('company_id', companyId).eq('id', id).maybeSingle(),
+    supabase.from('website_orders').select('id,company_id,order_number,customer_name,customer_phone,shipping_address,payment_method,created_at,notes,order_status').eq('company_id', companyId).eq('id', id).maybeSingle(),
     supabase.from('website_order_items').select('*').eq('company_id', companyId).eq('order_id', id).order('id'),
     supabase.from('website_settings').select('website_name,phone').eq('company_id', companyId).maybeSingle(),
   ]);
