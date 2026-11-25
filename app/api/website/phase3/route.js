@@ -76,7 +76,11 @@ export async function POST(request) {
     if(statusError)return jsonError(statusError.message,statusError.code==='42501'?403:statusError.code==='P0002'?404:400);
     const sanitizeOrder = (row) => {
       if (!row) return row;
-      const { tracking_token, razorpay_signature, razorpay_order_id, razorpay_payment_id, ...safe } = row;
+      const safe = { ...row };
+      delete safe.tracking_token;
+      delete safe.razorpay_signature;
+      delete safe.razorpay_order_id;
+      delete safe.razorpay_payment_id;
       return safe;
     };
     const before=sanitizeOrder(result?.before);
