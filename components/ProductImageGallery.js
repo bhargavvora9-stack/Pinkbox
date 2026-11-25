@@ -31,7 +31,8 @@ export default function ProductImageGallery({ images = [], title = '' }) {
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           className="h-full w-full object-contain p-3"
-          priority={selectedIndex === 0}
+          preload={selectedIndex === 0}
+          unoptimized={shouldUnoptimizeImage(selectedImage.image_url)}
         />
       </div>
       {availableImages.length > 1 && (
@@ -52,7 +53,8 @@ export default function ProductImageGallery({ images = [], title = '' }) {
                   src={image.image_url}
                   alt={image.alt_text || title + ' image ' + (index + 1)}
                   fill
-                  sizes="120px"
+                  sizes="(max-width: 640px) 20vw, 96px"
+                  loading="lazy"
                   className="object-contain p-1"
                   unoptimized={shouldUnoptimizeImage(image.image_url)}
                 />

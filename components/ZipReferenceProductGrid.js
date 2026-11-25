@@ -51,7 +51,7 @@ export default function ZipReferenceProductGrid({ products = [] }) {
         <label className="grid gap-1 text-xs font-medium text-muted-foreground">Sort by<select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
       </div>
       <p className="mb-4 text-xs text-muted-foreground" aria-live="polite">Showing {visible.length} of {products.length} products</p>
-      {visible.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{visible.map((product) => <ZipReferenceProductCard key={product.id} product={product} />)}</div> : <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">No products match these filters. Try another size, pack or price range.</div>}
+      {visible.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{visible.map((product, index) => <ZipReferenceProductCard key={product.id} product={product} priority={index === 0} />)}</div> : <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">No products match these filters. Try another size, pack or price range.</div>}
     </div>
   );
 }
