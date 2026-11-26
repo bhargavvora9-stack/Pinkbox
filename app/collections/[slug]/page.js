@@ -71,24 +71,19 @@ export async function generateMetadata({params}) {
   const isSanitary = c.category.slug === 'sanitary-pads';
   const isBabyDiapers = c.category.slug === 'baby-diapers';
   const isBags = c.category.slug === 'bags';
-  const isHandBags = c.category.slug === 'hand-bags';
-  const title = c.category.seo_title || (isHandBags
-    ? 'EcoCarry Hand Bags Online | PinkBox'
-    : isSanitary
+  const title = c.category.seo_title || (isSanitary
     ? 'Sanitary Pads & Sanitary Napkins | PinkBox'
     : isBabyDiapers
       ? 'Buy 7 Soft Baby Diaper Pants Online | PinkBox'
       : isBags
-        ? 'Personalized Cotton Tote Bags Online | PinkBox'
+        ? 'Bags Online | PinkBox'
         : `${c.category.name} | PinkBox`);
-  const description = c.category.seo_description || c.category.description || (isHandBags
-    ? 'Explore EcoCarry tote, office and mini hand bag designs at PinkBox. Check product photographs, prices and availability.'
-    : isSanitary
+  const description = c.category.seo_description || c.category.description || (isSanitary
     ? 'Shop sanitary pads and sanitary napkins online at PinkBox. Explore 320mm, heavy-flow, cottony-surface and anti-bacterial sanitary pad options.'
     : isBabyDiapers
       ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare available S, M, L and XL sizes, pack counts and current prices, with delivery across India.'
       : isBags
-        ? 'Explore personalized cotton tote bags at PinkBox. Browse floral and custom designs; current bag designs are listed as out of stock.'
+        ? 'Explore all PinkBox bag designs, including tote bags, handbags and office bags, together in one collection.'
         : `Shop ${c.category.name} products at PinkBox. Explore product options, sizes, prices and everyday essentials.`);
   return {
     title,
@@ -126,7 +121,7 @@ export default async function CollectionPage({params}) {
   const collectionSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: isHandBags ? 'EcoCarry Hand Bags' : isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Personalized Cotton Tote Bags' : c.category.name,
+    name: isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Bags' : c.category.name,
     url: absoluteUrl(`/collections/${encodeURIComponent(c.category.slug)}`),
     mainEntity: { '@type': 'ItemList', itemListElement: c.products.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: absoluteUrl(`/products/${encodeURIComponent(p.slug)}`), name: p.title })) }
   };
@@ -141,8 +136,8 @@ export default async function CollectionPage({params}) {
   <main className="min-h-screen bg-white text-[#171717]">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionSchema) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(crumbs) }} />
-    <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><nav aria-label="Shop collections" className="flex max-w-[72%] flex-wrap items-center justify-end gap-x-3 gap-y-2 text-xs font-semibold sm:gap-4 sm:text-sm"><Link href="/collections/sanitary-pads">Sanitary Pads</Link><Link href="/collections/baby-diapers">Baby Diapers</Link><Link href="/collections/bags">Tote Bags</Link><Link href="/collections/hand-bags">Hand Bags</Link><Link href="/shop">All products</Link><Link href="/account">Account</Link></nav></div></header>
-    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isHandBags ? 'Hand Bags' : isSanitary ? 'Sanitary Care' : isBags ? 'Personalized Bags' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isHandBags ? 'EcoCarry Hand Bags' : isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Personalized Cotton Tote Bags' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isHandBags ? 'Explore EcoCarry tote bags, office bags and mini bags at PinkBox. Open a design to view its photographs, price and current stock availability.' : isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : isBags ? 'Browse personalized cotton tote bag designs from PinkBox. These designs remain listed for viewing, but ordering is currently paused while they are out of stock.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
+    <header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"><Link href="/" className="font-black tracking-tight">PinkBox</Link><nav aria-label="Shop collections" className="flex max-w-[72%] flex-wrap items-center justify-end gap-x-3 gap-y-2 text-xs font-semibold sm:gap-4 sm:text-sm"><Link href="/collections/sanitary-pads">Sanitary Pads</Link><Link href="/collections/baby-diapers">Baby Diapers</Link><Link href="/collections/bags">Bags</Link><Link href="/shop">All products</Link><Link href="/account">Account</Link></nav></div></header>
+    <section className="mx-auto max-w-6xl px-5 py-12"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">{isSanitary ? 'Sanitary Care' : isBags ? 'Bags' : 'Collection'}</p><h1 className="mt-3 text-5xl font-black tracking-tight">{isSanitary ? 'Sanitary Pads & Sanitary Napkins' : isBabyDiapers ? '7 Soft Baby Diaper Pants' : isBags ? 'Bags' : c.category.name}</h1><p className="mt-3 max-w-2xl text-gray-600">{isSanitary ? 'Shop sanitary pads and sanitary napkins online from PinkBox. Compare 320mm sanitary pads, heavy-flow protection, cottony surfaces and anti-bacterial options for everyday menstrual care.' : isBabyDiapers ? 'Shop 7 Soft baby diaper pants online at PinkBox. Compare sizes S, M, L and XL and pack counts across Jumbo, Maha Jumbo and Premium packs, then check product details and current prices before choosing a pack.' : isBags ? 'Browse all PinkBox bag designs together in one collection, including tote bags, handbags and office bag styles.' : `Explore the PinkBox ${c.category.name} collection with product details, current prices and related guides.`}</p>
 <div className="mt-10"><ZipReferenceProductGrid products={c.products} /></div>
       {isSanitary && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Explore sanitary care</p><h2 className="mt-2 text-2xl font-black">Sanitary pads for everyday, night and heavy flow</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">PinkBox covers common sanitary pad searches including sanitary pads, sanitary napkins, 320mm sanitary pads, heavy-flow sanitary pads, cottony-surface pads and anti-bacterial sanitary pads. Use the guides below to compare the right type for your needs.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}<Link href="/blog" className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">Sanitary Pad Journal</Link></div></div>}
       {isBabyDiapers && <div className="mt-14 rounded-3xl border bg-[#fff9fb] p-6"><p className="text-xs font-black uppercase tracking-[.25em] text-[#d9295f]">Baby care</p><h2 className="mt-2 text-2xl font-black">Compare 7 Soft Baby Diaper Pants by Size and Pack</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-gray-600">Browse 7 Soft baby diaper pants in sizes S, M, L and XL. Compare Jumbo, Maha Jumbo and Premium packs by the listed size, piece count and current price before ordering.</p><div className="mt-4 flex flex-wrap gap-3">{guideLinks.map(([href,label])=><Link key={href} href={href} className="rounded-full border bg-white px-4 py-2 text-sm font-semibold hover:border-[#d9295f] hover:text-[#d9295f]">{label}</Link>)}</div></div>}
