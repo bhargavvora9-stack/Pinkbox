@@ -7,6 +7,7 @@ import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import LegacyBrandTestimonials from '@/components/LegacyBrandTestimonials';
 import { Star } from 'lucide-react';
+import { getExternalMarketplaceRating } from '@/lib/external-marketplace-ratings';
 import { cache } from 'react';
 import { absoluteUrl, safeJsonLd, buildProductMetaDescription, sanitizePublicProductText } from '@/lib/seo';
 
@@ -199,6 +200,7 @@ export default async function ProductPage({ params }) {
       { '@type': 'ListItem', position: 3, name: p.title, item: url },
     ],
   };
+  const marketplaceRating = getExternalMarketplaceRating(p.sku);
   const averageRating = p.reviews.length
     ? p.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / p.reviews.length
     : 0;
@@ -227,6 +229,29 @@ export default async function ProductPage({ params }) {
                   ))}
                 </span>
                 <span>{averageRating.toFixed(1)} / 5 · {p.reviews.length} {p.reviews.length === 1 ? 'customer review' : 'customer reviews'}</span>
+              </div>
+            )}
+            {marketplaceRating && (
+              <div
+                className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+                aria-label={'Online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
+              >
+                <span className="flex items-center gap-0.5" aria-hidden="true">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Star
+                      key={value}
+                      className={'h-4 w-4 ' + (value <= Math.round(marketplaceRating.rating)
+                        ? 'fill-primary text-primary'
+                        : 'text-muted-foreground/40')}
+                    />
+                  ))}
+                </span>
+                <span>
+                  {marketplaceRating.rating.toFixed(1)} / 5 · {marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Public marketplace ratings sourced from Flipkart; not PinkBox customer reviews.
+                </span>
               </div>
             )}
             <ProductPurchasePanel

@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
+import { getExternalMarketplaceRating } from '@/lib/external-marketplace-ratings';
 import Image from 'next/image';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const shouldUnoptimizeImage = (src) => {
@@ -13,6 +14,7 @@ export default function ZipReferenceProductCard({product, priority = false}){
  const router=useRouter();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
+ const marketplaceRating=getExternalMarketplaceRating(product.sku);
  const variants=Array.isArray(product.variants)?product.variants.filter((variant)=>variant?.is_active!==false):[];
  const canSellVariant=(variant)=>product.track_inventory===false||product.allow_backorder===true||Number(variant?.stock_quantity||0)>0;
  const preferredVariant=variants.find(canSellVariant)||variants[0]||null;
@@ -72,7 +74,27 @@ export default function ZipReferenceProductCard({product, priority = false}){
      {product.is_best_seller && <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm">Best Seller</span>}
      {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) calc((100vw - 3rem) / 2), (max-width: 1279px) calc((100vw - 4rem) / 3), 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" preload={priority || undefined} fetchPriority={priority ? "high" : "auto"} loading={priority ? undefined : "lazy"} decoding="async"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
-    <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
+    <div className="p-4">
+     <h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2>
+     {marketplaceRating && (
+      <div
+       className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs"
+       aria-label={'Online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
+      >
+       <span className="flex items-center gap-0.5" aria-hidden="true">
+        {Array.from({length:5},(_,index)=><Star key={index} className={'h-3.5 w-3.5 '+(index < Math.round(marketplaceRating.rating) ? 'fill-primary text-primary' : 'text-muted-foreground/35')}/>)}
+       </span>
+       <span className="font-semibold text-foreground">{marketplaceRating.rating.toFixed(1)}</span>
+       <span className="text-muted-foreground">({marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings)</span>
+      </div>
+     )}
+     <div className="mt-2 flex flex-wrap items-baseline gap-2">
+      <p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>
+      {listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}
+     </div>
+     {packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}
+     {!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}
+    </div>
    </Link>
    <div className="grid grid-cols-2 gap-2 px-4 pb-4">
     <button type="button" onClick={(event)=>addToCart(event,false)} disabled={busy||!available} className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-md border border-primary bg-background px-2 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
