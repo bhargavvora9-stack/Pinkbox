@@ -327,6 +327,7 @@ export default function AdminExcelTableFilters() {
 
       applyTableView(table, tableKey, filtersRef.current, sortsRef.current);
     });
+    window.dispatchEvent(new Event('pb-admin-table-view-updated'));
   };
 
   useEffect(() => {
@@ -391,6 +392,7 @@ export default function AdminExcelTableFilters() {
     setFilters(next);
     const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
     applyTableView(table, activeMenu.tableKey, next, sortsRef.current);
+    window.dispatchEvent(new Event('pb-admin-table-view-updated'));
     setActiveMenu(null);
   };
 
@@ -407,6 +409,7 @@ export default function AdminExcelTableFilters() {
     setSorts(nextSorts);
     const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
     applyTableView(table, key, nextFilters, nextSorts);
+    window.dispatchEvent(new Event('pb-admin-table-view-updated'));
     setActiveMenu(null);
   };
 
@@ -421,6 +424,7 @@ export default function AdminExcelTableFilters() {
     setFilters(next);
     const table = Array.from(document.querySelectorAll('.website-admin main table'))[activeMenu.tableIndex];
     applyTableView(table, activeMenu.tableKey, next, sortsRef.current);
+    window.dispatchEvent(new Event('pb-admin-table-view-updated'));
     setSelected(new Set(menuValues));
     setQuery('');
     setActiveMenu(null);
