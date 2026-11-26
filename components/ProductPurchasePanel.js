@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toAnalyticsItems, trackGa4Event } from '@/lib/analytics';
-import { Loader2, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
+import { Loader2, CheckCircle2, ShieldCheck, Truck, Gift, MessageCircle } from 'lucide-react';
 import ProductFeatureList from './ProductFeatureList';
 
 const money = (value) => '₹' + Number(value || 0).toLocaleString('en-IN', {
@@ -39,6 +39,27 @@ export default function ProductPurchasePanel({ product, description = '' }) {
       ? selectedVariant.price
       : product.price ?? 0,
   );
+
+  const compareAtPrice = Number(
+    selectedVariant && Number(selectedVariant.compare_at_price) > 0
+      ? selectedVariant.compare_at_price
+      : product.compare_at_price || 0,
+  );
+  const discountPercentage = compareAtPrice > effectivePrice
+    ? Math.round((1 - effectivePrice / compareAtPrice) * 100)
+    : 0;
+  const isBagProduct = String(product.sku || '').toUpperCase().startsWith('BAG-');
+  const rawWhatsappNumber = String(product.whatsapp_number || '').replace(/\\D/g, '');
+  const whatsappNumber = rawWhatsappNumber.length === 10
+    ? '91' + rawWhatsappNumber
+    : rawWhatsappNumber.length >= 11 && rawWhatsappNumber.length <= 15
+      ? rawWhatsappNumber
+      : '';
+  const whatsappHref = whatsappNumber
+    ? 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent(
+        'Hi PinkBox, I am interested in ' + product.title + '. Could you please share more details?',
+      )
+    : '';
   const effectiveImage = selectedVariant?.image_url || product.image_url || product.images?.[0]?.image_url || null;
   const tracksInventory = product.track_inventory !== false;
   const max = tracksInventory
@@ -167,36 +188,41 @@ export default function ProductPurchasePanel({ product, description = '' }) {
 
   return (
     <div className="mt-4 flex flex-col pb-24 md:pb-0">
-      <p className="text-2xl font-semibold text-foreground">{money(effectivePrice)}</p>
+      <div className="flex flex-wrap items-baseline gap-2.5">
+        <p className="text-2xl font-semibold text-foreground">{money(effectivePrice)}</p>
+        {compareAtPrice > effectivePrice && (
+          <>
+            <p className="text-sm text-muted-foreground line-through">MRP {money(compareAtPrice)}</p>
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+              {discountPercentage}% OFF
+            </span>
+          </>
+        )}
+      </div>
+
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        {product.online_payment_enabled !== false && <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary" />Secure online payment</span>}
-        <Link href="/policies/returns" className="inline-flex items-center gap-1.5 underline underline-offset-2 hover:text-primary">Returns &amp; refund policy</Link>
-        <Link href="/policies/shipping" className="inline-flex items-center gap-1.5"><Truck className="h-4 w-4 text-primary" />Shipping information</Link>
+        {product.online_payment_enabled !== false && (
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-primary" /> Secure online payment
+          </span>
+        )}
+        {product.cod_enabled === true && (
+          <span className="inline-flex items-center gap-1.5">
+            <CheckCircle2 className="h-4 w-4 text-primary" /> Cash on Delivery available
+          </span>
+        )}
+        <Link href="/policies/returns" className="inline-flex items-center gap-1.5 underline underline-offset-2 hover:text-primary">
+          Returns &amp; refund policy
+        </Link>
+        <Link href="/policies/shipping" className="inline-flex items-center gap-1.5 hover:text-primary">
+          <Truck className="h-4 w-4 text-primary" /> Shipping information
+        </Link>
       </div>
 
       {!canBuy && (
         <span className="mt-4 w-fit rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
           Out of stock
         </span>
-      )}
-
-      {canBuy && (
-        <form onSubmit={checkDelivery} className="mt-6 rounded-xl border border-border bg-card p-4">
-          <label htmlFor="delivery-pincode" className="block text-sm font-semibold text-foreground">Check delivery charges</label>
-          <div className="mt-2 flex gap-2">
-            <input id="delivery-pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} value={pincode} onChange={(event) => { setPincode(event.target.value.replace(/\D/g, '').slice(0, 6)); setDeliveryStatus(''); }} placeholder="Enter 6-digit PIN code" className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground" />
-            <button type="submit" disabled={checkingDelivery} className="h-10 rounded-md bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-60">{checkingDelivery ? 'Checking…' : 'Check'}</button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">Shipping charges are calculated using PinkBox’s current shipping rules. Delivery dates depend on courier serviceability.</p>
-          {deliveryStatus && <p className="mt-2 text-sm text-muted-foreground" role="status">{deliveryStatus}</p>}
-        </form>
-      )}
-
-      {description && (
-        <section className="mt-6" aria-label="Product features">
-          <h2 className="text-base font-semibold text-foreground">Key Features</h2>
-          <ProductFeatureList description={description} />
-        </section>
       )}
 
       {variants.length > 1 && (
@@ -313,12 +339,26 @@ export default function ProductPurchasePanel({ product, description = '' }) {
         </div>
       )}
 
-      <div className="mt-8 grid w-full gap-3 sm:grid-cols-2 md:max-w-xl">
+      {isBagProduct && (
+        <section className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4" aria-label="Gift idea">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+            <Gift className="h-4 w-4" /> A thoughtful gift idea
+          </p>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-foreground">
+            A lovely gift for your wife, a friend, your sister or someone special.
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            Browse the product photos above to see the exact design and details before ordering.
+          </p>
+        </section>
+      )}
+
+      <div className="mt-7 grid w-full gap-3 sm:grid-cols-2 md:max-w-xl">
         <button
           type="button"
           onClick={() => addToCart()}
           disabled={!canBuy || busy}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-primary bg-background px-5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-primary bg-background px-5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy && <Loader2 className="h-4 w-4 animate-spin" />}
           Add to Cart
@@ -327,13 +367,12 @@ export default function ProductPurchasePanel({ product, description = '' }) {
           type="button"
           onClick={() => addToCart({ buyNow: true })}
           disabled={!canBuy || busy}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Buy Now
         </button>
       </div>
-      {!canBuy && <p className="mt-3 text-sm text-muted-foreground">This item is currently unavailable.</p>}
 
       {status && (
         <div role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -341,11 +380,81 @@ export default function ProductPurchasePanel({ product, description = '' }) {
           {added && <Link href="/cart" className="font-semibold text-primary underline underline-offset-4">View cart</Link>}
         </div>
       )}
+
+      {whatsappHref && (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+        >
+          <MessageCircle className="h-4 w-4" /> Questions about this product? Chat on WhatsApp
+        </a>
+      )}
+
+      {canBuy && (
+        <form onSubmit={checkDelivery} className="mt-6 rounded-xl border border-border bg-card p-4">
+          <label htmlFor="delivery-pincode" className="block text-sm font-semibold text-foreground">
+            Check delivery charges
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="delivery-pincode"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={6}
+              value={pincode}
+              onChange={(event) => {
+                setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
+                setDeliveryStatus('');
+              }}
+              placeholder="Enter 6-digit PIN code"
+              className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+            />
+            <button
+              type="submit"
+              disabled={checkingDelivery}
+              className="h-10 rounded-md bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-60"
+            >
+              {checkingDelivery ? 'Checking…' : 'Check'}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Shipping charges are calculated using PinkBox’s current shipping rules. Delivery dates depend on courier serviceability.
+          </p>
+          {deliveryStatus && <p className="mt-2 text-sm text-muted-foreground" role="status">{deliveryStatus}</p>}
+        </form>
+      )}
+
+      {description && !isBagProduct && (
+        <section className="mt-7" aria-label="Product features">
+          <h2 className="text-base font-semibold text-foreground">Product details</h2>
+          <ProductFeatureList description={description} />
+        </section>
+      )}
+
       <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_1fr] gap-2 border-t border-border bg-background/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
-        <div className="flex min-w-0 flex-col justify-center pl-1"><span className="text-[11px] text-muted-foreground">Price</span><span className="truncate text-sm font-bold text-foreground">{money(effectivePrice)}</span></div>
+        <div className="flex min-w-0 flex-col justify-center pl-1">
+          <span className="text-[11px] text-muted-foreground">Price</span>
+          <span className="truncate text-sm font-bold text-foreground">{money(effectivePrice)}</span>
+        </div>
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => addToCart()} disabled={!canBuy || busy} className="h-11 rounded-md border border-primary px-2 text-xs font-semibold text-primary disabled:opacity-50">{busy ? 'Please wait…' : 'Add to Cart'}</button>
-          <button type="button" onClick={() => addToCart({ buyNow: true })} disabled={!canBuy || busy} className="h-11 rounded-md bg-primary px-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">Buy Now</button>
+          <button
+            type="button"
+            onClick={() => addToCart()}
+            disabled={!canBuy || busy}
+            className="h-11 rounded-md border border-primary px-2 text-xs font-semibold text-primary disabled:opacity-50"
+          >
+            {busy ? 'Please wait…' : 'Add to Cart'}
+          </button>
+          <button
+            type="button"
+            onClick={() => addToCart({ buyNow: true })}
+            disabled={!canBuy || busy}
+            className="h-11 rounded-md bg-primary px-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            {busy ? 'Please wait…' : 'Buy Now'}
+          </button>
         </div>
       </div>
     </div>

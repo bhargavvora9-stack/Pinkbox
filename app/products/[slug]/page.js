@@ -213,6 +213,21 @@ export default async function ProductPage({ params }) {
 
           <section className="flex flex-col">
             <h1 className="text-3xl font-bold text-foreground">{p.title}</h1>
+            {p.reviews.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-0.5" aria-label={averageRating.toFixed(1) + ' out of 5 stars'}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Star
+                      key={value}
+                      className={'h-4 w-4 ' + (value <= Math.round(averageRating)
+                        ? 'fill-primary text-primary'
+                        : 'text-muted-foreground/40')}
+                    />
+                  ))}
+                </span>
+                <span>{averageRating.toFixed(1)} / 5 · {p.reviews.length} {p.reviews.length === 1 ? 'customer review' : 'customer reviews'}</span>
+              </div>
+            )}
             <ProductPurchasePanel
               product={{
                 ...p,
