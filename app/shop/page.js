@@ -59,16 +59,33 @@ async function getShopData() {
   if (!visibleProducts.length) return { settings, products: [] };
 
   const ids = visibleProducts.map((product) => product.id);
-  const { data: images, error: imagesError } = await db
-    .from('website_product_images')
-    .select('product_id,image_url,alt_text,sort_order,is_primary')
-    .eq('company_id', settings.company_id)
-    .in('product_id', ids)
-    .order('sort_order');
+  const [imagesResult, reviewsResult] = await Promise.all([
+    db.from('website_product_images')
+      .select('product_id,image_url,alt_text,sort_order,is_primary')
+      .eq('company_id', settings.company_id)
+      .in('product_id', ids)
+      .order('sort_order'),
+    db.from('website_product_reviews')
+      .select('product_id,rating')
+      .eq('company_id', settings.company_id)
+      .eq('is_approved', true)
+      .in('product_id', ids),
+  ]);
 
-  if (imagesError) return { settings, products: [] };
+  if (imagesResult.error) return { settings, products: [] };
+
+  const reviewStats = new Map();
+  if (!reviewsResult.error) {
+    for (const review of reviewsResult.data || []) {
+      const current = reviewStats.get(review.product_id) || { total: 0, count: 0 };
+      current.total += Number(review.rating || 0);
+      current.count += 1;
+      reviewStats.set(review.product_id, current);
+    }
+  }
 
   const imageMap = new Map();
+  const images = imagesResult.data || [];
   for (const image of images || []) {
     const current = imageMap.get(image.product_id) || [];
     current.push(image);
@@ -87,8 +104,11 @@ async function getShopData() {
       (a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
     );
     const fallback = { image_url: `/catalog-products/${product.sku.toLowerCase()}.webp`, alt_text: product.title, is_primary: true };
+    const reviewStat = reviewStats.get(product.id);
     return {
       ...product,
+      review_average: reviewStat?.count ? Number((reviewStat.total / reviewStat.count).toFixed(1)) : 0,
+      review_count: reviewStat?.count || 0,
       website_order_count: Number(orderCounts[product.id] || 0),
       short_description: sanitizePublicProductText(product.short_description),
       description: sanitizePublicProductText(product.description),
