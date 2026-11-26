@@ -68,7 +68,8 @@ export default function ZipReferenceProductCard({product, priority = false}){
  return (
   <article className="group overflow-hidden rounded-xl border bg-card text-card-foreground shadow transition-shadow hover:shadow-md">
    <Link href={'/products/'+product.slug}>
-    <div className="aspect-square overflow-hidden bg-muted">
+    <div className="relative aspect-square overflow-hidden bg-muted">
+     {product.is_best_seller && <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm">Best Seller</span>}
      {image?<Image src={image} alt={product.title} width={600} height={600} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) calc((100vw - 3rem) / 2), (max-width: 1279px) calc((100vw - 4rem) / 3), 25vw" unoptimized={shouldUnoptimizeImage(image)} className="h-full w-full object-contain p-3" preload={priority || undefined} fetchPriority={priority ? "high" : "auto"} loading={priority ? undefined : "lazy"} decoding="async"/>:<div className="flex h-full w-full items-center justify-center text-muted-foreground">No image</div>}
     </div>
     <div className="p-4"><h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2><div className="mt-2 flex flex-wrap items-baseline gap-2"><p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>{listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}</div>{packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}{!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}</div>
