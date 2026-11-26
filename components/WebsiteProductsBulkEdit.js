@@ -82,6 +82,12 @@ export default function WebsiteProductsBulkEdit(){
     });
   },[rows,search,statusFilter,brandFilter,stockFilter]);
 
+  // Reset selection whenever the filter/search changes so hidden products
+  // from a previous view can never be included in a bulk operation.
+  useEffect(()=>{
+    setSelected(new Set());
+  },[search,statusFilter,brandFilter,stockFilter]);
+
   const allVisibleSelected = filtered.length>0 && filtered.every(r=>selected.has(r.id));
   const meta = fields.find(x=>x[0]===field);
   const activeFilterCount = Number(statusFilter !== 'all') + Number(brandFilter !== 'all') + Number(stockFilter !== 'all');
@@ -150,7 +156,7 @@ export default function WebsiteProductsBulkEdit(){
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
       <div className="border-b px-5 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Showing {filtered.length} of {rows.length} · Selected {selected.size}. Selection is preserved when filters change.</p></div>
+          <div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Showing {filtered.length} of {rows.length} · Selected {selected.size}. Selection resets when filters change; apply filters first, then select products.</p></div>
           <label className="w-full lg:w-96"><span className="sr-only">Search products</span><input className={input} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, SKU, brand, price, stock…"/></label>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
