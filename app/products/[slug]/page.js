@@ -234,7 +234,7 @@ export default async function ProductPage({ params }) {
             {marketplaceRating && (
               <div
                 className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
-                aria-label={'Flipkart online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
+                aria-label={'Online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
               >
                 <span className="flex items-center gap-0.5" aria-hidden="true">
                   {[1, 2, 3, 4, 5].map((value) => (
@@ -247,7 +247,10 @@ export default async function ProductPage({ params }) {
                   ))}
                 </span>
                 <span>
-                  {marketplaceRating.rating.toFixed(1)} / 5 · {marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings on Flipkart
+                  {marketplaceRating.rating.toFixed(1)} / 5 · {marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Public marketplace ratings sourced from Flipkart; not PinkBox customer reviews.
                 </span>
               </div>
             )}
