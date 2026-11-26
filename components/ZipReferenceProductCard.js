@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Star } from 'lucide-react';
-import { getExternalMarketplaceRating } from '@/lib/external-marketplace-ratings';
 import Image from 'next/image';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const shouldUnoptimizeImage = (src) => {
@@ -14,7 +13,8 @@ export default function ZipReferenceProductCard({product, priority = false}){
  const router=useRouter();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
- const marketplaceRating=getExternalMarketplaceRating(product.sku);
+ const reviewAverage=Number(product.review_average||0);
+ const reviewCount=Number(product.review_count||0);
  const variants=Array.isArray(product.variants)?product.variants.filter((variant)=>variant?.is_active!==false):[];
  const canSellVariant=(variant)=>product.track_inventory===false||product.allow_backorder===true||Number(variant?.stock_quantity||0)>0;
  const preferredVariant=variants.find(canSellVariant)||variants[0]||null;
@@ -76,16 +76,16 @@ export default function ZipReferenceProductCard({product, priority = false}){
     </div>
     <div className="p-4">
      <h2 className="line-clamp-1 text-lg font-semibold text-card-foreground">{product.title}</h2>
-     {marketplaceRating && (
+     {reviewCount > 0 && (
       <div
        className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs"
-       aria-label={'Online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
+       aria-label={reviewAverage.toFixed(1) + ' out of 5 from ' + reviewCount + ' PinkBox reviews'}
       >
        <span className="flex items-center gap-0.5" aria-hidden="true">
-        {Array.from({length:5},(_,index)=><Star key={index} className={'h-3.5 w-3.5 '+(index < Math.round(marketplaceRating.rating) ? 'fill-primary text-primary' : 'text-muted-foreground/35')}/>)}
+        {Array.from({length:5},(_,index)=><Star key={index} className={'h-3.5 w-3.5 '+(index < Math.round(reviewAverage) ? 'fill-primary text-primary' : 'text-muted-foreground/35')}/>)} 
        </span>
-       <span className="font-semibold text-foreground">{marketplaceRating.rating.toFixed(1)}</span>
-       <span className="text-muted-foreground">({marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings)</span>
+       <span className="font-semibold text-foreground">{reviewAverage.toFixed(1)}</span>
+       <span className="text-muted-foreground">({reviewCount.toLocaleString('en-IN')} PinkBox reviews)</span>
       </div>
      )}
      <div className="mt-2 flex flex-wrap items-baseline gap-2">
