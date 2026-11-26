@@ -1,11 +1,11 @@
 import { permanentRedirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'Hand Bags Collection | PinkBox',
-  description: 'Explore EcoCarry hand bags at PinkBox.',
-  alternates: { canonical: '/collections/hand-bags' },
+  title: 'Bags Collection | PinkBox',
+  description: 'Explore all PinkBox bag designs in one collection.',
+  alternates: { canonical: '/collections/bags' },
 };
 
 export default function HandBagsPage() {
-  permanentRedirect('/collections/hand-bags');
+  permanentRedirect('/collections/bags');
 }
