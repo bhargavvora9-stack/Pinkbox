@@ -34,10 +34,27 @@ async function getCollection(slug) {
     orderCounts,
     sellableProductIds,
   );
-  const { data: images, error: imagesError } = ids.length ? await db.from('website_product_images')
-    .select('product_id,image_url,alt_text,is_primary,sort_order')
-    .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[],error:null};
+  const [imagesResult, reviewsResult] = await Promise.all([
+    ids.length ? db.from('website_product_images')
+      .select('product_id,image_url,alt_text,is_primary,sort_order')
+      .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : Promise.resolve({data:[],error:null}),
+    ids.length ? db.from('website_product_reviews')
+      .select('product_id,rating')
+      .eq('company_id',settings.company_id).eq('is_approved',true).in('product_id',ids) : Promise.resolve({data:[],error:null}),
+  ]);
+  const { data: images, error: imagesError } = imagesResult;
+  const { data: reviews, error: reviewsError } = reviewsResult;
   if (imagesError) throw new Error(imagesError.message);
+
+  const reviewStats = new Map();
+  if (!reviewsError) {
+    (reviews || []).forEach((review) => {
+      const current = reviewStats.get(review.product_id) || { total: 0, count: 0 };
+      current.total += Number(review.rating || 0);
+      current.count += 1;
+      reviewStats.set(review.product_id, current);
+    });
+  }
   const imageMap = {};
   (images || []).forEach((image) => {
     const productImages = imageMap[image.product_id] || [];
@@ -61,8 +78,11 @@ async function getCollection(slug) {
       sort_order: 0,
     };
     const resolvedImages = productImages.length ? productImages : [fallback];
+    const reviewStat = reviewStats.get(product.id);
     return {
       ...product,
+      review_average: reviewStat?.count ? Number((reviewStat.total / reviewStat.count).toFixed(1)) : 0,
+      review_count: reviewStat?.count || 0,
       website_order_count: Number(orderCounts[product.id] || 0),
       short_description: sanitizePublicProductText(product.short_description),
       variants: variantsByProduct[product.id] || [],
