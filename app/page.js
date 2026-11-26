@@ -2,6 +2,8 @@ import PinkBoxHome from '../components/PinkBoxHome';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { filterAvailableProducts } from '@/lib/product-availability';
+import { getWebsiteProductOrderCounts, sortProductsByWebsiteOrders } from '@/lib/website-product-sales';
 import { absoluteUrl, limitMetaText, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +26,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
   // The homepage only renders collection tiles, hero banners and coupon offers.
   // Fetch only the IDs needed to decide which collections have products; avoid
   // loading full product descriptions, variants, image rows, blog bodies and reviews.
-  const [products, featuredProductRows, homepageReviews, categories, banners, mappings, discounts, homepageSections] = await Promise.all([
+  const [products, featuredProductRows, homepageReviews, categories, banners, mappings, discounts, homepageSections, orderCounts] = await Promise.all([
     db.from('website_products')
       .select('id')
       .eq('company_id', companyId)
@@ -38,8 +40,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .or('sku.like.MDH-%,sku.like.BAG-%')
       .gt('price', 0)
       .order('featured', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(8),
+      .order('created_at', { ascending: false }),
     db.from('website_product_reviews')
       .select('id,product_id,customer_name,rating,title,review_text,created_at')
       .eq('company_id', companyId)
@@ -67,6 +68,7 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .select('id,section_type,title,settings,sort_order,is_active')
       .eq('company_id', companyId)
       .order('sort_order'),
+    getWebsiteProductOrderCounts(companyId),
   ]);
 
   const results = { products, featuredProductRows, homepageReviews, categories, banners, mappings, discounts, homepageSections };
@@ -96,6 +98,9 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       ])
     : [{ data: [], error: null }, { data: [], error: null }];
   if (featuredVariantsResult.error || featuredImagesResult.error) throw new Error(featuredVariantsResult.error?.message || featuredImagesResult.error?.message);
+  const sellableProductIds = new Set(filterAvailableProducts(featuredProductRows.data || [], featuredVariantsResult.data || []).map((product) => product.id));
+  const rankedFeaturedRows = sortProductsByWebsiteOrders(featuredProductRows.data || [], orderCounts, sellableProductIds);
+  const hasBestSellers = rankedFeaturedRows.some((product) => Number(orderCounts[product.id] || 0) > 0);
   const variantsByProduct = new Map();
   for (const variant of featuredVariantsResult.data || []) {
     const rows = variantsByProduct.get(variant.product_id) || [];
@@ -108,16 +113,17 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     rows.push(image);
     imagesByProduct.set(image.product_id, rows);
   }
-  const homepageFeaturedProducts = (featuredProductRows.data || []).slice(0, 4).map((product) => {
+  const homepageFeaturedProducts = rankedFeaturedRows.slice(0, 4).map((product) => {
     const productImages = (imagesByProduct.get(product.id) || []).sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0));
     const fallback = `/catalog-products/${String(product.sku || '').toLowerCase()}.webp`;
-    return { ...product, short_description: sanitizePublicProductText(product.short_description), description: sanitizePublicProductText(product.description), variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
+    return { ...product, website_order_count: Number(orderCounts[product.id] || 0), short_description: sanitizePublicProductText(product.short_description), description: sanitizePublicProductText(product.description), variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
   });
 
   return {
     settings,
     categories: visibleCategories,
     featuredProducts: homepageFeaturedProducts,
+    hasBestSellers,
     reviews: homepageReviews.data || [],
     banners: activeBanners,
     homepageSections: homepageSections.data || [],

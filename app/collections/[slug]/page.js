@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { absoluteUrl, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 import { filterAvailableProducts } from '@/lib/product-availability';
+import { getWebsiteProductOrderCounts, sortProductsByWebsiteOrders } from '@/lib/website-product-sales';
 import ZipReferenceFooter from '@/components/ZipReferenceFooter';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,13 @@ async function getCollection(slug) {
     .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
     .eq('company_id',settings.company_id).in('product_id',ids).eq('is_active',true) : {data:[],error:null};
   if (variantsError) throw new Error(variantsError.message);
-  const availableProducts = filterAvailableProducts(products || [], variants || [], { includeOutOfStock: true });
+  const orderCounts = await getWebsiteProductOrderCounts(settings.company_id);
+  const sellableProductIds = new Set(filterAvailableProducts(products || [], variants || []).map((product) => product.id));
+  const availableProducts = sortProductsByWebsiteOrders(
+    filterAvailableProducts(products || [], variants || [], { includeOutOfStock: true }),
+    orderCounts,
+    sellableProductIds,
+  );
   const { data: images, error: imagesError } = ids.length ? await db.from('website_product_images')
     .select('product_id,image_url,alt_text,is_primary,sort_order')
     .eq('company_id',settings.company_id).in('product_id',ids).order('sort_order') : {data:[],error:null};
@@ -56,6 +63,7 @@ async function getCollection(slug) {
     const resolvedImages = productImages.length ? productImages : [fallback];
     return {
       ...product,
+      website_order_count: Number(orderCounts[product.id] || 0),
       short_description: sanitizePublicProductText(product.short_description),
       variants: variantsByProduct[product.id] || [],
       images: resolvedImages,

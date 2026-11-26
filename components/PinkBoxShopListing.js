@@ -8,7 +8,7 @@ import ZipReferenceProductGrid from '@/components/ZipReferenceProductGrid';
 
 export default function PinkBoxShopListing({ settings = {}, products = [] }) {
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('featured');
+  const [sort, setSort] = useState('best-sellers');
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = products.filter((product) =>
@@ -36,7 +36,7 @@ export default function PinkBoxShopListing({ settings = {}, products = [] }) {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pads, diapers and bags…" aria-label="Search pads, diapers and bags" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground sm:max-w-xs" />
           <select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground" aria-label="Sort products">
-            <option value="featured">Featured</option>
+            <option value="best-sellers">Best Sellers</option><option value="featured">Featured first</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
           </select>

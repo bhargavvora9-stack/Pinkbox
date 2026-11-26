@@ -18,7 +18,7 @@ export default function ZipReferenceProductGrid({ products = [] }) {
   const [size, setSize] = useState('all');
   const [pack, setPack] = useState('all');
   const [priceBand, setPriceBand] = useState('all');
-  const [sort, setSort] = useState('featured');
+  const [sort, setSort] = useState('best-sellers');
   const sizes = useMemo(() => [...new Set(products.map(sizeOf).filter(Boolean))].sort(), [products]);
   const packs = useMemo(() => [...new Set(products.map(packOf).filter(Boolean))].sort((a, b) => a - b), [products]);
   const visible = useMemo(() => {
@@ -48,7 +48,7 @@ export default function ZipReferenceProductGrid({ products = [] }) {
         {sizes.length > 0 && <label className="grid gap-1 text-xs font-medium text-muted-foreground">Size<select value={size} onChange={(event) => setSize(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All sizes</option>{sizes.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>}
         {packs.length > 0 && <label className="grid gap-1 text-xs font-medium text-muted-foreground">Pack quantity<select value={pack} onChange={(event) => setPack(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All pack quantities</option>{packs.map((value) => <option key={value} value={String(value)}>{value} pieces</option>)}</select></label>}
         <label className="grid gap-1 text-xs font-medium text-muted-foreground">Price range<select value={priceBand} onChange={(event) => setPriceBand(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All prices</option><option value="under-100">Under ₹100</option><option value="100-299">₹100–₹299</option><option value="300-499">₹300–₹499</option><option value="500-plus">₹500 and above</option></select></label>
-        <label className="grid gap-1 text-xs font-medium text-muted-foreground">Sort by<select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
+        <label className="grid gap-1 text-xs font-medium text-muted-foreground">Sort by<select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="best-sellers">Best Sellers</option><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
       </div>
       <p className="mb-4 text-xs text-muted-foreground" aria-live="polite">Showing {visible.length} of {products.length} products</p>
       {visible.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{visible.map((product, index) => <ZipReferenceProductCard key={product.id} product={product} priority={index === 0} />)}</div> : <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">No products match these filters. Try another size, pack or price range.</div>}
