@@ -147,15 +147,15 @@ function TrustBadges({ section }) {
       {categories.length ? <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{categories.map((category)=><article key={category.id} className="group overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-1 hover:shadow-soft"><Link href={`/collections/${encodeURIComponent(category.slug)}`} className="block"><div className="relative aspect-square overflow-hidden bg-muted">{category.image_url?<Image src={category.image_url} alt={category.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" unoptimized={shouldUnoptimizeImage(category.image_url)} className="h-full w-full object-contain p-3"/>:<div className="flex h-full items-center justify-center bg-gradient-to-br from-[#fff4f7] to-[#fce4ec] p-6"><span className="font-display text-2xl font-semibold text-primary">{category.name}</span></div>}</div><div className="flex items-center justify-between gap-4 p-5"><div><p className="text-xs font-semibold tracking-widest text-primary uppercase">PinkBox Collection</p><h3 className="mt-2 font-display text-xl font-semibold text-foreground">{category.name}</h3></div><span className="shrink-0 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">Explore</span></div></Link></article>)}</div>:<p className="mt-12 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Collections will appear here soon.</p>}
     </section>
   );
-}function FeaturedProducts({ products = [] }) {
+}function FeaturedProducts({ products = [], hasBestSellers = false }) {
   if (!products.length) return null;
   return (
     <section id="featured-products" className="container mx-auto px-4 py-14 md:py-20">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">Picked for you</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">Featured Products</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Explore selected PinkBox products, pack details and current prices. Choose a product to see all available options.</p>
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">{hasBestSellers ? 'Most ordered by PinkBox customers' : 'Picked for you'}</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-4xl">{hasBestSellers ? 'Best Sellers' : 'Featured Products'}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{hasBestSellers ? 'Products are ranked using completed orders placed on the PinkBox website.' : 'Explore selected PinkBox products, pack details and current prices. Choose a product to see all available options.'}</p>
         </div>
         <Link href="/shop" className="text-sm font-semibold text-primary underline underline-offset-4">View all products</Link>
       </div>
@@ -363,7 +363,7 @@ export default function PinkBoxHome({ initialData }) {
       <main>
         <Hero banner={banners}/>
         <CouponStrip coupons={coupons}/>
-        <FeaturedProducts products={data.featuredProducts || []}/>
+        <FeaturedProducts products={data.featuredProducts || []} hasBestSellers={Boolean(data.hasBestSellers)}/>
         {orderedSections.map((row,index)=><Fragment key={row.id||row.section_type||index}>{sectionNodes[row.section_type]||null}</Fragment>)}
         <BrandReelSection />
       </main>
