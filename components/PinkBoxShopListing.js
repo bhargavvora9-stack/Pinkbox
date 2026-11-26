@@ -26,12 +26,13 @@ export default function PinkBoxShopListing({ settings = {}, products = [] }) {
       <ZipReferenceHeader settings={settings} />
       <main className="container mx-auto px-4 py-12 md:py-16">
         <p className="text-xs font-semibold tracking-widest text-primary uppercase">Shop</p>
-        <h1 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-5xl">Shop Sanitary Pads, Baby Diapers &amp; Tote Bags Online</h1>
+        <h1 className="mt-3 font-display text-3xl font-semibold text-foreground md:text-5xl">Shop Sanitary Pads, Baby Diapers, Tote Bags &amp; Hand Bags Online</h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">Buy sanitary pads and 7 Soft baby diaper pants online at PinkBox. Explore personalized cotton tote bags too; bag designs remain visible while currently out of stock. Compare product details, sizes and pack counts before ordering. Delivery across India.</p>
         <nav className="mt-6 flex flex-wrap gap-3" aria-label="Shop by category">
           <Link href="/collections/sanitary-pads" className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary">Shop sanitary pads</Link>
           <Link href="/collections/baby-diapers" className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary">Shop 7 Soft baby diapers</Link>
           <Link href="/collections/bags" className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary">Explore tote bags</Link>
+          <Link href="/collections/hand-bags" className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary">Explore hand bags</Link>
         </nav>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pads, diapers and tote bags…" aria-label="Search pads, diapers and tote bags" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground sm:max-w-xs" />
