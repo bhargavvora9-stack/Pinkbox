@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
 import LegacyBrandTestimonials from '@/components/LegacyBrandTestimonials';
+import ExternalMarketplaceRating from '@/components/ExternalMarketplaceRating';
 import { Star } from 'lucide-react';
 import { cache } from 'react';
 import { absoluteUrl, safeJsonLd, buildProductMetaDescription, sanitizePublicProductText } from '@/lib/seo';
@@ -304,6 +305,7 @@ export default async function ProductPage({ params }) {
         {String(p.brand || '').trim().toLowerCase() === '24 care' && (
           <LegacyBrandTestimonials />
         )}
+        <ExternalMarketplaceRating sku={p.sku} />
       </main>
       <ZipReferenceFooter settings={p} />
     </div>
