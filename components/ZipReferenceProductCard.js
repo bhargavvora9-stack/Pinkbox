@@ -79,13 +79,13 @@ export default function ZipReferenceProductCard({product, priority = false}){
      {marketplaceRating && (
       <div
        className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs"
-       aria-label={'Flipkart online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
+       aria-label={'Online rating ' + marketplaceRating.rating.toFixed(1) + ' out of 5 from ' + marketplaceRating.ratingCount + ' ratings'}
       >
        <span className="flex items-center gap-0.5" aria-hidden="true">
         {Array.from({length:5},(_,index)=><Star key={index} className={'h-3.5 w-3.5 '+(index < Math.round(marketplaceRating.rating) ? 'fill-primary text-primary' : 'text-muted-foreground/35')}/>)}
        </span>
        <span className="font-semibold text-foreground">{marketplaceRating.rating.toFixed(1)}</span>
-       <span className="text-muted-foreground">({marketplaceRating.ratingCount.toLocaleString('en-IN')}) · Flipkart</span>
+       <span className="text-muted-foreground">({marketplaceRating.ratingCount.toLocaleString('en-IN')} ratings)</span>
       </div>
      )}
      <div className="mt-2 flex flex-wrap items-baseline gap-2">
