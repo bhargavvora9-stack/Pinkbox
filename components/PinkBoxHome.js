@@ -53,7 +53,7 @@ export default function PinkBoxHome({ initialData }){
  const toggle=id=>setWish(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
  const freeShipThreshold=Number(s.free_shipping_threshold||0);
  const freeShipLabel=freeShipThreshold>0?`free shipping above ${money(freeShipThreshold)}`:'free shipping on all orders';
- const announcementText=pick(s.announcement_text||s.announcement_bar,freeShipThreshold>0?`Free shipping on orders above ${money(freeShipThreshold)} · PinkBox, a brand by 24 CARE · Dealer & bulk enquiries welcome``:'Free shipping on all orders · PinkBox, a brand by 24 CARE · Dealer & bulk enquiries welcome');
+ const announcementText=pick(s.announcement_text||s.announcement_bar,freeShipThreshold>0?`Free shipping on orders above ${money(freeShipThreshold)} · PinkBox, a brand by 24 CARE · Dealer & bulk enquiries welcome`:'Free shipping on all orders · PinkBox, a brand by 24 CARE · Dealer & bulk enquiries welcome');
  const heroImage=activeBanner?.image_url||shopProducts[0]?.image_url||null;
  const heroLine=bagOnly?'Explore embroidered cotton tote bag designs and add a name for embroidery on the product page.':hasSanitary&&hasDiapers?'Shop 24 Care sanitary pads and 7 Soft baby diapers, with size and pack details shown on each product card.':hasSanitary?'Explore sanitary pad options and compare the features listed on each product page.':hasDiapers?'Explore 7 Soft baby diaper sizes and pack options.':hasBags?'Explore PinkBox collections, including personalized cotton tote bags.':'Explore PinkBox products.';
  const rawWhatsappNumber=String(s.whatsapp_number||s.phone||'').replace(/\D/g,'');
