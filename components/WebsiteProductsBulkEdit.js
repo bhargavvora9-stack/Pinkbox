@@ -32,6 +32,7 @@ const normalize = value => String(value ?? '')
 export default function WebsiteProductsBulkEdit(){
   const [rows,setRows] = useState([]);
   const [selected,setSelected] = useState(new Set());
+  const [visibleProductIds,setVisibleProductIds] = useState(null);
   const [search,setSearch] = useState('');
   const [statusFilter,setStatusFilter] = useState('all');
   const [brandFilter,setBrandFilter] = useState('all');
@@ -56,6 +57,23 @@ export default function WebsiteProductsBulkEdit(){
     finally{ setLoading(false); }
   };
   useEffect(()=>{load();},[]);
+
+  useEffect(()=>{
+    const syncVisibleRows=()=>{
+      const table=document.querySelector('.website-admin main table[data-pb-bulk-edit-table="true"]');
+      if(!table){setVisibleProductIds(null);return;}
+      const ids=Array.from(table.querySelectorAll('tbody tr[data-pb-bulk-product-id]'))
+        .filter(row=>window.getComputedStyle(row).display!=='none')
+        .map(row=>String(row.dataset.pbBulkProductId))
+        .filter(Boolean);
+      setVisibleProductIds(ids);
+      const visibleSet=new Set(ids);
+      setSelected(current=>new Set([...current].filter(id=>visibleSet.has(String(id)))));
+    };
+    syncVisibleRows();
+    window.addEventListener('pb-admin-table-view-updated',syncVisibleRows);
+    return()=>window.removeEventListener('pb-admin-table-view-updated',syncVisibleRows);
+  },[]);
 
   const brands = useMemo(() => Array.from(new Set(
     rows.map(row => String(row.brand || '').trim()).filter(Boolean)
@@ -88,17 +106,25 @@ export default function WebsiteProductsBulkEdit(){
     setSelected(new Set());
   },[search,statusFilter,brandFilter,stockFilter]);
 
-  const allVisibleSelected = filtered.length>0 && filtered.every(r=>selected.has(r.id));
+  const visibleFiltered = visibleProductIds===null
+    ? filtered
+    : filtered.filter(row=>visibleProductIds.includes(String(row.id)));
+  const allVisibleSelected = visibleFiltered.length>0 && visibleFiltered.every(r=>selected.has(r.id));
   const meta = fields.find(x=>x[0]===field);
   const activeFilterCount = Number(statusFilter !== 'all') + Number(brandFilter !== 'all') + Number(stockFilter !== 'all');
 
   const toggle = id => setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
-  const toggleAll = () => setSelected(prev=>{
-    const n=new Set(prev);
-    if(allVisibleSelected) filtered.forEach(r=>n.delete(r.id));
-    else filtered.forEach(r=>n.add(r.id));
-    return n;
-  });
+  const toggleAll = () => {
+    const table=document.querySelector('.website-admin main table[data-pb-bulk-edit-table="true"]');
+    const ids=table
+      ? Array.from(table.querySelectorAll('tbody tr[data-pb-bulk-product-id]'))
+          .filter(row=>window.getComputedStyle(row).display!=='none')
+          .map(row=>String(row.dataset.pbBulkProductId))
+          .filter(Boolean)
+      : visibleFiltered.map(row=>String(row.id));
+    setVisibleProductIds(ids);
+    setSelected(current=>ids.length>0&&ids.every(id=>current.has(id))?new Set():new Set(ids));
+  };
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('all');
@@ -156,7 +182,7 @@ export default function WebsiteProductsBulkEdit(){
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
       <div className="border-b px-5 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Showing {filtered.length} of {rows.length} · Selected {selected.size}. Selection resets when filters change; apply filters first, then select products.</p></div>
+          <div><h2 className="font-semibold">Select products</h2><p className="text-xs text-gray-500">Showing {filtered.length} of {rows.length} · Selected {selected.size}. Selection is limited to visible filtered products. Changing filters clears or removes products that are no longer visible.</p></div>
           <label className="w-full lg:w-96"><span className="sr-only">Search products</span><input className={input} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, SKU, brand, price, stock…"/></label>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -169,7 +195,7 @@ export default function WebsiteProductsBulkEdit(){
           {(search || activeFilterCount > 0) && <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"><X size={13}/>Clear filters</button>}
         </div>
       </div>
-      <div className="overflow-auto"><table className="min-w-[900px] w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Select all visible products"/></th><th className="px-4 py-3">Product</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Stock</th><th className="px-4 py-3">GST</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y">{loading?<tr><td colSpan="7" className="p-12 text-center text-gray-500">Loading…</td></tr>:filtered.length?filtered.map(r=><tr key={r.id} className={selected.has(r.id)?'bg-pink-50/40':''}><td className="px-4 py-3"><input type="checkbox" checked={selected.has(r.id)} onChange={()=>toggle(r.id)} aria-label={`Select ${r.title}`}/></td><td className="px-4 py-3 font-semibold">{r.title}<div className="text-xs text-gray-500">{r.brand||'No brand'}</div></td><td className="px-4 py-3">{r.sku||'—'}</td><td className="px-4 py-3">{money(r.price)}</td><td className="px-4 py-3">{r.stock_quantity??0}</td><td className="px-4 py-3">{r.gst_percent??0}%</td><td className="px-4 py-3">{r.is_active?'Active':'Draft'}</td></tr>):<tr><td colSpan="7" className="p-12 text-center text-gray-500">No products match these filters. Try clearing a filter or changing your search.</td></tr>}</tbody></table></div>
+      <div className="overflow-auto"><table data-pb-bulk-edit-table="true" className="min-w-[900px] w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Select all visible products"/></th><th className="px-4 py-3">Product</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Stock</th><th className="px-4 py-3">GST</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y">{loading?<tr><td colSpan="7" className="p-12 text-center text-gray-500">Loading…</td></tr>:filtered.length?filtered.map(r=><tr key={r.id} data-pb-bulk-product-id={r.id} className={selected.has(r.id)?'bg-pink-50/40':''}><td className="px-4 py-3"><input type="checkbox" checked={selected.has(r.id)} onChange={()=>toggle(r.id)} aria-label={`Select ${r.title}`}/></td><td className="px-4 py-3 font-semibold">{r.title}<div className="text-xs text-gray-500">{r.brand||'No brand'}</div></td><td className="px-4 py-3">{r.sku||'—'}</td><td className="px-4 py-3">{money(r.price)}</td><td className="px-4 py-3">{r.stock_quantity??0}</td><td className="px-4 py-3">{r.gst_percent??0}%</td><td className="px-4 py-3">{r.is_active?'Active':'Draft'}</td></tr>):<tr><td colSpan="7" className="p-12 text-center text-gray-500">No products match these filters. Try clearing a filter or changing your search.</td></tr>}</tbody></table></div>
     </section>
   </div>;
 }
