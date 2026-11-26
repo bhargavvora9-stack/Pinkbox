@@ -62,7 +62,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/mr/baby-care/diaper-potty-training/baby-diapers/7-soft~brand/pr?sid=kyh%2Cfdp%2Cyvf',
     listing: '7 Soft Baby Diaper Pants — L, 75 pcs',
     note: 'The external L-size 75-piece listing matches this PinkBox pack.',
-  }
+  },
   'MDH-023': {
     rating: 4.2,
     ratingCount: 78,
