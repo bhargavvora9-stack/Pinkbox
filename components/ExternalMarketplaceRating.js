@@ -101,7 +101,14 @@ export default function ExternalMarketplaceRating({ sku }) {
         </div>
         <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2">
           <span className="text-lg font-bold text-foreground">{details.rating.toFixed(1)}</span>
-          <span className="text-sm text-primary" aria-label="out of 5 stars">★★★★★</span>
+          <span
+            className="text-sm tracking-tight text-primary"
+            aria-label={details.rating.toFixed(1) + ' out of 5 stars'}
+          >
+            {Array.from({ length: 5 }, (_, index) =>
+              index + 1 <= Math.round(details.rating) ? '★' : '☆',
+            ).join('')}
+          </span>
         </div>
       </div>
 
