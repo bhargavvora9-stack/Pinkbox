@@ -20,9 +20,13 @@ export default function WebsiteProductsManagerWizard(){
    const table=document.querySelector('.website-admin main table[data-pb-product-list="true"]');
    if(!table){setVisibleProductIds(null);return;}
    const ids=Array.from(table.querySelectorAll('tbody tr[data-pb-product-id]'))
-    .filter(row=>row.style.display!=='none')
-    .map(row=>row.dataset.pbProductId);
+    .filter(row=>window.getComputedStyle(row).display!=='none')
+    .map(row=>String(row.dataset.pbProductId))
+    .filter(Boolean);
    setVisibleProductIds(ids);
+   const visibleSet=new Set(ids);
+   // A table filter must also remove hidden products from the current selection.
+   setSelectedIds(current=>current.filter(id=>visibleSet.has(String(id))));
   };
   syncVisibleProductRows();
   window.addEventListener('pb-admin-table-view-updated',syncVisibleProductRows);
@@ -35,7 +39,17 @@ export default function WebsiteProductsManagerWizard(){
  },[filtered,visibleProductIds]);
  const toggleSelected=id=>setSelectedIds(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const allVisibleSelected=visibleFiltered.length>0&&visibleFiltered.every(r=>selectedIds.includes(r.id));
- const toggleAllVisible=()=>setSelectedIds(v=>allVisibleSelected?v.filter(id=>!visibleFiltered.some(r=>r.id===id)):[...new Set([...v,...visibleFiltered.map(r=>r.id)])]);
+ const toggleAllVisible=()=>{
+  const table=document.querySelector('.website-admin main table[data-pb-product-list="true"]');
+  const ids=table
+   ?Array.from(table.querySelectorAll('tbody tr[data-pb-product-id]'))
+     .filter(row=>window.getComputedStyle(row).display!=='none')
+     .map(row=>String(row.dataset.pbProductId))
+     .filter(Boolean)
+   :visibleFiltered.map(row=>String(row.id));
+  setVisibleProductIds(ids);
+  setSelectedIds(current=>ids.length>0&&ids.every(id=>current.includes(id))?[]:ids);
+ };
  const deleteSelected=async()=>{if(!selectedIds.length)return;if(!confirm(`Delete ${selectedIds.length} selected product(s)? This cannot be undone.`))return;setBulkDeleting(true);setError('');setNotice('');try{const results=await Promise.all(selectedIds.map(id=>fetch(`/api/website/products?id=${id}`,{method:'DELETE'})));const failed=results.filter(x=>!x.ok).length;if(failed)throw Error(`${failed} product(s) could not be deleted.`);setRows(v=>v.filter(r=>!selectedIds.includes(r.id)));setSelectedIds([]);setNotice(`${results.length} product(s) deleted successfully.`)}catch(e){setError(e.message||'Bulk delete failed.')}finally{setBulkDeleting(false)}};
  const open=async row=>{setEdit(row);setStep(1);setError('');setNotice('');setFiles([]);setCategoryIds([]);setOpeningStock(0);setStockAdjustQty('1');setStockMessage('');setForm({...blank,...(row||{}),price:row?.price??'',compare_at_price:row?.compare_at_price??'',cost_price:row?.cost_price??'',gst_percent:row?.gst_percent??'',weight:row?.weight??'',low_stock_threshold:row?.low_stock_threshold??5,cod_override:row?.cod_override??null,online_payment_override:row?.online_payment_override??null,shipping_charge_override:row?.shipping_charge_override??null});setModal(true);await Promise.all([loadImages(row?.id),(async()=>{if(!row?.id)return;try{const r=await fetch('/api/website/product-categories',{cache:'no-store'}),j=await r.json();if(r.ok)setCategoryIds((j.data||[]).filter(x=>x.product_id===row.id).map(x=>x.category_id));}catch{setCategoryIds([])}})()])};
  const adjustStock=async direction=>{
