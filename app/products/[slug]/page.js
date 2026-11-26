@@ -5,6 +5,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ProductPurchasePanel from '@/components/ProductPurchasePanel';
 import ProductReviewForm from '@/components/ProductReviewForm';
+import LegacyBrandTestimonials from '@/components/LegacyBrandTestimonials';
 import { Star } from 'lucide-react';
 import { cache } from 'react';
 import { absoluteUrl, safeJsonLd, buildProductMetaDescription, sanitizePublicProductText } from '@/lib/seo';
@@ -243,7 +244,7 @@ export default async function ProductPage({ params }) {
         <section className="mt-16 border-t border-border pt-10" aria-label="Customer reviews">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Customer Reviews</h2>
+              <h2 className="text-2xl font-bold text-foreground">PinkBox Product Reviews</h2>
               {p.reviews.length > 0 ? (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex gap-0.5" aria-label={averageRating.toFixed(1) + ' out of 5 stars'}>
@@ -262,7 +263,7 @@ export default async function ProductPage({ params }) {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  No reviews yet — be the first to share your experience.
+                  No PinkBox reviews yet — be the first to share your experience.
                 </p>
               )}
             </div>
@@ -299,6 +300,10 @@ export default async function ProductPage({ params }) {
             </ul>
           )}
         </section>
+
+        {String(p.brand || '').trim().toLowerCase() === '24 care' && (
+          <LegacyBrandTestimonials />
+        )}
       </main>
       <ZipReferenceFooter settings={p} />
     </div>
