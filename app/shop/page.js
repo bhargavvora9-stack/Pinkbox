@@ -6,8 +6,8 @@ import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SHOP_TITLE = 'Shop Sanitary Pads, Diapers & Hand Bags | PinkBox';
-const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers, tote bags and EcoCarry hand bags at PinkBox. Browse product details, designs and current prices.';
+const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Bags | PinkBox';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and bags at PinkBox. Explore tote bags, handbags and office bag styles together in one collection.';
 
 export const metadata = {
   title: SHOP_TITLE,
