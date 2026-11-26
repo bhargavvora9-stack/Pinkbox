@@ -22,7 +22,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/7-soft-premium-baby-diaper-pants-m-size-34-5-11-kg-extra-absorbent/p/itmbd2fa2c5de9c9',
     listing: '7 Soft Premium Baby Diaper Pants — M, 34 pcs',
     note: 'The external listing matches this PinkBox single-pack size and quantity.',
-  }
+  },
   'MDH-003': {
     rating: 4.1,
     ratingCount: 101,
@@ -30,7 +30,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/mr/baby-care/diaper-potty-training/baby-diapers/7-soft~brand/pr?sid=kyh%2Cfdp%2Cyvf',
     listing: '7 Soft Premium Baby Diaper Pants — L, 30 pcs',
     note: 'The external L-size 30-piece listing matches this PinkBox pack.',
-  }
+  },
   'MDH-007': {
     rating: 3.8,
     ratingCount: 150,
@@ -38,7 +38,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/mr/baby-care/diaper-potty-training/baby-diapers/7-soft~brand/pr?sid=kyh%2Cfdp%2Cyvf',
     listing: '7 Soft Baby Diaper Pants — L, 124 pcs (2 × 62)',
     note: 'The source is a 2-pack combo of the same 62-piece L pack; PinkBox lists one 62-piece pack.',
-  }
+  },
   'MDH-010': {
     rating: 3.7,
     ratingCount: 264,
@@ -46,7 +46,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/mr/baby-care/diaper-potty-training/baby-diapers/7-soft~brand/pr?sid=kyh%2Cfdp%2Cyvf',
     listing: '7 Soft Baby Diaper Pants — M, 50 pcs',
     note: 'The external M-size 50-piece listing matches this PinkBox pack.',
-  }
+  },
   'MDH-012': {
     rating: 4.4,
     ratingCount: 10,
@@ -54,7 +54,7 @@ const EXTERNAL_RATINGS = {
     href: 'https://www.flipkart.com/mr/baby-care/diaper-potty-training/baby-diapers/7-soft~brand/pr?sid=kyh%2Cfdp%2Cyvf',
     listing: '7 Soft Premium Baby Diaper Pants — S, 75 pcs',
     note: 'The external S-size 75-piece listing matches this PinkBox pack.',
-  }
+  },
   'MDH-014': {
     rating: 4.4,
     ratingCount: 10,
