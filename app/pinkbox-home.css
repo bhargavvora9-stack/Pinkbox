@@ -6,7 +6,11 @@
 .pb-home a{color:inherit;text-decoration:none}
 .pb-home img{max-width:100%}
 
-.pb-home-announcement{overflow:hidden;white-space:nowrap;padding:9px 14px;background:#e1b86f;color:#fff;text-align:center;font-size:clamp(9px,2.6vw,11px);font-weight:700;letter-spacing:.14em;text-overflow:ellipsis}
+.pb-home-announcement{display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding:0;background:#e1b86f;color:#fff;text-align:left;font-size:clamp(9px,2.6vw,11px);font-weight:700;letter-spacing:.08em}
+.pb-home-announcement-track{display:flex;flex:none;width:max-content;animation:pb-announcement-marquee 48s linear infinite}
+.pb-home-announcement-track span{display:block;flex:none;padding:9px 56px;white-space:nowrap}
+@keyframes pb-announcement-marquee{to{transform:translateX(-50%)}}
+.pb-home-announcement:hover .pb-home-announcement-track{animation-play-state:paused}
 
 /* ================= HEADER ================= */
 .pb-home-header{position:sticky;top:0;z-index:50;background:#fffaf7f2;border-bottom:1px solid #eadfd9;backdrop-filter:blur(14px);box-shadow:0 2px 15px rgba(108,78,79,.05)}
@@ -211,7 +215,7 @@
 
 /* ================= BREAKPOINT 2: MOBILE (<=768px) ================= */
 @media(max-width:768px){
-.pb-home-announcement{white-space:normal;line-height:1.4;padding:8px 14px}
+.pb-home-announcement{white-space:nowrap;line-height:1.4;padding:0}
 .pb-home-top{height:64px;padding:0 14px}
 .pb-home-brand{font-size:17px;min-width:0}
 .pb-home-brand span,.pb-home-brand img{width:34px;height:34px}
@@ -267,3 +271,23 @@
 .pb-home-bulk{border:1px solid #eadfd9;border-radius:26px;background:#fff9fb;padding:26px}
 .pb-bulk-intro{max-width:760px;color:#7d6769;line-height:1.7;margin:0 0 20px}
 @media(max-width:768px){.pb-home-bulk{padding:18px;border-radius:20px}}
+
+/* ================= PINKBOX TRUST & PRODUCT DETAILS ================= */
+.pb-brand-lockup{display:flex;min-width:0;flex-direction:column;align-items:flex-start;line-height:1.05}
+.pb-brand-lockup strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#6a4b4e;font:inherit}
+.pb-brand-lockup small{display:block;margin-top:4px;color:#c36f83;font-size:9px;font-weight:800;letter-spacing:.045em;white-space:nowrap}
+.pb-home-tools>a.pb-header-whatsapp{width:auto;height:36px;min-width:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;border:1px solid #b8e7c7;border-radius:999px;background:#f1fff5;color:#168447;font-size:11px;font-weight:800;white-space:nowrap}
+.pb-home-tools>a.pb-header-whatsapp:hover{background:#e6ffef;color:#0c7138}
+.pb-product-pack{display:inline-flex;margin-top:7px;padding:5px 8px;border:1px solid #f0d7df;border-radius:999px;background:#fff5f8;color:#9a5367;font-size:10px;font-weight:800;letter-spacing:.02em}
+.pb-review-product{display:block;margin-bottom:8px;color:#a36a7c;font-size:10px;font-weight:800;letter-spacing:.03em}
+@media(max-width:768px){
+ .pb-home-tools>a.pb-header-whatsapp{width:36px;height:36px;min-width:36px;padding:0;border-radius:50%}
+ .pb-header-whatsapp span{display:none}
+}
+@media(max-width:480px){
+ .pb-brand-lockup strong{max-width:110px}
+ .pb-brand-lockup small{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .pb-home-announcement-track{animation:none!important}
+}
