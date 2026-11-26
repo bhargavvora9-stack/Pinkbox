@@ -49,7 +49,7 @@ export default function ProductPurchasePanel({ product, description = '' }) {
     ? Math.round((1 - effectivePrice / compareAtPrice) * 100)
     : 0;
   const isBagProduct = String(product.sku || '').toUpperCase().startsWith('BAG-');
-  const rawWhatsappNumber = String(product.whatsapp_number || '').replace(/\\D/g, '');
+  const rawWhatsappNumber = String(product.whatsapp_number || '').replace(/\D/g, '');
   const whatsappNumber = rawWhatsappNumber.length === 10
     ? '91' + rawWhatsappNumber
     : rawWhatsappNumber.length >= 11 && rawWhatsappNumber.length <= 15
