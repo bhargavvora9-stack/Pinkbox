@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import { filterAvailableProducts } from '@/lib/product-availability';
+import { getWebsiteProductOrderCounts, sortProductsByWebsiteOrders } from '@/lib/website-product-sales';
 import { absoluteUrl, limitMetaText, safeJsonLd, sanitizePublicProductText } from '@/lib/seo';
 import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 
@@ -28,7 +29,7 @@ async function getShopData() {
 
   if (settingsError || !settings) return { settings: settings || {}, products: [] };
 
-  const [productsResult, variantsResult] = await Promise.all([
+  const [productsResult, variantsResult, orderCounts] = await Promise.all([
     db.from('website_products')
       .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
       .eq('company_id', settings.company_id)
@@ -40,6 +41,7 @@ async function getShopData() {
       .select('id,product_id,title,sku,price,compare_at_price,stock_quantity,image_url,is_active')
       .eq('company_id', settings.company_id)
       .eq('is_active', true),
+    getWebsiteProductOrderCounts(settings.company_id),
   ]);
 
   // Fail closed when inventory could not be checked; never advertise an item as available
@@ -48,7 +50,12 @@ async function getShopData() {
     return { settings, products: [] };
   }
 
-  const visibleProducts = filterAvailableProducts(productsResult.data, variantsResult.data || [], { includeOutOfStock: true });
+  const sellableProductIds = new Set(filterAvailableProducts(productsResult.data, variantsResult.data || []).map((product) => product.id));
+  const visibleProducts = sortProductsByWebsiteOrders(
+    filterAvailableProducts(productsResult.data, variantsResult.data || [], { includeOutOfStock: true }),
+    orderCounts,
+    sellableProductIds,
+  );
   if (!visibleProducts.length) return { settings, products: [] };
 
   const ids = visibleProducts.map((product) => product.id);
@@ -82,6 +89,7 @@ async function getShopData() {
     const fallback = { image_url: `/catalog-products/${product.sku.toLowerCase()}.webp`, alt_text: product.title, is_primary: true };
     return {
       ...product,
+      website_order_count: Number(orderCounts[product.id] || 0),
       short_description: sanitizePublicProductText(product.short_description),
       description: sanitizePublicProductText(product.description),
       variants: variantsByProductId.get(product.id) || [],
