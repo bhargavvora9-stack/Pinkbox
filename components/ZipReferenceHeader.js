@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 const EMPTY_SETTINGS = Object.freeze({});
 import Link from 'next/link';
 import Image from 'next/image';
-import { Flower2, Menu, X, Phone } from 'lucide-react';
+import { Flower2, Menu, X, Phone, ChevronDown } from 'lucide-react';
 import ZipReferenceCartDrawer from '@/components/ZipReferenceCartDrawer';
 const NAV = [
   { label: 'Home', href: '/#top' },{ label: 'Shop', href: '/shop' },
@@ -16,38 +16,50 @@ const CORE_COLLECTION_NAV = [
   { label: 'Bags', href: '/collections/bags' },
 ];
 
-function withCollectionLinks(items) {
+function withShopDropdown(items) {
   const currentItems = Array.isArray(items) ? items : [];
-  const existingHrefs = new Set(
-    currentItems.map((item) => String(item?.href || item?.url || '').trim()).filter(Boolean),
+  const collectionHrefs = new Set(CORE_COLLECTION_NAV.map((item) => item.href));
+  const separateCollections = currentItems.filter((item) =>
+    collectionHrefs.has(String(item?.href || item?.url || '').trim()),
   );
-  const missingItems = CORE_COLLECTION_NAV.filter((item) => !existingHrefs.has(item.href));
-  if (!missingItems.length) return currentItems;
-
-  const shopIndex = currentItems.findIndex(
+  const topLevelItems = currentItems.filter((item) =>
+    !collectionHrefs.has(String(item?.href || item?.url || '').trim()),
+  );
+  const shopIndex = topLevelItems.findIndex(
     (item) => String(item?.href || item?.url || '').trim() === '/shop',
   );
-  if (shopIndex >= 0) {
-    return [
-      ...currentItems.slice(0, shopIndex + 1),
-      ...missingItems,
-      ...currentItems.slice(shopIndex + 1),
-    ];
+
+  if (shopIndex < 0) {
+    const homeIndex = topLevelItems.findIndex((item) =>
+      ['/', '/#top'].includes(String(item?.href || item?.url || '').trim()),
+    );
+    topLevelItems.splice(homeIndex >= 0 ? homeIndex + 1 : topLevelItems.length, 0, {
+      label: 'Shop',
+      href: '/shop',
+    });
   }
 
-  const homeIndex = currentItems.findIndex((item) =>
-    ['/', '/#top'].includes(String(item?.href || item?.url || '').trim()),
+  const resolvedShopIndex = topLevelItems.findIndex(
+    (item) => String(item?.href || item?.url || '').trim() === '/shop',
   );
-  if (homeIndex >= 0) {
-    return [
-      ...currentItems.slice(0, homeIndex + 1),
-      ...missingItems,
-      ...currentItems.slice(homeIndex + 1),
-    ];
-  }
+  const shopItem = topLevelItems[resolvedShopIndex];
+  const nestedItems = [
+    ...(Array.isArray(shopItem?.children) ? shopItem.children : []),
+    ...separateCollections,
+    ...CORE_COLLECTION_NAV,
+  ];
+  const seen = new Set();
+  const children = nestedItems.filter((item) => {
+    const href = String(item?.href || item?.url || '').trim();
+    if (!href || seen.has(href) || item?.is_active === false) return false;
+    seen.add(href);
+    return true;
+  });
 
-  return [...currentItems, ...missingItems];
+  topLevelItems[resolvedShopIndex] = { ...shopItem, children };
+  return topLevelItems;
 }
+
 const TICKER = [
   'Free shipping on orders above ₹499','Ultra-soft cotton top sheet',
   'Rash-free · Leak-proof · 12 hr protection','Dealer & bulk enquiries welcome',
@@ -55,7 +67,7 @@ const TICKER = [
 export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
   const [open, setOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState(settings || {});
-  const [navItems, setNavItems] = useState(withCollectionLinks(NAV));
+  const [navItems, setNavItems] = useState(withShopDropdown(NAV));
   const [themeSettings, setThemeSettings] = useState({});
   useEffect(() => {
     let active = true;
@@ -65,7 +77,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
         if (!active || !data) return;
         setSiteSettings({ ...(settings || {}), ...(data.settings || {}) });
         const savedItems = data.headerMenu?.items;
-        setNavItems(withCollectionLinks(Array.isArray(savedItems) && savedItems.length
+        setNavItems(withShopDropdown(Array.isArray(savedItems) && savedItems.length
           ? savedItems.filter((item) => item && item.is_active !== false && (item.href || item.url))
           : NAV));
         setThemeSettings(data.theme || {});
@@ -108,7 +120,20 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
             )}
           </Link>
           <nav className="hidden items-center gap-3 lg:flex">
-            {navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary lg:text-sm">{item.label || item.title || 'Link'}</Link>)}
+            {navItems.map((item, index) => item.children?.length ? (
+              <details key={item.id || item.href || item.label || index} className="group relative">
+                <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:text-sm">
+                  {item.label || item.title || 'Shop'}
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <div className="absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-border bg-background p-2 shadow-xl group-open:block">
+                  <Link href={item.href || item.url || '/shop'} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); }} className="block rounded-lg px-3 py-2 text-sm font-semibold text-foreground hover:bg-secondary">All Products</Link>
+                  {item.children.map((child, childIndex) => <Link key={child.id || child.href || child.url || child.label || childIndex} href={child.href || child.url || '/shop'} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); }} className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary">{child.label || child.title || 'Category'}</Link>)}
+                </div>
+              </details>
+            ) : (
+              <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary lg:text-sm">{item.label || item.title || 'Link'}</Link>
+            ))}
           </nav>
           <div className="flex items-center gap-1">
             <a href={'tel:' + phoneHref} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary lg:inline-flex"><Phone className="h-4 w-4" />{phone}</a>
@@ -117,7 +142,20 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
             <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground lg:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
-        {open && <nav className="border-t border-border bg-background px-4 py-3 lg:hidden">{navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 text-sm font-medium text-foreground hover:bg-secondary">{item.label || item.title || 'Link'}</Link>)}</nav>}
+        {open && <nav className="border-t border-border bg-background px-4 py-3 lg:hidden">{navItems.map((item, index) => item.children?.length ? (
+          <details key={item.id || item.href || item.label || index} className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-2 py-2.5 text-sm font-medium text-foreground hover:bg-secondary">
+              {item.label || item.title || 'Shop'}
+              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="mb-2 ml-3 border-l border-border pl-3">
+              <Link href={item.href || item.url || '/shop'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 text-sm font-semibold text-foreground hover:bg-secondary">All Products</Link>
+              {item.children.map((child, childIndex) => <Link key={child.id || child.href || child.url || child.label || childIndex} href={child.href || child.url || '/shop'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary">{child.label || child.title || 'Category'}</Link>)}
+            </div>
+          </details>
+        ) : (
+          <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 text-sm font-medium text-foreground hover:bg-secondary">{item.label || item.title || 'Link'}</Link>
+        ))}</nav>}
       </div>
     </header>
   );
