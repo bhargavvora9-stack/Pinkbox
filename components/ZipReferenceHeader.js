@@ -10,6 +10,44 @@ const NAV = [
   { label: 'About', href: '/about' },{ label: 'Blog', href: '/blog' },
   { label: 'FAQ', href: '/faq' },{ label: 'Contact', href: '/#contact' },
 ];
+const CORE_COLLECTION_NAV = [
+  { label: 'Sanitary Pads', href: '/collections/sanitary-pads' },
+  { label: 'Baby Diapers', href: '/collections/baby-diapers' },
+  { label: 'Bags', href: '/collections/bags' },
+];
+
+function withCollectionLinks(items) {
+  const currentItems = Array.isArray(items) ? items : [];
+  const existingHrefs = new Set(
+    currentItems.map((item) => String(item?.href || item?.url || '').trim()).filter(Boolean),
+  );
+  const missingItems = CORE_COLLECTION_NAV.filter((item) => !existingHrefs.has(item.href));
+  if (!missingItems.length) return currentItems;
+
+  const shopIndex = currentItems.findIndex(
+    (item) => String(item?.href || item?.url || '').trim() === '/shop',
+  );
+  if (shopIndex >= 0) {
+    return [
+      ...currentItems.slice(0, shopIndex + 1),
+      ...missingItems,
+      ...currentItems.slice(shopIndex + 1),
+    ];
+  }
+
+  const homeIndex = currentItems.findIndex((item) =>
+    ['/', '/#top'].includes(String(item?.href || item?.url || '').trim()),
+  );
+  if (homeIndex >= 0) {
+    return [
+      ...currentItems.slice(0, homeIndex + 1),
+      ...missingItems,
+      ...currentItems.slice(homeIndex + 1),
+    ];
+  }
+
+  return [...currentItems, ...missingItems];
+}
 const TICKER = [
   'Free shipping on orders above ₹499','Ultra-soft cotton top sheet',
   'Rash-free · Leak-proof · 12 hr protection','Dealer & bulk enquiries welcome',
@@ -17,7 +55,7 @@ const TICKER = [
 export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
   const [open, setOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState(settings || {});
-  const [navItems, setNavItems] = useState(NAV);
+  const [navItems, setNavItems] = useState(withCollectionLinks(NAV));
   const [themeSettings, setThemeSettings] = useState({});
   useEffect(() => {
     let active = true;
@@ -27,9 +65,9 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
         if (!active || !data) return;
         setSiteSettings({ ...(settings || {}), ...(data.settings || {}) });
         const savedItems = data.headerMenu?.items;
-        setNavItems(Array.isArray(savedItems) && savedItems.length
+        setNavItems(withCollectionLinks(Array.isArray(savedItems) && savedItems.length
           ? savedItems.filter((item) => item && item.is_active !== false && (item.href || item.url))
-          : NAV);
+          : NAV));
         setThemeSettings(data.theme || {});
       })
       .catch(() => {
@@ -69,17 +107,17 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
               </>
             )}
           </Link>
-          <nav className="hidden items-center gap-7 md:flex">
-            {navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">{item.label || item.title || 'Link'}</Link>)}
+          <nav className="hidden items-center gap-3 lg:flex">
+            {navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary lg:text-sm">{item.label || item.title || 'Link'}</Link>)}
           </nav>
           <div className="flex items-center gap-1">
             <a href={'tel:' + phoneHref} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary lg:inline-flex"><Phone className="h-4 w-4" />{phone}</a>
-            <Link href="/shop" className="hidden h-10 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 md:inline-flex">Shop Now</Link>
+            <Link href="/shop" className="hidden h-10 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 lg:inline-flex">Shop Now</Link>
             <ZipReferenceCartDrawer settings={currentSettings} />
-            <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground md:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
+            <button type="button" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground lg:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
-        {open && <nav className="border-t border-border bg-background px-4 py-3 md:hidden">{navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 text-sm font-medium text-foreground hover:bg-secondary">{item.label || item.title || 'Link'}</Link>)}</nav>}
+        {open && <nav className="border-t border-border bg-background px-4 py-3 lg:hidden">{navItems.map((item, index) => <Link key={item.id || item.href || item.url || item.label || index} href={item.href || item.url || '/'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 text-sm font-medium text-foreground hover:bg-secondary">{item.label || item.title || 'Link'}</Link>)}</nav>}
       </div>
     </header>
   );
