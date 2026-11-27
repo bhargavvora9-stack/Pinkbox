@@ -8,12 +8,12 @@ const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFract
 const getCardDescription = (product) => {
  const raw = String(product?.description || product?.short_description || '')
   .replace(/<[^>]*>/g, ' ')
-  .replace(/\\s+/g, ' ')
-  .replace(/Please refer to the product photographs for visible details\\.?/gi, '')
+  .replace(/\s+/g, ' ')
+  .replace(/Please refer to the product photographs for visible details\.?/gi, '')
   .trim();
  if (!raw) return '';
  const sentences = raw.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) || [];
- const openingRepeatsPackDetails = /\\b(?:pack of\\s+\\d+|size\\s+(?:s|m|l|xl|xxl|xxxl))\\b/i.test(sentences[0] || '');
+ const openingRepeatsPackDetails = /\b(?:pack of\s+\d+|size\s+(?:s|m|l|xl|xxl|xxxl))\b/i.test(sentences[0] || '');
  const concise = (openingRepeatsPackDetails && sentences.length > 1 ? sentences.slice(1).join(' ') : raw).trim();
  return (concise || raw).slice(0, 320);
 };
