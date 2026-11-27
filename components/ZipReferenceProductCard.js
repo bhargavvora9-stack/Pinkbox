@@ -5,6 +5,18 @@ import Link from 'next/link';
 import { Loader2, Star } from 'lucide-react';
 import Image from 'next/image';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const getCardDescription = (product) => {
+ const raw = String(product?.description || product?.short_description || '')
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .replace(/Please refer to the product photographs for visible details\.?/gi, '')
+  .trim();
+ if (!raw) return '';
+ const sentences = raw.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) || [];
+ const openingRepeatsPackDetails = /\b(?:pack of\s+\d+|size\s+(?:s|m|l|xl|xxl|xxxl))\b/i.test(sentences[0] || '');
+ const concise = (openingRepeatsPackDetails && sentences.length > 1 ? sentences.slice(1).join(' ') : raw).trim();
+ return (concise || raw).slice(0, 320);
+};
 const shouldUnoptimizeImage = (src) => {
   if (typeof src !== 'string') return true;
   return !(src.startsWith('/') || /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(src));
@@ -13,6 +25,7 @@ export default function ZipReferenceProductCard({product, priority = false}){
  const router=useRouter();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const image=product.image_url||product.images?.[0]?.image_url||null;
+ const description=getCardDescription(product);
  const reviewAverage=Number(product.review_average||0);
  const reviewCount=Number(product.review_count||0);
  const variants=Array.isArray(product.variants)?product.variants.filter((variant)=>variant?.is_active!==false):[];
@@ -92,6 +105,7 @@ export default function ZipReferenceProductCard({product, priority = false}){
       <p className="text-lg font-bold text-foreground">{money(offerPrice)}</p>
       {listPrice>offerPrice&&<><p className="text-sm text-muted-foreground line-through">MRP {money(listPrice)}</p><span className="text-xs font-semibold text-primary">{Math.round((1-offerPrice/listPrice)*100)}% off</span></>}
      </div>
+     {description&&<p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground">{description}</p>}
      {packCount>0&&<p className="mt-1 text-xs text-muted-foreground">{packCount}-piece pack · {money(perPiece)} per piece</p>}
      {!available&&<p className="mt-2 text-xs font-semibold text-muted-foreground">Currently out of stock</p>}
     </div>
