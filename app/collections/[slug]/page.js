@@ -19,7 +19,7 @@ async function getCollection(slug) {
   const { data: mappings } = await db.from('website_product_categories').select('product_id').eq('company_id',settings.company_id).eq('category_id',category.id);
   const ids = (mappings || []).map(x => x.product_id);
   const { data: products, error: productsError } = ids.length ? await db.from('website_products')
-    .select('id,sku,title,slug,short_description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
+    .select('id,sku,title,slug,short_description,description,brand,price,compare_at_price,stock_quantity,track_inventory,allow_backorder,featured,is_active')
     .eq('company_id',settings.company_id).in('id',ids).eq('is_active',true)
     .or('sku.like.MDH-%,sku.like.BAG-%').gt('price',0).order('created_at',{ascending:false}) : {data:[],error:null};
   if (productsError) throw new Error(productsError.message);
@@ -85,6 +85,7 @@ async function getCollection(slug) {
       review_count: reviewStat?.count || 0,
       website_order_count: Number(orderCounts[product.id] || 0),
       short_description: sanitizePublicProductText(product.short_description),
+      description: sanitizePublicProductText(product.description),
       variants: variantsByProduct[product.id] || [],
       images: resolvedImages,
       image_url: resolvedImages[0]?.image_url || fallback.image_url,
