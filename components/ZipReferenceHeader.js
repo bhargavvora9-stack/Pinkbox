@@ -126,7 +126,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
                   {item.label || item.title || 'Shop'}
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
                 </summary>
-                <div className="absolute left-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-border bg-background p-2 shadow-xl group-open:block">
+                <div className="absolute left-0 top-full z-50 mt-2 hidden min-w-48 rounded-xl border border-border bg-background p-2 shadow-xl group-open:block">
                   <Link href={item.href || item.url || '/shop'} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); }} className="block rounded-lg px-3 py-2 text-sm font-semibold text-foreground hover:bg-secondary">All Products</Link>
                   {item.children.map((child, childIndex) => <Link key={child.id || child.href || child.url || child.label || childIndex} href={child.href || child.url || '/shop'} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); }} className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary">{child.label || child.title || 'Category'}</Link>)}
                 </div>
@@ -148,7 +148,7 @@ export default function ZipReferenceHeader({ settings = EMPTY_SETTINGS }) {
               {item.label || item.title || 'Shop'}
               <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
             </summary>
-            <div className="mb-2 ml-3 border-l border-border pl-3">
+            <div className="mb-2 ml-3 hidden border-l border-border pl-3 group-open:block">
               <Link href={item.href || item.url || '/shop'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 text-sm font-semibold text-foreground hover:bg-secondary">All Products</Link>
               {item.children.map((child, childIndex) => <Link key={child.id || child.href || child.url || child.label || childIndex} href={child.href || child.url || '/shop'} onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary">{child.label || child.title || 'Category'}</Link>)}
             </div>
