@@ -6,11 +6,12 @@ import { Loader2, Star } from 'lucide-react';
 import Image from 'next/image';
 const money=(value)=>'₹'+Number(value||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const getCardDescription = (product) => {
- const raw = String(product?.description || product?.short_description || '')
+ const clean = (value) => String(value || '')
   .replace(/<[^>]*>/g, ' ')
   .replace(/\s+/g, ' ')
   .replace(/Please refer to the product photographs for visible details\.?/gi, '')
   .trim();
+ const raw = clean(product?.description) || clean(product?.short_description);
  if (!raw) return '';
  const sentences = raw.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) || [];
  const openingRepeatsPackDetails = /\b(?:pack of\s+\d+|size\s+(?:s|m|l|xl|xxl|xxxl))\b/i.test(sentences[0] || '');
