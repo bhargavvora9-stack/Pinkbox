@@ -42,9 +42,10 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false }),
     db.from('website_product_reviews')
-      .select('id,product_id,customer_name,rating,title,review_text,created_at')
+      .select('id,product_id,customer_name,rating,title,review_text,created_at,is_verified_purchase')
       .eq('company_id', companyId)
       .eq('is_approved', true)
+      .eq('is_verified_purchase', true)
       .order('created_at', { ascending: false })
       .limit(6),
     db.from('website_categories')
@@ -79,17 +80,6 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     (banner) => (!banner.starts_at || banner.starts_at <= now) && (!banner.ends_at || banner.ends_at >= now)
   );
 
-  const availableProductIds = new Set((products.data || []).map((product) => product.id));
-  const categoryProductCounts = {};
-  for (const mapping of mappings.data || []) {
-    if (!availableProductIds.has(mapping.product_id)) continue;
-    categoryProductCounts[mapping.category_id] = (categoryProductCounts[mapping.category_id] || 0) + 1;
-  }
-
-  const visibleCategories = (categories.data || []).filter(
-    (category) => Number(categoryProductCounts[category.id] || 0) > 0
-  );
-
   const featuredIds = (featuredProductRows.data || []).map((product) => product.id);
   const [featuredVariantsResult, featuredImagesResult] = featuredIds.length
     ? await Promise.all([
@@ -99,8 +89,19 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     : [{ data: [], error: null }, { data: [], error: null }];
   if (featuredVariantsResult.error || featuredImagesResult.error) throw new Error(featuredVariantsResult.error?.message || featuredImagesResult.error?.message);
   const sellableProductIds = new Set(filterAvailableProducts(featuredProductRows.data || [], featuredVariantsResult.data || []).map((product) => product.id));
+  const categoryProductCounts = {};
+  const productCategoryIds = new Map();
+  for (const mapping of mappings.data || []) {
+    if (!sellableProductIds.has(mapping.product_id)) continue;
+    categoryProductCounts[mapping.category_id] = (categoryProductCounts[mapping.category_id] || 0) + 1;
+    const categoryIds = productCategoryIds.get(mapping.product_id) || [];
+    categoryIds.push(mapping.category_id);
+    productCategoryIds.set(mapping.product_id, categoryIds);
+  }
+  const visibleCategories = (categories.data || []).filter(
+    (category) => Number(categoryProductCounts[category.id] || 0) > 0
+  );
   const rankedFeaturedRows = sortProductsByWebsiteOrders(featuredProductRows.data || [], orderCounts, sellableProductIds);
-  const hasBestSellers = rankedFeaturedRows.some((product) => Number(orderCounts[product.id] || 0) > 0);
   const variantsByProduct = new Map();
   for (const variant of featuredVariantsResult.data || []) {
     const rows = variantsByProduct.get(variant.product_id) || [];
@@ -113,18 +114,39 @@ const getStoreData = cache(unstable_cache(async function getStoreData() {
     rows.push(image);
     imagesByProduct.set(image.product_id, rows);
   }
-  const homepageFeaturedProducts = rankedFeaturedRows.slice(0, 4).map((product) => {
+  const toHomepageProduct = (product) => {
     const productImages = (imagesByProduct.get(product.id) || []).sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0));
     const fallback = `/catalog-products/${String(product.sku || '').toLowerCase()}.webp`;
-    return { ...product, website_order_count: Number(orderCounts[product.id] || 0), short_description: sanitizePublicProductText(product.short_description), description: sanitizePublicProductText(product.description), variants: variantsByProduct.get(product.id) || [], images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }], image_url: productImages[0]?.image_url || fallback };
-  });
+    return {
+      ...product,
+      website_order_count: Number(orderCounts[product.id] || 0),
+      short_description: sanitizePublicProductText(product.short_description),
+      description: sanitizePublicProductText(product.description),
+      variants: variantsByProduct.get(product.id) || [],
+      images: productImages.length ? productImages : [{ image_url: fallback, alt_text: product.title }],
+      image_url: productImages[0]?.image_url || fallback,
+    };
+  };
+  const homepageProductsByCategory = Object.fromEntries(
+    visibleCategories.map((category) => [
+      category.slug,
+      rankedFeaturedRows
+        .filter((product) => sellableProductIds.has(product.id) && (productCategoryIds.get(product.id) || []).includes(category.id))
+        .slice(0, 4)
+        .map(toHomepageProduct),
+    ])
+  );
+  const productTitleById = new Map((featuredProductRows.data || []).map((product) => [product.id, product.title]));
+  const verifiedHomepageReviews = (homepageReviews.data || []).map((review) => ({
+    ...review,
+    product_title: productTitleById.get(review.product_id) || null,
+  })).filter((review) => review.product_title);
 
   return {
     settings,
     categories: visibleCategories,
-    featuredProducts: homepageFeaturedProducts,
-    hasBestSellers,
-    reviews: homepageReviews.data || [],
+    productsByCategory: homepageProductsByCategory,
+    reviews: verifiedHomepageReviews,
     banners: activeBanners,
     homepageSections: homepageSections.data || [],
     coupons: (discounts.data || [])
