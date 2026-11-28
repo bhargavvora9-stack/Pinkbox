@@ -7,8 +7,8 @@ import PinkBoxShopListing from '@/components/PinkBoxShopListing';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const SHOP_TITLE = 'Shop Sanitary Pads, Baby Diapers & Bags | PinkBox';
-const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diapers and bags at PinkBox. Explore tote bags, handbags and office bag styles together in one collection.';
+const SHOP_TITLE = 'Sanitary Pads, Baby Diapers & Bags Online | PinkBox';
+const SHOP_DESCRIPTION = 'Shop sanitary pads, 7 Soft baby diaper pants and tote bags at PinkBox. Compare product details, pack sizes, prices and availability online across India.';
 
 export const metadata = {
   title: SHOP_TITLE,
